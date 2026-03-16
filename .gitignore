@@ -1,0 +1,39 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ROS2 bag files (too large for git)
+*.bag
+*.db3
+*.mcap
+
+# Point cloud data (too large for git)
+*.pcd
+*.ply
+
+# Compiled libraries
+*.so
+*.a
+*.o
+
+# Third-party repos pulled by vcs import
+src/third_party/
