@@ -24,6 +24,18 @@ import os
 from datetime import datetime
 # 导入yaml模块，用于读取配置文件
 import yaml
+from pathlib import Path
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
 
 # 文件最新改动时间：2025.10.9
 # 文件改动人：鹏
@@ -168,7 +180,7 @@ def get_quaternion_from_euler(roll, pitch, yaw):
 # 定义读取日志配置的辅助函数
 def should_enable_logging(node_name):
     """从YAML配置文件读取节点的日志开关状态"""
-    config_path = "/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml"
+    config_path = get_runtime_path("config", "log_switch.yaml")
     try:
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
@@ -204,7 +216,7 @@ class IMUDriverNode(Node):
         
         if enable_log:
             # 创建日志目录
-            log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/wit_imu_log"
+            log_dir = get_runtime_path("logs", "wit_imu_log")
             os.makedirs(log_dir, exist_ok=True)
 
             # 生成日志文件名

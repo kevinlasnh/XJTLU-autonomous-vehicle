@@ -36,12 +36,24 @@ from libnmea_navsat_driver.driver import Ros2NMEADriver
 import os
 from datetime import datetime
 import yaml
+from pathlib import Path
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
 
 
 def should_enable_logging(node_key):
     """检查是否应该启用日志"""
     try:
-        config_path = "/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml"
+        config_path = get_runtime_path("config", "log_switch.yaml")
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         
@@ -73,7 +85,7 @@ def main(args=None):
     if enable_log:
         # 这里由 grok 进行了改动
         # Create log directory if it doesn't exist
-        log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/nmea_navsat"
+        log_dir = get_runtime_path("logs", "nmea_navsat")
         os.makedirs(log_dir, exist_ok=True)
 
         # Generate log filename based on current time

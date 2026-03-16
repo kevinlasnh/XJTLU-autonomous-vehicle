@@ -22,12 +22,54 @@
 #include "serial/serial.h"
 // 包含yaml-cpp头文件，用于解析YAML配置文件
 #include <yaml-cpp/yaml.h>
+#include <sstream>
+#include <cstdlib>
+#include <cerrno>
+#include <sys/stat.h>
+#include <sys/types.h>
 
+namespace {
+std::string getRuntimeRoot() {
+    const char* runtime_root = std::getenv("FYP_RUNTIME_ROOT");
+    if (runtime_root != nullptr && runtime_root[0] != '\0') {
+        return std::string(runtime_root);
+    }
+    const char* home = std::getenv("HOME");
+    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+}
+
+std::string getRuntimePath(const std::string& relative_path) {
+    return getRuntimeRoot() + "/" + relative_path;
+}
+
+bool ensureDirectory(const std::string& directory) {
+    if (directory.empty()) {
+        return false;
+    }
+
+    std::string current = directory[0] == '/' ? "/" : "";
+    std::stringstream path_stream(directory);
+    std::string segment;
+    while (std::getline(path_stream, segment, '/')) {
+        if (segment.empty()) {
+            continue;
+        }
+        if (!current.empty() && current.back() != '/') {
+            current += "/";
+        }
+        current += segment;
+        if (mkdir(current.c_str(), 0755) != 0 && errno != EEXIST) {
+            return false;
+        }
+    }
+    return true;
+}
+}
 
 // 检查是否启用日志的辅助函数
 bool shouldEnableLogging(const std::string& node_key) {
     try {
-        YAML::Node config = YAML::LoadFile("/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml");
+        YAML::Node config = YAML::LoadFile(getRuntimePath("config/log_switch.yaml"));
         if (config[node_key] && config[node_key]["enable_logging"]) {
             return config[node_key]["enable_logging"].as<bool>();
         }
@@ -64,10 +106,13 @@ public:
             // 将time_t转换为本地时间结构体
             std::tm* now_tm = std::localtime(&now_time);
 
+            std::string log_dir = getRuntimePath("logs/twist_log");
+            ensureDirectory(log_dir);
+
             // 创建文件名输出流
             std::ostringstream filename_stream;
             // 构建日志文件名，包含年月日时分秒
-            filename_stream << "/home/jetson/2025_FYP/all_kind_output_file/All_Log/twist_log/log_"
+            filename_stream << log_dir << "/log_"
                             << (now_tm->tm_year + 1900)  // 年份
                             << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1) // 月份
                             << std::setw(2) << std::setfill('0') << now_tm->tm_mday // 日期

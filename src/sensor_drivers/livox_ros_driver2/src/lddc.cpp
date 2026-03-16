@@ -40,6 +40,46 @@
 #include <stdint.h>
 #include <algorithm>  // 用于std::min函数
 #include <yaml-cpp/yaml.h>
+#include <cstdlib>
+#include <cerrno>
+
+namespace {
+std::string getRuntimeRoot() {
+    const char* runtime_root = std::getenv("FYP_RUNTIME_ROOT");
+    if (runtime_root != nullptr && runtime_root[0] != '\0') {
+        return std::string(runtime_root);
+    }
+    const char* home = std::getenv("HOME");
+    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+}
+
+std::string getRuntimePath(const std::string& relative_path) {
+    return getRuntimeRoot() + "/" + relative_path;
+}
+
+bool ensureDirectory(const std::string& directory) {
+    if (directory.empty()) {
+        return false;
+    }
+
+    std::string current = directory[0] == '/' ? "/" : "";
+    std::stringstream path_stream(directory);
+    std::string segment;
+    while (std::getline(path_stream, segment, '/')) {
+        if (segment.empty()) {
+            continue;
+        }
+        if (!current.empty() && current.back() != '/') {
+            current += "/";
+        }
+        current += segment;
+        if (mkdir(current.c_str(), 0755) != 0 && errno != EEXIST) {
+            return false;
+        }
+    }
+    return true;
+}
+}
 
 #include "include/ros_headers.h"
 
@@ -89,19 +129,19 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
   
   if (enable_log) {
     // 创建日志目录
-    std::string log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/raw_LiDAR";
-    mkdir(log_dir.c_str(), 0755);
+    std::string log_dir = getRuntimePath("logs/raw_LiDAR");
+    ensureDirectory(log_dir);
 
     // 创建点云数据日志目录
-    std::string pointcloud_log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/raw_LiDAR_pointcloud";
-    mkdir(pointcloud_log_dir.c_str(), 0755);
+    std::string pointcloud_log_dir = getRuntimePath("logs/raw_LiDAR_pointcloud");
+    ensureDirectory(pointcloud_log_dir);
 
     // 生成日志文件名
     auto now = std::chrono::system_clock::now();
     std::time_t now_time = std::chrono::system_clock::to_time_t(now);
     std::tm* now_tm = std::localtime(&now_time);
     std::stringstream filename_stream;
-    filename_stream << "/home/jetson/2025_FYP/all_kind_output_file/All_Log/raw_LiDAR/raw_lidar_log_"
+    filename_stream << log_dir << "/raw_lidar_log_"
                     << (now_tm->tm_year + 1900)
                     << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
                     << std::setw(2) << std::setfill('0') << now_tm->tm_mday
@@ -114,7 +154,7 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
 
     // 生成点云数据日志文件名
     std::stringstream pointcloud_filename_stream;
-    pointcloud_filename_stream << "/home/jetson/2025_FYP/all_kind_output_file/All_Log/raw_LiDAR_pointcloud/pointcloud_log_"
+    pointcloud_filename_stream << pointcloud_log_dir << "/pointcloud_log_"
                     << (now_tm->tm_year + 1900)
                     << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
                     << std::setw(2) << std::setfill('0') << now_tm->tm_mday
@@ -190,7 +230,7 @@ Lddc::~Lddc() {
 
 bool Lddc::shouldEnableLogging(const std::string& node_key) {
   try {
-    std::string config_path = "/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml";
+    std::string config_path = getRuntimePath("config/log_switch.yaml");
     YAML::Node config = YAML::LoadFile(config_path);
     
     // 直接读取节点配置

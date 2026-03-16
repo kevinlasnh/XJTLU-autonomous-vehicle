@@ -1,11 +1,24 @@
 import os
 import time
+from pathlib import Path
 from math import sin, cos, radians
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
+
 
 class IMUTrajectoryNode(Node):
     def __init__(self):
@@ -28,9 +41,10 @@ class IMUTrajectoryNode(Node):
         self.path_msg = Path()  # 路径消息
         self.path_msg.header.frame_id = "map"
 
-        # 日志文件路径
-        self.log_file_path = "/home/jetson/ros2_ws/src/GNSS/GNSSlog/imu_trajectory_log.txt"
-        os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
+        default_log_file = get_runtime_path("logs", "imu_trajectory", "imu_trajectory_log.txt")
+        self.declare_parameter("log_file_path", str(default_log_file))
+        self.log_file_path = self.get_parameter("log_file_path").value
+        Path(self.log_file_path).parent.mkdir(parents=True, exist_ok=True)
 
         self.get_logger().info(f"Trajectory log will be saved to: {self.log_file_path}")
 

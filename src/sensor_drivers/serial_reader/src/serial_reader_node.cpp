@@ -38,12 +38,51 @@
 #include <sys/types.h>
 // 包含yaml-cpp头文件，用于解析YAML配置文件
 #include <yaml-cpp/yaml.h>
+#include <cstdlib>
+#include <cerrno>
 
+namespace {
+std::string getRuntimeRoot() {
+    const char* runtime_root = std::getenv("FYP_RUNTIME_ROOT");
+    if (runtime_root != nullptr && runtime_root[0] != '\0') {
+        return std::string(runtime_root);
+    }
+    const char* home = std::getenv("HOME");
+    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+}
+
+std::string getRuntimePath(const std::string& relative_path) {
+    return getRuntimeRoot() + "/" + relative_path;
+}
+
+bool ensureDirectory(const std::string& directory) {
+    if (directory.empty()) {
+        return false;
+    }
+
+    std::string current = directory[0] == '/' ? "/" : "";
+    std::stringstream path_stream(directory);
+    std::string segment;
+    while (std::getline(path_stream, segment, '/')) {
+        if (segment.empty()) {
+            continue;
+        }
+        if (!current.empty() && current.back() != '/') {
+            current += "/";
+        }
+        current += segment;
+        if (mkdir(current.c_str(), 0755) != 0 && errno != EEXIST) {
+            return false;
+        }
+    }
+    return true;
+}
+}
 
 // 检查是否启用日志的辅助函数
 bool shouldEnableLogging(const std::string& node_key) {
     try {
-        YAML::Node config = YAML::LoadFile("/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml");
+        YAML::Node config = YAML::LoadFile(getRuntimePath("config/log_switch.yaml"));
         if (config[node_key] && config[node_key]["enable_logging"]) {
             return config[node_key]["enable_logging"].as<bool>();
         }
@@ -96,8 +135,8 @@ public:
         
         if (enable_log) {
             // 创建日志目录
-            std::string log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/reader_log";
-            if (mkdir(log_dir.c_str(), 0755) != 0 && errno != EEXIST) {
+            std::string log_dir = getRuntimePath("logs/reader_log");
+            if (!ensureDirectory(log_dir)) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to create log directory: %s", log_dir.c_str());
             }
 

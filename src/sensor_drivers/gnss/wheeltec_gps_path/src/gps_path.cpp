@@ -11,6 +11,22 @@
 #include <filesystem>
 #include <chrono>
 #include <yaml-cpp/yaml.h>
+#include <cstdlib>
+
+namespace {
+std::string getRuntimeRoot() {
+    const char* runtime_root = std::getenv("FYP_RUNTIME_ROOT");
+    if (runtime_root != nullptr && runtime_root[0] != '\0') {
+        return std::string(runtime_root);
+    }
+    const char* home = std::getenv("HOME");
+    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+}
+
+std::string getRuntimePath(const std::string& relative_path) {
+    return getRuntimeRoot() + "/" + relative_path;
+}
+}
 
 #define EARTH_RADIUS 6378.137
 #define NORTH_SOUTH_OFFSET 459.13  // NS方向误差
@@ -36,7 +52,7 @@ public:
             // 内容：修改日志文件的保存路径
             // 影响：日志文件将保存在新的路径中
             // Create log directory if it doesn't exist
-            std::string log_dir = "/home/jetson/2025_FYP/all_kind_output_file/All_Log/wheeltec_gps_path";
+            std::string log_dir = getRuntimePath("logs/wheeltec_gps_path");
             std::filesystem::create_directories(log_dir);
 
             // Generate log filename based on current time
@@ -80,7 +96,7 @@ public:
     bool shouldEnableLogging(const std::string& node_key)
     {
         try {
-            std::string config_path = "/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml";
+            std::string config_path = getRuntimePath("config/log_switch.yaml");
             YAML::Node config = YAML::LoadFile(config_path);
             
             // 直接读取节点配置
@@ -114,7 +130,9 @@ public:
     void save_to_file(double latitude, double longitude)
     {
         std::ofstream file;
-        file.open("/home/jetson/ros2_ws/src/GNSS/GNSSlog/gps_path_std.txt", std::ios::app);
+        const auto file_path = getRuntimePath("logs/wheeltec_gps_path/gps_path_std.txt");
+        std::filesystem::create_directories(std::filesystem::path(file_path).parent_path());
+        file.open(file_path, std::ios::app);
 
         if (file.is_open())
         {

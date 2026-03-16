@@ -24,6 +24,19 @@ from datetime import datetime
 from nav_msgs.msg import Path
 # 从geometry_msgs.msg模块导入PoseStamped消息类型，用于姿态消息
 from geometry_msgs.msg import PoseStamped
+from pathlib import Path
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
+
 
 # 节点名称：global_path_planner
 
@@ -305,9 +318,10 @@ def astar(start, goal, nodes, adj_list):
     return None
 
 # 定义保存路径到文件的函数
-def save_path_to_file(path, filepath="/home/jetson/ros2_ws/src/GNSS/GNSSlog/astar_path.txt"):
+def save_path_to_file(path, filepath=None):
+    filepath = Path(filepath) if filepath else get_runtime_path("logs", "planning", "astar_path.txt")
     # 创建文件目录（如果不存在）
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
     # 获取当前时间
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 格式化路径字符串
@@ -355,7 +369,7 @@ class RuntimeCalibration:
         # 初始化校准完成标志
         self.calibrated = False
         # 设置偏移量文件路径
-        self.OFFSET_FILE_PATH = '/home/jetson/ros2_ws/src/GNSS/gnss_calibration/gnss_calibration/gnss_offset.txt'
+        self.OFFSET_FILE_PATH = str(get_runtime_path("gnss", "gnss_offset.txt"))
         # 设置接近阈值
         self.PROXIMITY_THRESHOLD = PROXIMITY_THRESHOLD
         # 初始化GNSS1点
@@ -650,7 +664,7 @@ if __name__ == "__main__":
     path_publisher = PathPublisher()
 
     # 加载地图
-    filepath = "/home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ04132316.geojson"
+    filepath = os.environ.get("FYP_GNSS_MAP_FILE", str(get_runtime_path("maps", "XJ04132316.geojson")))
     nodes, adj_list = process_map(filepath)
 
     # 记录等待GNSS数据的日志

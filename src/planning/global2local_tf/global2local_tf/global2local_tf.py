@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 # 导入os模块，用于操作系统相关功能，如文件路径操作
 import os
+from pathlib import Path
 # 导入rclpy库，用于ROS2 Python接口
 import rclpy
 # 从rclpy.node模块导入Node类，用于创建ROS2节点
@@ -20,6 +21,18 @@ from geopy.distance import geodesic
 from datetime import datetime
 # 从nav_msgs.msg模块导入Path消息类型，用于路径消息
 from nav_msgs.msg import Path
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
+
 
 # 节点名称：coordinate_transformer
 
@@ -61,11 +74,11 @@ class CoordinateTransformer(Node):
         # 初始化开始时间为None
         self.start_time = None
         # 加载角度偏置文件
-        self.angle_offset = self.load_angle_offset("/home/jetson/ros2_ws/src/global2local_tf/global2local_tf/angle_offset.txt")
+        self.angle_offset = self.load_angle_offset(str(get_runtime_path("planning", "angle_offset.txt")))
         # 记录加载的角度偏置日志
         self.get_logger().info(f"Loaded angle offset: {self.angle_offset} degrees")
         # 设置日志文件路径
-        self.log_file_path = "/home/jetson/ros2_ws/src/GNSS/GNSSlog/imu_yaw.txt"
+        self.log_file_path = str(get_runtime_path("logs", "planning", "imu_yaw.txt"))
         # 创建日志文件目录（如果不存在）
         os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
         # 初始化最近一次的IMU数据为None

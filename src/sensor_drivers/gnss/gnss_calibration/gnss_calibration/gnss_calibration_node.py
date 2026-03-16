@@ -19,6 +19,22 @@ from math import radians, sin, cos, sqrt, atan2
 import sys
 # 导入yaml模块，用于读取配置文件
 import yaml
+from pathlib import Path
+
+
+def get_runtime_root():
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
+    if runtime_root:
+        return Path(runtime_root).expanduser()
+    return Path.home() / "fyp_runtime_data"
+
+
+def get_runtime_path(*parts):
+    return get_runtime_root().joinpath(*parts)
+
+LOG_SWITCH_PATH = get_runtime_path("config", "log_switch.yaml")
+OFFSET_FILE_PATH = get_runtime_path("gnss", "gnss_offset.txt")
+START_ID_FILE_PATH = get_runtime_path("gnss", "startid.txt")
 
 # 定义校准所需的数据次数常量
 CALIBRATION_TIMES = 5
@@ -47,10 +63,6 @@ CALIBRATION_POINTS = {
     # 校准点4：前门口
     4: (31.274842, 120.737268, "前门口")
 }
-
-# 定义偏移量文件路径
-# 此处 Grok 改动后有问题，已撤回
-OFFSET_FILE_PATH = '/home/jetson/2025_FYP/car_ws/src/Sensor_Driver_layer/GNSS/gnss_calibration/gnss_calibration/gnss_offset.txt'
 
 # 定义GnssCalibrationNode类，继承自Node类
 class GnssCalibrationNode(Node):
@@ -93,7 +105,7 @@ class GnssCalibrationNode(Node):
         if enable_log:
             # Grok 进行了改动
             # Generate log path with timestamp
-            log_dir = '/home/jetson/2025_FYP/all_kind_output_file/All_Log/gnss_calibration'
+            log_dir = get_runtime_path("logs", "gnss_calibration")
             os.makedirs(log_dir, exist_ok=True)
             now = datetime.now()
             self.log_path = f"{log_dir}/log_{now.strftime('%Y%m%d_%H%M%S')}.txt"
@@ -109,7 +121,7 @@ class GnssCalibrationNode(Node):
     def should_enable_logging(self, node_key: str) -> bool:
         """检查是否应该启用日志"""
         try:
-            config_path = "/home/jetson/2025_FYP/all_kind_output_file/Other_File/manual_config/log_switch.yaml"
+            config_path = LOG_SWITCH_PATH
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
             
@@ -186,6 +198,7 @@ class GnssCalibrationNode(Node):
     def save_offsets(self):
         # 尝试打开偏移量文件进行写入
         try:
+            OFFSET_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
             with open(OFFSET_FILE_PATH, 'w') as offset_file:
                 # 写入纬度偏移量和经度偏移量，每行一个
                 offset_file.write(f"{self.lat_offset}\n{self.lon_offset}")
@@ -306,7 +319,7 @@ def main(args=None):
     # 尝试读取校准点ID
     try:
         # 定义startid文件路径
-        start_id_path = '/home/jetson/2025_FYP/car_ws/src/Sensor_Driver_layer/GNSS/gnss_calibration/gnss_calibration/startid.txt'
+        start_id_path = START_ID_FILE_PATH
         # 打开文件读取
         with open(start_id_path, 'r') as file:
             # 读取内容并转换为整数
