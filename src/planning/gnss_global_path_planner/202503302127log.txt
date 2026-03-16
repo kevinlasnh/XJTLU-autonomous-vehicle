@@ -1,0 +1,122 @@
+[global_path_planner.py-3] [LOG] ======Reached waypoint [616]: (120.73831662500001, 31.27495)======
+[global_path_planner.py-3] Traceback (most recent call last):
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 655, in <module>
+[global_path_planner.py-3]     runtime_calibrator.check_precise_reached(
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 304, in check_precise_reached
+[global_path_planner.py-3]     if not self.is_on_perpendicular_line(prev_node, curr_gnss, next_coords):
+[global_path_planner.py-3] AttributeError: 'RuntimeCalibration' object has no attribute 'is_on_perpendicular_line'
+[ERROR] [global_path_planner.py-3]: process has died [pid 39741, exit code 1, cmd '/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py --ros-args -r __node:=global_path_planner'].
+
+
+    [global_path_planner.py-3] [LOG] Publishing next node [617]: (120.73821825, 31.274947)
+[global_path_planner.py-3] Traceback (most recent call last):
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 677, in <module>
+[global_path_planner.py-3]     rclpy.spin_once(gnss_subscriber)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 206, in spin_once
+[global_path_planner.py-3]     executor.spin_once(timeout_sec=timeout_sec)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 739, in spin_once
+[global_path_planner.py-3]     self._spin_once_impl(timeout_sec)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 728, in _spin_once_impl
+[global_path_planner.py-3]     handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 711, in wait_for_ready_callbacks
+[global_path_planner.py-3]     return next(self._cb_iter)
+[global_path_planner.py-3] ValueError: generator already executing
+[ERROR] [global_path_planner.py-3]: process has died [pid 44862, exit code 1, cmd '/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py --ros-args -r __node:=global_path_planner'].
+
+
+[global_path_planner.py-3] [INFO] [1743427255.256372607] [global_path_planner]: Precise reached recorded: (120.738119875, 31.274944)
+[global_path_planner.py-3] [ERROR] [1743427255.257232759] [global_path_planner]: Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+
+
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [616]: (120.73831662500001, 31.27495)======
+[global_path_planner.py-3] [INFO] [1743429275.290047639] [global_path_planner]: Recorded gnss1: (120.73835845000002, 31.27495125)
+[global_path_planner.py-3] [INFO] [1743429275.291388928] [global_path_planner]: Recorded gnss2: (120.73835845000002, 31.27495125)
+[global_path_planner.py-3] [INFO] [1743429275.292706408] [global_path_planner]: Intersection point calculated: (120.73835845000002, 31.274951275476496)
+[global_path_planner.py-3] [INFO] [1743429275.293912397] [global_path_planner]: Error recorded: -1.2754764959765907e-06, -4.1825000010931035e-05
+[global_path_planner.py-3] [LOG] Publishing next node [617]: (120.73821825, 31.274947)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [617]: (120.73821825, 31.274947)======
+[global_path_planner.py-3] [INFO] [1743429285.375648504] [global_path_planner]: Recorded gnss1: (120.73825045000002, 31.27494625)
+[global_path_planner.py-3] [INFO] [1743429285.377115717] [global_path_planner]: Recorded gnss2: (120.73825045000002, 31.27494625)
+[global_path_planner.py-3] [INFO] [1743429285.378405134] [global_path_planner]: Intersection point calculated: (120.73825045000002, 31.274947981956803)
+[global_path_planner.py-3] [INFO] [1743429285.379631764] [global_path_planner]: Error recorded: -9.819568020930092e-07, -3.220000002102097e-05
+[global_path_planner.py-3] [LOG] Publishing next node [618]: (120.738119875, 31.274944)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [618]: (120.738119875, 31.274944)======
+[global_path_planner.py-3] [INFO] [1743429294.305914550] [global_path_planner]: Recorded gnss1: (120.7381536166667, 31.27494025)
+[global_path_planner.py-3] [INFO] [1743429294.307309922] [global_path_planner]: Recorded gnss2: (120.7381536166667, 31.27494025)
+[global_path_planner.py-3] [INFO] [1743429294.308628171] [global_path_planner]: Intersection point calculated: (120.7381536166667, 31.274945028970773)
+[global_path_planner.py-3] [INFO] [1743429294.309896563] [global_path_planner]: Error recorded: -1.028970771699278e-06, -3.3741666698006156e-05
+[global_path_planner.py-3] [WARN] [1743429294.311357153] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [619]: (120.7380215, 31.274941)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [619]: (120.7380215, 31.274941)======
+[global_path_planner.py-3] [INFO] [1743429303.329604014] [global_path_planner]: Recorded gnss1: (120.73805345000002, 31.274936750000002)
+[global_path_planner.py-3] [INFO] [1743429303.331058941] [global_path_planner]: Recorded gnss2: (120.73805345000002, 31.274936750000002)
+[global_path_planner.py-3] [INFO] [1743429303.332394215] [global_path_planner]: Intersection point calculated: (120.73805345000002, 31.27494197433291)
+[global_path_planner.py-3] [INFO] [1743429303.333597966] [global_path_planner]: Error recorded: -9.74332913017406e-07, -3.195000002165216e-05
+[global_path_planner.py-3] [WARN] [1743429303.335011707] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [620]: (120.73792312500001, 31.274938)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [620]: (120.73792312500001, 31.274938)======
+[global_path_planner.py-3] [INFO] [1743429316.343936901] [global_path_planner]: Recorded gnss1: (120.73796245000003, 31.27494275)
+[global_path_planner.py-3] [INFO] [1743429316.345430166] [global_path_planner]: Recorded gnss2: (120.73796245000003, 31.27494275)
+[global_path_planner.py-3] [INFO] [1743429316.346699008] [global_path_planner]: Intersection point calculated: (120.73796245000003, 31.274939199237608)
+[global_path_planner.py-3] [INFO] [1743429316.347977449] [global_path_planner]: Error recorded: -1.1992376087732737e-06, -3.932500001724293e-05
+[global_path_planner.py-3] [WARN] [1743429316.349495483] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [621]: (120.73782475, 31.274935)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [621]: (120.73782475, 31.274935)======
+[global_path_planner.py-3] [INFO] [1743429325.332922797] [global_path_planner]: Recorded gnss1: (120.73785978333336, 31.27494575)
+[global_path_planner.py-3] [INFO] [1743429325.334375196] [global_path_planner]: Recorded gnss2: (120.73785978333336, 31.27494575)
+[global_path_planner.py-3] [INFO] [1743429325.335604453] [global_path_planner]: Intersection point calculated: (120.73785978333336, 31.274936068360862)
+[global_path_planner.py-3] [INFO] [1743429325.336841006] [global_path_planner]: Error recorded: -1.0683608628880847e-06, -3.503333336141168e-05
+[global_path_planner.py-3] [WARN] [1743429325.338274237] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [622]: (120.737726375, 31.274932)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [622]: (120.737726375, 31.274932)======
+[global_path_planner.py-3] [INFO] [1743429334.352770388] [global_path_planner]: Recorded gnss1: (120.7377596166667, 31.274950750000002)
+[global_path_planner.py-3] [INFO] [1743429334.354182435] [global_path_planner]: Recorded gnss2: (120.7377596166667, 31.274950750000002)
+[global_path_planner.py-3] [INFO] [1743429334.355480014] [global_path_planner]: Intersection point calculated: (120.7377596166667, 31.274933013723)
+[global_path_planner.py-3] [INFO] [1743429334.357026146] [global_path_planner]: Error recorded: -1.0137230006534992e-06, -3.3241666699268535e-05
+[global_path_planner.py-3] [WARN] [1743429334.358568629] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [140]: (120.737628, 31.274929)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [140]: (120.737628, 31.274929)======
+[global_path_planner.py-3] [INFO] [1743429343.321258783] [global_path_planner]: Recorded gnss1: (120.7376571166667, 31.27495025)
+[global_path_planner.py-3] [INFO] [1743429343.322692688] [global_path_planner]: Recorded gnss2: (120.7376571166667, 31.27495025)
+[global_path_planner.py-3] [INFO] [1743429343.323987259] [global_path_planner]: Intersection point calculated: (120.7376571166667, 31.274929887928845)
+[global_path_planner.py-3] [INFO] [1743429343.325264263] [global_path_planner]: Error recorded: -8.879288451169032e-07, -2.9116666695472304e-05
+[global_path_planner.py-3] [WARN] [1743429343.326705847] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [141]: (120.737548, 31.274927)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [141]: (120.737548, 31.274927)======
+[global_path_planner.py-3] [INFO] [1743429350.350370157] [global_path_planner]: Recorded gnss1: (120.73757778333336, 31.274951416666667)
+[global_path_planner.py-3] [INFO] [1743429350.351805854] [global_path_planner]: Recorded gnss2: (120.73757778333336, 31.274951416666667)
+[global_path_planner.py-3] [INFO] [1743429350.353117610] [global_path_planner]: Intersection point calculated: (120.73757778333336, 31.27492789315648)
+[global_path_planner.py-3] [INFO] [1743429350.354337076] [global_path_planner]: Error recorded: -8.931564785541468e-07, -2.97833333604558e-05
+[global_path_planner.py-3] [WARN] [1743429350.355822823] [global_path_planner]: Points are not collinear. Skipping offset calculation.
+[global_path_planner.py-3] [LOG] Publishing next node [623]: (120.73747, 31.274905333333333)
+
+
+
+
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [616]: (120.73831662500001, 31.27495)======
+[global_path_planner.py-3] [INFO] [1743432493.337177480] [global_path_planner]: Recorded gnss1: (120.73835663333332, 31.27494961666666)
+[global_path_planner.py-3] [LOG] Publishing next node [617]: (120.73821825, 31.274947)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [617]: (120.73821825, 31.274947)======
+[global_path_planner.py-3] [INFO] [1743432502.358171392] [global_path_planner]: Recorded gnss2: (120.73825846666666, 31.274947949999994)
+[global_path_planner.py-3] [INFO] [1743432502.359645191] [global_path_planner]: Intersection point calculated: (120.738238017105, 31.274947602808794)
+[global_path_planner.py-3] [INFO] [1743432502.360992908] [global_path_planner]: Error recorded: -6.028087931042592e-07, -1.9767105001733398e-05
+[global_path_planner.py-3] [LOG] Publishing next node [618]: (120.738119875, 31.274944)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [618]: (120.738119875, 31.274944)======
+[global_path_planner.py-3] [INFO] [1743432511.364460548] [global_path_planner]: Recorded gnss1: (120.73816163333333, 31.27494261666666)
+[global_path_planner.py-3] [LOG] Publishing next node [619]: (120.7380215, 31.274941)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [619]: (120.7380215, 31.274941)======
+[global_path_planner.py-3] [INFO] [1743432520.387633697] [global_path_planner]: Recorded gnss2: (120.73806313333333, 31.274937949999995)
+[global_path_planner.py-3] [INFO] [1743432520.389150826] [global_path_planner]: Intersection point calculated: (120.73831900878604, 31.274950072694875)
+[global_path_planner.py-3] [INFO] [1743432520.390434893] [global_path_planner]: Error recorded: -9.072694876266496e-06, -0.00029750878603351794
+[global_path_planner.py-3] [LOG] Publishing next node [620]: (120.73792312500001, 31.274938)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [620]: (120.73792312500001, 31.274938)======
+[global_path_planner.py-3] [INFO] [1743432538.350861565] [global_path_planner]: Recorded gnss1: (120.7379618, 31.274939116666662)
+[global_path_planner.py-3] [LOG] Publishing next node [621]: (120.73782475, 31.274935)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [621]: (120.73782475, 31.274935)======
+[global_path_planner.py-3] [INFO] [1743432547.338807896] [global_path_planner]: Recorded gnss2: (120.73785963333333, 31.27493861666666)
+[global_path_planner.py-3] [INFO] [1743432547.340305377] [global_path_planner]: Intersection point calculated: (120.73795934902572, 31.27493910467168)
+[global_path_planner.py-3] [INFO] [1743432547.341573220] [global_path_planner]: Error recorded: -4.104671681659511e-06, -0.00013459902571355542
+[global_path_planner.py-3] [ERROR] [1743432547.342860327] [global_path_planner]: Error calculating and saving offsets: 'fix_coords'
+[global_path_planner.py-3] [LOG] Publishing next node [622]: (120.737726375, 31.274932)

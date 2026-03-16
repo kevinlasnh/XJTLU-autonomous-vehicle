@@ -1,0 +1,228 @@
+jetson@ubuntu:~/ros2_ws$ ros2 launch gnss_global_path_planner gnss_combined_launch.py 
+[INFO] [launch]: All log files can be found below /home/jetson/.ros/log/2025-04-08-23-01-59-111635-ubuntu-6158
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [nmea_serial_driver-1]: process started with pid [6159]
+[INFO] [gnss_calibration_node-2]: process started with pid [6161]
+[INFO] [global_path_planner.py-3]: process started with pid [6163]
+[INFO] [global2local_tf-4]: process started with pid [6165]
+[INFO] [wit_ros2_imu-5]: process started with pid [6167]
+[gnss_calibration_node-2] [INFO] [1744124519.919571966] [gnss_calibration]: 成功启动在位置 后门向北的丁字口
+[gnss_calibration_node-2] [INFO] [1744124519.920275269] [gnss_calibration]: GNSS 校准节点已初始化，等待有效的传感器数据...
+[nmea_serial_driver-1] [INFO] [1744124519.947129531] [nmea_navsat_driver]: Successfully connected to /dev/wheeltec_gps at 9600.
+[nmea_serial_driver-1] [WARN] [1744124519.948750370] [nmea_navsat_driver]: Received a sentence with an invalid checksum. Sentence was: ,46*6E
+[wit_ros2_imu-5] [INFO] [1744124519.954852461] [imu]: Serial port opened successfully...
+[global2local_tf-4] [INFO] [1744124520.168205054] [coordinate_transformer]: Loaded angle offset: 0.0 degrees
+[global2local_tf-4] [INFO] [1744124520.178387131] [coordinate_transformer]: Coordinate Transformer initialized.
+[global2local_tf-4] [INFO] [1744124520.295314769] [coordinate_transformer]: IMU yaw added to queue: 262.42 degrees
+[gnss_calibration_node-2] [INFO] [1744124520.295918332] [gnss_calibration]: 正在校准，请勿移动 1/10
+[global2local_tf-4] [INFO] [1744124520.296581541] [coordinate_transformer]: IMU yaw added to queue: 262.42 degrees
+[global2local_tf-4] [INFO] [1744124520.388340328] [coordinate_transformer]: IMU yaw added to queue: 262.42 degrees
+[global2local_tf-4] [INFO] [1744124520.388876309] [coordinate_transformer]: IMU yaw average calculated: 262.42 degrees
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [LOG] Waiting for GNSS data...
+[gnss_calibration_node-2] [INFO] [1744124521.319677739] [gnss_calibration]: 正在校准，请勿移动 2/10
+[gnss_calibration_node-2] [INFO] [1744124522.343911263] [gnss_calibration]: 正在校准，请勿移动 3/10
+[gnss_calibration_node-2] [INFO] [1744124523.367528412] [gnss_calibration]: 正在校准，请勿移动 4/10
+[gnss_calibration_node-2] [INFO] [1744124524.331116829] [gnss_calibration]: 正在校准，请勿移动 5/10
+[gnss_calibration_node-2] [INFO] [1744124525.294436460] [gnss_calibration]: 正在校准，请勿移动 6/10
+[gnss_calibration_node-2] [INFO] [1744124526.257901178] [gnss_calibration]: 正在校准，请勿移动 7/10
+[gnss_calibration_node-2] [INFO] [1744124527.281681957] [gnss_calibration]: 正在校准，请勿移动 8/10
+[gnss_calibration_node-2] [INFO] [1744124528.305537341] [gnss_calibration]: 正在校准，请勿移动 9/10
+[gnss_calibration_node-2] [INFO] [1744124529.329163147] [gnss_calibration]: 正在校准，请勿移动 10/10
+[gnss_calibration_node-2] [INFO] [1744124529.330320868] [gnss_calibration]: 偏移量已保存到 /home/jetson/ros2_ws/src/GNSS/gnss_calibration/gnss_calibration/gnss_offset.txt
+[gnss_calibration_node-2] [INFO] [1744124529.330849522] [gnss_calibration]: 完成校准: 纬度误差 -8.699999998640351e-06, 经度误差 -1.0699999990038123e-05
+[global_path_planner.py-3] [LOG] Initial GNSS data received. Starting calibration delay...
+[global_path_planner.py-3] [LOG] [==Transformer is calibrating==]
+[global2local_tf-4] [INFO] [1744124529.333072551] [coordinate_transformer]: Logged yaw: 262.42 degrees at 2025-04-08 23:02:09
+[global2local_tf-4] [INFO] [1744124530.354486030] [coordinate_transformer]: Logged yaw: 262.42 degrees at 2025-04-08 23:02:10
+[global2local_tf-4] [INFO] [1744124531.378540873] [coordinate_transformer]: Origin set: (120.73841496666667, 31.274952744444448)
+[global2local_tf-4] [INFO] [1744124531.379975513] [coordinate_transformer]: Coordinate transformation matrix initialized.
+[global2local_tf-4] [INFO] [1744124531.380509767] [coordinate_transformer]: Initial orientation angle: 262.42 degrees
+[global2local_tf-4] [INFO] [1744124531.381211471] [coordinate_transformer]: Logged yaw: 262.42 degrees at 2025-04-08 23:02:11
+[global_path_planner.py-3] [LOG] [==Transformer calibrated==]
+[global_path_planner.py-3] [WARN] [1744124533.338482376] [rcl.logging_rosout]: Publisher already registered for provided node name. If this is due to multiple nodes with the same name then all logs for that logger name will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [INFO] [1744124533.423640263] [global_path_planner]: Loaded 784 nodes from map file.
+[global_path_planner.py-3] [INFO] [1744124533.613335037] [global_path_planner]: Converted 784 nodes to local coordinates.
+[global_path_planner.py-3] [INFO] [1744124533.619270519] [global_path_planner]: Published static TF: map -> base_link
+[global_path_planner.py-3] [LOG] Starting A* from 139 to 59
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [616]
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global2local_tf-4] [INFO] [1744124533.835197888] [coordinate_transformer]: Published next_local coordinates: (9.32, -0.93)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [616]: (120.73831662500001, 31.27495)======
+[global_path_planner.py-3] [WARN] [1744124559.383461121] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [617]
+[global_path_planner.py-3] [LOG] Publishing next node [617]: (120.73821825, 31.274947)
+[global2local_tf-4] [INFO] [1744124559.386571040] [coordinate_transformer]: Published next_local coordinates: (18.65, -1.84)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [617]: (120.73821825, 31.274947)======
+[global_path_planner.py-3] [INFO] [1744124580.466077196] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.7383074222388, 31.274949719356716)
+[global_path_planner.py-3] [INFO] [1744124580.466673051] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.7383181222388, 31.274958419356715), error=-1.1419356713560092e-05, -9.987223879193152e-05
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [618]
+[global_path_planner.py-3] [LOG] Publishing next node [618]: (120.738119875, 31.274944)
+[global2local_tf-4] [INFO] [1744124580.469292142] [coordinate_transformer]: Published next_local coordinates: (27.98, -2.75)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [618]: (120.738119875, 31.274944)======
+[global_path_planner.py-3] [WARN] [1744124589.399392481] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [619]
+[global_path_planner.py-3] [LOG] Publishing next node [619]: (120.7380215, 31.274941)
+[global2local_tf-4] [INFO] [1744124589.403501546] [coordinate_transformer]: Published next_local coordinates: (37.31, -3.65)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [619]: (120.7380215, 31.274941)======
+[global_path_planner.py-3] [INFO] [1744124597.477894065] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73808514270183, 31.274942940819365)
+[global_path_planner.py-3] [INFO] [1744124597.478479456] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73809584270182, 31.274951640819364), error=-1.064081936519301e-05, -7.434270182216096e-05
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [620]
+[global_path_planner.py-3] [LOG] Publishing next node [620]: (120.73792312500001, 31.274938)
+[global2local_tf-4] [INFO] [1744124597.482592684] [coordinate_transformer]: Published next_local coordinates: (46.64, -4.56)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [620]: (120.73792312500001, 31.274938)======
+[global_path_planner.py-3] [WARN] [1744124606.452750864] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [621]
+[global_path_planner.py-3] [LOG] Publishing next node [621]: (120.73782475, 31.274935)
+[global2local_tf-4] [INFO] [1744124606.456890845] [coordinate_transformer]: Published next_local coordinates: (55.97, -5.46)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [621]: (120.73782475, 31.274935)======
+[global_path_planner.py-3] [INFO] [1744124615.446793640] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73803622842583, 31.274941449151484)
+[global_path_planner.py-3] [INFO] [1744124615.447572563] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73804692842582, 31.274950149151483), error=-1.5149151483484502e-05, -0.00022217842581540026
+[global_path_planner.py-3] [ERROR] [1744124615.448393309] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [622]
+[global_path_planner.py-3] [LOG] Publishing next node [622]: (120.737726375, 31.274932)
+[global2local_tf-4] [INFO] [1744124615.450924600] [coordinate_transformer]: Published next_local coordinates: (65.30, -6.37)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [622]: (120.737726375, 31.274932)======
+[global_path_planner.py-3] [WARN] [1744124623.412388572] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [140]
+[global_path_planner.py-3] [LOG] Publishing next node [140]: (120.737628, 31.274929)
+[global2local_tf-4] [INFO] [1744124623.415052757] [coordinate_transformer]: Published next_local coordinates: (74.63, -7.28)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [140]: (120.737628, 31.274929)======
+[global_path_planner.py-3] [INFO] [1744124632.451527363] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73760463021453, 31.274928287325476)
+[global_path_planner.py-3] [INFO] [1744124632.452924126] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73761533021452, 31.274936987325475), error=-7.987325474800855e-06, 1.2669785476759898e-05
+[global_path_planner.py-3] [ERROR] [1744124632.453758792] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [141]
+[global_path_planner.py-3] [LOG] Publishing next node [141]: (120.737548, 31.274927)
+[global2local_tf-4] [INFO] [1744124632.456516575] [coordinate_transformer]: Published next_local coordinates: (82.22, -8.06)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [141]: (120.737548, 31.274927)======
+[global_path_planner.py-3] [WARN] [1744124639.420208216] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [623]
+[global_path_planner.py-3] [LOG] Publishing next node [623]: (120.73747, 31.274905333333333)
+[global2local_tf-4] [INFO] [1744124639.422677079] [coordinate_transformer]: Published next_local coordinates: (89.90, -6.66)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [623]: (120.73747, 31.274905333333333)======
+[global_path_planner.py-3] [INFO] [1744124647.551571075] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73748014604905, 31.27490584510935)
+[global_path_planner.py-3] [INFO] [1744124647.552188179] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73749084604904, 31.274914545109347), error=-9.211776013984263e-06, -2.0846049039846548e-05
+[global_path_planner.py-3] [ERROR] [1744124647.552681414] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [624]
+[global_path_planner.py-3] [LOG] Publishing next node [624]: (120.737392, 31.274883666666668)
+[global2local_tf-4] [INFO] [1744124647.556540610] [coordinate_transformer]: Published next_local coordinates: (97.58, -5.26)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [624]: (120.737392, 31.274883666666668)======
+[global_path_planner.py-3] [WARN] [1744124654.513640349] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [142]
+[global_path_planner.py-3] [LOG] Publishing next node [142]: (120.737314, 31.274862)
+[global2local_tf-4] [INFO] [1744124654.516265882] [coordinate_transformer]: Published next_local coordinates: (105.26, -3.86)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [142]: (120.737314, 31.274862)======
+[global_path_planner.py-3] [INFO] [1744124662.645252319] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.7374062543537, 31.27486962501925)
+[global_path_planner.py-3] [INFO] [1744124662.646580861] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73741695435369, 31.274878325019248), error=-1.632501924930807e-05, -0.00010295435369300776
+[global_path_planner.py-3] [ERROR] [1744124662.647826558] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [143]
+[global_path_planner.py-3] [LOG] Publishing next node [143]: (120.737268, 31.274842)
+[global2local_tf-4] [INFO] [1744124662.650174531] [coordinate_transformer]: Published next_local coordinates: (109.89, -2.24)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [143]: (120.737268, 31.274842)======
+[global_path_planner.py-3] [WARN] [1744124666.476965608] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [641]
+[global_path_planner.py-3] [LOG] Publishing next node [641]: (120.73727366666667, 31.274752666666668)
+[global2local_tf-4] [INFO] [1744124666.480951588] [coordinate_transformer]: Published next_local coordinates: (110.66, 7.65)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [641]: (120.73727366666667, 31.274752666666668)======
+[global_path_planner.py-3] [INFO] [1744124672.655224932] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73727595205597, 31.27475306781122)
+[global_path_planner.py-3] [INFO] [1744124672.656766877] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73728665205596, 31.274761767811217), error=-9.101144549106266e-06, -1.2985389290065541e-05
+[global_path_planner.py-3] [ERROR] [1744124672.657999519] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [640]
+[global_path_planner.py-3] [LOG] Publishing next node [640]: (120.73727933333333, 31.274663333333333)
+[global2local_tf-4] [INFO] [1744124672.661954908] [coordinate_transformer]: Published next_local coordinates: (111.43, 17.54)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [640]: (120.73727933333333, 31.274663333333333)======
+[global_path_planner.py-3] [WARN] [1744124682.564347531] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [157]
+[global_path_planner.py-3] [LOG] Publishing next node [157]: (120.737285, 31.274574)
+[global2local_tf-4] [INFO] [1744124682.568632385] [coordinate_transformer]: Published next_local coordinates: (112.21, 27.43)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [157]: (120.737285, 31.274574)======
+[global_path_planner.py-3] [INFO] [1744124691.647353127] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.7372954832024, 31.27457751604743)
+[global_path_planner.py-3] [INFO] [1744124691.648714150] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73730618320239, 31.274586216047428), error=-1.2216047426960586e-05, -2.118320239219429e-05
+[global_path_planner.py-3] [ERROR] [1744124691.650145155] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [153]
+[global_path_planner.py-3] [LOG] Publishing next node [153]: (120.737288, 31.274524)
+[global2local_tf-4] [INFO] [1744124691.654251519] [coordinate_transformer]: Published next_local coordinates: (112.65, 32.96)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [153]: (120.737288, 31.274524)======
+[global_path_planner.py-3] [WARN] [1744124696.620410451] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [154]
+[global_path_planner.py-3] [LOG] Publishing next node [154]: (120.737295, 31.274481)
+[global2local_tf-4] [INFO] [1744124696.624829673] [coordinate_transformer]: Published next_local coordinates: (112.62, 37.78)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [154]: (120.737295, 31.274481)======
+[global_path_planner.py-3] [INFO] [1744124700.623658171] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73730334219502, 31.274484515639188)
+[global_path_planner.py-3] [INFO] [1744124700.625060730] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73731404219501, 31.274493215639186), error=-1.2215639184631755e-05, -1.90421950065911e-05
+[global_path_planner.py-3] [ERROR] [1744124700.626291228] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [155]
+[global_path_planner.py-3] [LOG] Publishing next node [155]: (120.737304, 31.274421)
+[global2local_tf-4] [INFO] [1744124700.629386898] [coordinate_transformer]: Published next_local coordinates: (112.65, 44.48)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [155]: (120.737304, 31.274421)======
+[global_path_planner.py-3] [WARN] [1744124707.665096860] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [156]
+[global_path_planner.py-3] [LOG] Publishing next node [156]: (120.737307, 31.274384)
+[global2local_tf-4] [INFO] [1744124707.667133452] [coordinate_transformer]: Published next_local coordinates: (112.91, 48.59)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [156]: (120.737307, 31.274384)======
+[global_path_planner.py-3] [INFO] [1744124711.536100030] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73731428085908, 31.27438773899712)
+[global_path_planner.py-3] [INFO] [1744124711.537463454] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73732498085907, 31.27439643899712), error=-1.2438997117669714e-05, -1.798085907012137e-05
+[global_path_planner.py-3] [ERROR] [1744124711.538674881] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [637]
+[global_path_planner.py-3] [LOG] Publishing next node [637]: (120.7373135, 31.274306000000003)
+[global2local_tf-4] [INFO] [1744124711.542096208] [coordinate_transformer]: Published next_local coordinates: (113.43, 57.24)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [637]: (120.7373135, 31.274306000000003)======
+[global_path_planner.py-3] [WARN] [1744124724.639034167] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [638]
+[global_path_planner.py-3] [LOG] Publishing next node [638]: (120.73732000000001, 31.274228)
+[global2local_tf-4] [INFO] [1744124724.641273890] [coordinate_transformer]: Published next_local coordinates: (113.96, 65.90)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [638]: (120.73732000000001, 31.274228)======
+[global_path_planner.py-3] [INFO] [1744124733.709660417] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.7373132023426, 31.274223499268373)
+[global_path_planner.py-3] [INFO] [1744124733.711031169] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.7373239023426, 31.274232199268372), error=-4.199268371252174e-06, -3.902342584183316e-06
+[global_path_planner.py-3] [ERROR] [1744124733.712310916] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [639]
+[global_path_planner.py-3] [LOG] Publishing next node [639]: (120.73732650000001, 31.27415)
+[global2local_tf-4] [INFO] [1744124733.714529968] [coordinate_transformer]: Published next_local coordinates: (114.49, 74.55)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [639]: (120.73732650000001, 31.27415)======
+[global_path_planner.py-3] [WARN] [1744124741.593010504] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [60]
+[global_path_planner.py-3] [LOG] Publishing next node [60]: (120.737333, 31.274072)
+[global2local_tf-4] [INFO] [1744124741.597074410] [coordinate_transformer]: Published next_local coordinates: (115.02, 83.21)
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [387]: (120.73723700000001, 31.27406866666667)
+[global2local_tf-4] [INFO] [1744124747.539612916] [coordinate_transformer]: Published next_local coordinates: (124.13, 82.37)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [387]: (120.73723700000001, 31.27406866666667)======
+[global_path_planner.py-3] [INFO] [1744124751.662594090] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73722629398993, 31.274060629585534)
+[global_path_planner.py-3] [INFO] [1744124751.663963562] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73723699398992, 31.274069329585533), error=-6.629188646911643e-07, 6.010083097862662e-09
+[global_path_planner.py-3] [ERROR] [1744124751.664906453] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [386]: (120.73714100000001, 31.274065333333333)
+[global2local_tf-4] [INFO] [1744124751.667215040] [coordinate_transformer]: Published next_local coordinates: (133.24, 81.53)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [386]: (120.73714100000001, 31.274065333333333)======
+[global_path_planner.py-3] [WARN] [1744124759.653134235] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [385]: (120.737045, 31.274062)
+[global2local_tf-4] [INFO] [1744124759.655305706] [coordinate_transformer]: Published next_local coordinates: (142.35, 80.69)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [385]: (120.737045, 31.274062)======
+[global_path_planner.py-3] [INFO] [1744124769.583134507] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73708966855727, 31.27409105086462)
+[global_path_planner.py-3] [INFO] [1744124769.584531819] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73710036855726, 31.274099750864618), error=-3.7750864617436264e-05, -5.5368557269730445e-05
+[global_path_planner.py-3] [ERROR] [1744124769.585756848] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [384]: (120.736949, 31.27405866666667)
+[global2local_tf-4] [INFO] [1744124769.588024637] [coordinate_transformer]: Published next_local coordinates: (151.46, 79.85)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [384]: (120.736949, 31.27405866666667)======
+[global_path_planner.py-3] [WARN] [1744124778.670506553] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [383]: (120.736853, 31.274055333333333)
+[global2local_tf-4] [INFO] [1744124778.674535422] [coordinate_transformer]: Published next_local coordinates: (160.57, 79.01)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [383]: (120.736853, 31.274055333333333)======
+[global_path_planner.py-3] [INFO] [1744124787.635490391] [global_path_planner]: [RuntimeCalibration]Intersection point calculated: (120.73689934413788, 31.274081966872245)
+[global_path_planner.py-3] [INFO] [1744124787.636903511] [global_path_planner]: [RuntimeCalibration]Data recorded: gnss2fix=(120.73691004413787, 31.274090666872244), error=-3.533353891072011e-05, -5.7044137875550405e-05
+[global_path_planner.py-3] [ERROR] [1744124787.638098141] [global_path_planner]: [RuntimeCalibration]Error calculating and saving offsets: 'RuntimeCalibration' object has no attribute 'calculate_angle'
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 37.2°
+[global_path_planner.py-3] [LOG] Publishing next node [59]: (120.736757, 31.274052)
+[global2local_tf-4] [INFO] [1744124787.642110531] [coordinate_transformer]: Published next_local coordinates: (169.68, 78.17)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [59]: (120.736757, 31.274052)======
+[global_path_planner.py-3] [WARN] [1744124795.518047525] [global_path_planner]: Insufficient data to calculate intersection.
+[global_path_planner.py-3] [LOG] **********Destination reached [59]: (120.736757, 31.274052)**********
+[INFO] [global_path_planner.py-3]: process has finished cleanly [pid 6163]

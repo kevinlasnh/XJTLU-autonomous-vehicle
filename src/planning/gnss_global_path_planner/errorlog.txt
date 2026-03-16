@@ -1,0 +1,99 @@
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [INFO] [1743611083.297549987] [global_path_planner]: Loaded 784 nodes from map file.
+[global_path_planner.py-3] [INFO] [1743611083.485384482] [global_path_planner]: Converted 784 nodes to local coordinates.
+[global_path_planner.py-3] [INFO] [1743611083.490830439] [global_path_planner]: Published static TF: map -> base_link
+[global_path_planner.py-3] [LOG] Starting A* from 139 to 59
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 178.3°
+[global2local_tf-4] [WARN] [1743611083.704661995] [coordinate_transformer]: Coordinate transformation not ready yet.
+[global2local_tf-4] [INFO] [1743611085.226141686] [coordinate_transformer]: Origin set: (120.73841453888888, 31.274953394444452)
+[global2local_tf-4] [INFO] [1743611085.226783728] [coordinate_transformer]: Coordinate transformation matrix initialized.
+
+[gnss_calibration_node-2] [INFO] [1743612850.238420976] [gnss_calibration]: 完成校准: 纬度误差 0.0006030833333348085, 经度误差 0.0007134166666560304
+[global_path_planner.py-3] [LOG] Initial GNSS data received. Starting calibration delay...
+[global_path_planner.py-3] [LOG] [==Transformer is calibrating==]
+[global2local_tf-4] [INFO] [1743612852.235688313] [coordinate_transformer]: Origin set: (120.7384133611111, 31.274951750000003)
+[global2local_tf-4] [INFO] [1743612852.236286419] [coordinate_transformer]: Coordinate transformation matrix initialized.
+[global_path_planner.py-3] [LOG] [==Transformer calibrated==]
+[global_path_planner.py-3] [WARN] [1743612854.246429554] [rcl.logging_rosout]: Publisher already registered for provided node name. If this is due to multiple nodes with the same name then all logs for that logger name will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [INFO] [1743612854.330129132] [global_path_planner]: Loaded 784 nodes from map file.
+[global_path_planner.py-3] [INFO] [1743612854.532154246] [global_path_planner]: Converted 784 nodes to local coordinates.
+[global_path_planner.py-3] [INFO] [1743612854.537774167] [global_path_planner]: Published static TF: map -> base_link
+[global_path_planner.py-3] [LOG] Starting A* from 139 to 59
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global_path_planner.py-3] [LOG] Direction: Turn Right by 178.3°
+[global2local_tf-4] [INFO] [1743612854.764466480] [coordinate_transformer]: Published next_local coordinates: (8.39, 3.81)
+
+[wit_ros2_imu-5] [INFO] [1744120250.448724409] [imu]: Serial port opened successfully...
+[global2local_tf-4] [INFO] [1744120250.644899430] [coordinate_transformer]: Loaded angle offset: 28.0 degrees
+[global2local_tf-4] [INFO] [1744120250.656030772] [coordinate_transformer]: Coordinate Transformer initialized.
+[gnss_calibration_node-2] [INFO] [1744120251.252709689] [gnss_calibration]: 正在校准，请勿移动 1/10
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [LOG] Waiting for GNSS data...
+[gnss_calibration_node-2] [INFO] [1744120252.257991666] [gnss_calibration]: 正在校准，请勿移动 2/10
+[gnss_calibration_node-2] [INFO] [1744120253.252242432] [gnss_calibration]: 正在校准，请勿移动 3/10
+[gnss_calibration_node-2] [INFO] [1744120254.258125897] [gnss_calibration]: 正在校准，请勿移动 4/10
+[gnss_calibration_node-2] [INFO] [1744120255.283622630] [gnss_calibration]: 正在校准，请勿移动 5/10
+[gnss_calibration_node-2] [INFO] [1744120256.250559790] [gnss_calibration]: 正在校准，请勿移动 6/10
+[gnss_calibration_node-2] [INFO] [1744120257.254072406] [gnss_calibration]: 正在校准，请勿移动 7/10
+[gnss_calibration_node-2] [INFO] [1744120258.250773350] [gnss_calibration]: 正在校准，请勿移动 8/10
+[gnss_calibration_node-2] [INFO] [1744120259.257122299] [gnss_calibration]: 正在校准，请勿移动 9/10
+[gnss_calibration_node-2] [INFO] [1744120260.257095491] [gnss_calibration]: 正在校准，请勿移动 10/10
+[gnss_calibration_node-2] [INFO] [1744120260.258275555] [gnss_calibration]: 偏移量已保存到 /home/jetson/ros2_ws/src/GNSS/gnss_calibration/gnss_calibration/gnss_offset.txt
+[gnss_calibration_node-2] [INFO] [1744120260.258800018] [gnss_calibration]: 完成校准: 纬度误差 -1.2266666669091819e-05, 经度误差 -2.728333332413513e-05
+[global_path_planner.py-3] [LOG] Initial GNSS data received. Starting calibration delay...
+[global_path_planner.py-3] [LOG] [==Transformer is calibrating==]
+[global2local_tf-4] [INFO] [1744120260.260876074] [coordinate_transformer]: Logged yaw: 289.90 degrees at 2025-04-08 21:51:00
+[global2local_tf-4] [INFO] [1744120261.253225571] [coordinate_transformer]: Logged yaw: 289.90 degrees at 2025-04-08 21:51:01
+[global2local_tf-4] [INFO] [1744120262.261702930] [coordinate_transformer]: Origin set: (120.73841505000001, 31.2749529)
+[global2local_tf-4] [INFO] [1744120262.263421601] [coordinate_transformer]: Logged yaw: 289.83 degrees at 2025-04-08 21:51:02
+[global_path_planner.py-3] [LOG] [==Transformer calibrated==]
+[global_path_planner.py-3] [WARN] [1744120264.265890165] [rcl.logging_rosout]: Publisher already registered for provided node name. If this is due to multiple nodes with the same name then all logs for that logger name will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [INFO] [1744120264.334412697] [global_path_planner]: Loaded 784 nodes from map file.
+[global_path_planner.py-3] [INFO] [1744120264.520739067] [global_path_planner]: Converted 784 nodes to local coordinates.
+[global_path_planner.py-3] [INFO] [1744120264.526257648] [global_path_planner]: Published static TF: map -> base_link
+[global_path_planner.py-3] [LOG] Starting A* from 139 to 59
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Skipping direction calculation for the first node [616]
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global2local_tf-4] [WARN] [1744120264.739539342] [coordinate_transformer]: Coordinate transformation not ready yet.
+
+
+[global_path_planner.py-3] [LOG] Publishing next node [244]: (120.734932, 31.273729499999998)
+[global2local_tf-4] [ERROR] [1744122568.597579318] [coordinate_transformer]: Error transforming coordinates: 'CoordinateTransformer' object has no attribute 'transform_coordinates'
+
+
+global_path_planner.py-3] Traceback (most recent call last):
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 709, in <module>
+[global_path_planner.py-3]     rclpy.spin_once(visualizer, timeout_sec=0.1)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 206, in spin_once
+[global_path_planner.py-3]     executor.spin_once(timeout_sec=timeout_sec)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 739, in spin_once
+[global_path_planner.py-3]     self._spin_once_impl(timeout_sec)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 736, in _spin_once_impl
+[global_path_planner.py-3]     raise handler.exception()
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/task.py", line 239, in __call__
+[global_path_planner.py-3]     self._handler.send(None)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 437, in handler
+[global_path_planner.py-3]     await call_coroutine(entity, arg)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 362, in _execute_subscription
+[global_path_planner.py-3]     await await_or_execute(sub.callback, msg)
+[global_path_planner.py-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 107, in await_or_execute
+[global_path_planner.py-3]     return callback(*args)
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 530, in gnss_callback
+[global_path_planner.py-3]     self.publish_point(local_coords[0], local_coords[1], color=(1.0, 0.0, 0.0), marker_id=9998)  # 红色 GNSS 点
+[global_path_planner.py-3]   File "/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py", line 563, in publish_point
+[global_path_planner.py-3]     marker.color.a, marker.color.r, marker.color.g, marker.color.b = color
+[global_path_planner.py-3] ValueError: not enough values to unpack (expected 4, got 3)
+[ERROR] [global_path_planner.py-3]: process has died [pid 22885, exit code 1, cmd '/home/jetson/ros2_ws/install/gnss_global_path_planner/lib/gnss_global_path_planner/global_path_planner.py --ros-args -r __node:=global_path_planner'].

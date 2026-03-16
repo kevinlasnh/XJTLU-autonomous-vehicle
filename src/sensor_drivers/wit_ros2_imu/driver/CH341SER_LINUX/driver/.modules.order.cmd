@@ -1,0 +1,1 @@
+cmd_/home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/modules.order := {   echo /home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/ch341.ko; :; } | awk '!x[$$0]++' - > /home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/modules.order

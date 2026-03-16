@@ -1,0 +1,24 @@
+pointcloud_to_laserscan:
+  ros__parameters:
+    # 基本转换参数（如需调整，可在此修改）
+    target_frame: ""
+    transform_tolerance: 0.01
+    queue_size: 10
+    min_height: -1.0
+    max_height: 1.0
+    angle_min: -3.14159
+    angle_max: 3.14159
+    angle_increment: 0.0174533  # 1 degree
+    scan_time: 0.0333333        # 30 Hz
+    range_min: 0.0
+    range_max: 30.0
+    inf_epsilon: 1.0
+    use_inf: true
+
+    # 显式设置 QoS 参数以兼容 SLAM Toolbox / Nav2
+    qos_overrides./scan.publisher.reliability: best_effort
+    qos_overrides./scan.publisher.durability: volatile
+    qos_overrides./scan.publisher.history: keep_last
+    qos_overrides./scan.publisher.depth: 10
+
+

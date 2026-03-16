@@ -1,0 +1,1 @@
+cmd_/home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/ch341.mod := printf '%s\n'   ch341.o | awk '!x[$$0]++ { print("/home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/"$$0) }' > /home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/ch341.mod

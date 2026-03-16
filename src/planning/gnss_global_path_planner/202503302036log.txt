@@ -1,0 +1,170 @@
+    jetson@ubuntu:~/ros2_ws$ ros2 launch gnss_global_path_planner gnss_combined_launch.py 
+[INFO] [launch]: All log files can be found below /home/jetson/.ros/log/2025-03-30-19-00-01-955130-ubuntu-26113
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [nmea_serial_driver-1]: process started with pid [26114]
+[INFO] [gnss_calibration_node-2]: process started with pid [26116]
+[INFO] [global_path_planner.py-3]: process started with pid [26118]
+[gnss_calibration_node-2] [INFO] [1743332402.627918465] [gnss_calibration]: 成功启动在位置 后门向北的丁字口
+[gnss_calibration_node-2] [INFO] [1743332402.628598996] [gnss_calibration]: GNSS 校准节点已初始化，等待有效的传感器数据...
+[nmea_serial_driver-1] [INFO] [1743332402.669249935] [nmea_navsat_driver]: Successfully connected to /dev/wheeltec_gps at 9600.
+[nmea_serial_driver-1] [WARN] [1743332402.670313709] [nmea_navsat_driver]: Received a sentence with an invalid checksum. Sentence was: 
+[gnss_calibration_node-2] [INFO] [1743332403.262070826] [gnss_calibration]: 正在校准，请勿移动 1/10
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [LOG] Waiting for GNSS data...
+[gnss_calibration_node-2] [INFO] [1743332404.253657279] [gnss_calibration]: 正在校准，请勿移动 2/10
+[gnss_calibration_node-2] [INFO] [1743332405.248643641] [gnss_calibration]: 正在校准，请勿移动 3/10
+[gnss_calibration_node-2] [INFO] [1743332406.246538027] [gnss_calibration]: 正在校准，请勿移动 4/10
+[gnss_calibration_node-2] [INFO] [1743332407.254697124] [gnss_calibration]: 正在校准，请勿移动 5/10
+[gnss_calibration_node-2] [INFO] [1743332408.248795573] [gnss_calibration]: 正在校准，请勿移动 6/10
+[gnss_calibration_node-2] [INFO] [1743332409.251886025] [gnss_calibration]: 正在校准，请勿移动 7/10
+[gnss_calibration_node-2] [INFO] [1743332410.244956423] [gnss_calibration]: 正在校准，请勿移动 8/10
+[gnss_calibration_node-2] [INFO] [1743332411.234611306] [gnss_calibration]: 正在校准，请勿移动 9/10
+[gnss_calibration_node-2] [INFO] [1743332412.243006979] [gnss_calibration]: 正在校准，请勿移动 10/10
+[gnss_calibration_node-2] [INFO] [1743332412.245597453] [gnss_calibration]: 偏移量已保存到 /home/jetson/ros2_ws/src/GNSS/gnss_calibration/gnss_calibration/gnss_offset.txt
+[gnss_calibration_node-2] [INFO] [1743332412.247017109] [gnss_calibration]: 完成校准: 纬度误差 3.500000005374204e-07, 经度误差 -4.2199999995773396e-05
+[global_path_planner.py-3] [LOG] Initial GNSS data received: (120.73841513333333, 31.274952850000002)
+[global_path_planner.py-3] [WARN] [1743332412.251464883] [rcl.logging_rosout]: Publisher already registered for provided node name. If this is due to multiple nodes with the same name then all logs for that logger name will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[global_path_planner.py-3] [LOG] Processing map from: /home/jetson/ros2_ws/src/gnss_global_path_planner/map/XJ03181720.geojson
+[global_path_planner.py-3] [LOG] Map loaded: 784 nodes, 1658 edges
+[global_path_planner.py-3] [INFO] [1743332412.343198004] [global_path_planner]: Loaded 784 nodes from map file.
+[global_path_planner.py-3] [INFO] [1743332412.546788624] [global_path_planner]: Converted 784 nodes to local coordinates.
+[global_path_planner.py-3] [INFO] [1743332412.552435056] [global_path_planner]: Published static TF: map -> base_link
+[global_path_planner.py-3] [LOG] Starting A* from 139 to 59
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [LOG] Path found with 31 nodes
+[global_path_planner.py-3] [INFO] [1743332412.781091056] [global_path_planner]: Runtime calibration initialized.
+[global_path_planner.py-3] [LOG] Publishing next node [616]: (120.73831662500001, 31.27495)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [616]: (120.73831662500001, 31.27495)======
+[global_path_planner.py-3] [WARN] [1743332423.307763467] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332423.309417914] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [617]: (120.73821825, 31.274947)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [617]: (120.73821825, 31.274947)======
+[global_path_planner.py-3] [WARN] [1743332432.433133124] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332432.434742802] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [618]: (120.738119875, 31.274944)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [618]: (120.738119875, 31.274944)======
+[global_path_planner.py-3] [WARN] [1743332441.376221761] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332441.378002708] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [619]: (120.7380215, 31.274941)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [619]: (120.7380215, 31.274941)======
+[global_path_planner.py-3] [WARN] [1743332449.366675711] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332449.368411856] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [620]: (120.73792312500001, 31.274938)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [620]: (120.73792312500001, 31.274938)======
+[global_path_planner.py-3] [WARN] [1743332458.386966902] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332458.388598180] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [621]: (120.73782475, 31.274935)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [621]: (120.73782475, 31.274935)======
+[global_path_planner.py-3] [WARN] [1743332466.370012268] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332466.371652186] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [622]: (120.737726375, 31.274932)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [622]: (120.737726375, 31.274932)======
+[global_path_planner.py-3] [WARN] [1743332475.366858295] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332475.368446980] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [140]: (120.737628, 31.274929)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [140]: (120.737628, 31.274929)======
+[global_path_planner.py-3] [WARN] [1743332484.411781910] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332484.413361987] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [141]: (120.737548, 31.274927)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [141]: (120.737548, 31.274927)======
+[global_path_planner.py-3] [WARN] [1743332491.396331331] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332491.397947665] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [623]: (120.73747, 31.274905333333333)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [623]: (120.73747, 31.274905333333333)======
+[global_path_planner.py-3] [WARN] [1743332498.382512600] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332498.384170023] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [624]: (120.737392, 31.274883666666668)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [624]: (120.737392, 31.274883666666668)======
+[global_path_planner.py-3] [WARN] [1743332505.366381184] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332505.367968814] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [142]: (120.737314, 31.274862)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [142]: (120.737314, 31.274862)======
+[global_path_planner.py-3] [WARN] [1743332513.383650150] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332513.385219539] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [143]: (120.737268, 31.274842)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [143]: (120.737268, 31.274842)======
+[global_path_planner.py-3] [WARN] [1743332518.424885913] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332518.426547017] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [641]: (120.73727366666667, 31.274752666666668)
+[global_path_planner.py-3] [LOG] Publishing next node [640]: (120.73727933333333, 31.274663333333333)
+[global_path_planner.py-3] [LOG] Warning: Off track! Adjusting course...
+[global_path_planner.py-3] [LOG] Publishing next node [157]: (120.737285, 31.274574)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [157]: (120.737285, 31.274574)======
+[global_path_planner.py-3] [WARN] [1743332547.095129046] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332547.096716036] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [153]: (120.737288, 31.274524)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [153]: (120.737288, 31.274524)======
+[global_path_planner.py-3] [WARN] [1743332552.271675306] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332552.273283513] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [154]: (120.737295, 31.274481)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [154]: (120.737295, 31.274481)======
+[global_path_planner.py-3] [WARN] [1743332557.448991327] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332557.450631086] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [155]: (120.737304, 31.274421)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [155]: (120.737304, 31.274421)======
+[global_path_planner.py-3] [WARN] [1743332564.696246517] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332564.698034824] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [156]: (120.737307, 31.274384)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [156]: (120.737307, 31.274384)======
+[global_path_planner.py-3] [WARN] [1743332568.847951023] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332568.849558429] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [637]: (120.7373135, 31.274306000000003)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [637]: (120.7373135, 31.274306000000003)======
+[global_path_planner.py-3] [WARN] [1743332578.096307097] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332578.097908519] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [638]: (120.73732000000001, 31.274228)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [638]: (120.73732000000001, 31.274228)======
+[global_path_planner.py-3] [WARN] [1743332587.199141634] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332587.200854868] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [639]: (120.73732650000001, 31.27415)
+[global_path_planner.py-3] [LOG] Publishing next node [60]: (120.737333, 31.274072)
+[global_path_planner.py-3] [LOG] Warning: Off track! Adjusting course...
+[global_path_planner.py-3] [LOG] Publishing next node [387]: (120.73723700000001, 31.27406866666667)
+[global_path_planner.py-3] [LOG] Warning: Off track! Adjusting course...
+[global_path_planner.py-3] [LOG] Publishing next node [386]: (120.73714100000001, 31.274065333333333)
+[global_path_planner.py-3] [LOG] Publishing next node [385]: (120.737045, 31.274062)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [385]: (120.737045, 31.274062)======
+[global_path_planner.py-3] [WARN] [1743332620.631386302] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332620.633065263] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [384]: (120.736949, 31.27405866666667)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [384]: (120.736949, 31.27405866666667)======
+[global_path_planner.py-3] [WARN] [1743332629.750941783] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332629.752547590] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [383]: (120.736853, 31.274055333333333)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [383]: (120.736853, 31.274055333333333)======
+[global_path_planner.py-3] [WARN] [1743332638.978442237] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332638.980029771] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] Publishing next node [59]: (120.736757, 31.274052)
+[global_path_planner.py-3] [LOG] ======Reached waypoint [59]: (120.736757, 31.274052)======
+[global_path_planner.py-3] [WARN] [1743332647.286514545] [global_path_planner]: Failed to find valid /fix data for interpolation.
+[global_path_planner.py-3] [WARN] [1743332647.288118080] [global_path_planner]: Failed to interpolate precise_reached coordinates.
+[global_path_planner.py-3] [LOG] **********Destination reached [59]: (120.736757, 31.274052)**********
+[INFO] [global_path_planner.py-3]: process has finished cleanly [pid 26118]
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[nmea_serial_driver-1] Traceback (most recent call last):
+[nmea_serial_driver-1]   File "/home/jetson/ros2_ws/install/nmea_navsat_driver/lib/nmea_navsat_driver/nmea_serial_driver", line 33, in <module>
+[nmea_serial_driver-1]     sys.exit(load_entry_point('nmea-navsat-driver==2.0.0', 'console_scripts', 'nmea_serial_driver')())
+[nmea_serial_driver-1]   File "/home/jetson/ros2_ws/install/nmea_navsat_driver/lib/python3.10/site-packages/libnmea_navsat_driver/nodes/nmea_serial_driver.py", line 54, in main
+[nmea_serial_driver-1]     data = GPS.readline().strip()
+[nmea_serial_driver-1]   File "/home/jetson/.local/lib/python3.10/site-packages/serial/serialposix.py", line 565, in read
+[nmea_serial_driver-1]     ready, _, _ = select.select([self.fd, self.pipe_abort_read_r], [], [], timeout.time_left())
+[nmea_serial_driver-1] KeyboardInterrupt
+[gnss_calibration_node-2] Traceback (most recent call last):
+[gnss_calibration_node-2]   File "/home/jetson/ros2_ws/install/gnss_calibration/lib/gnss_calibration/gnss_calibration_node", line 33, in <module>
+[gnss_calibration_node-2]     sys.exit(load_entry_point('gnss-calibration==0.0.0', 'console_scripts', 'gnss_calibration_node')())
+[gnss_calibration_node-2]   File "/home/jetson/ros2_ws/install/gnss_calibration/lib/python3.10/site-packages/gnss_calibration/gnss_calibration_node.py", line 192, in main
+[gnss_calibration_node-2]     rclpy.spin(node)
+[gnss_calibration_node-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 226, in spin
+[gnss_calibration_node-2]     executor.spin_once()
+[gnss_calibration_node-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 739, in spin_once
+[gnss_calibration_node-2]     self._spin_once_impl(timeout_sec)
+[gnss_calibration_node-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 728, in _spin_once_impl
+[gnss_calibration_node-2]     handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+[gnss_calibration_node-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 711, in wait_for_ready_callbacks
+[gnss_calibration_node-2]     return next(self._cb_iter)
+[gnss_calibration_node-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 608, in _wait_for_ready_callbacks
+[gnss_calibration_node-2]     wait_set.wait(timeout_nsec)
+[gnss_calibration_node-2] KeyboardInterrupt
+[ERROR] [gnss_calibration_node-2]: process has died [pid 26116, exit code -2, cmd '/home/jetson/ros2_ws/install/gnss_calibration/lib/gnss_calibration/gnss_calibration_node --ros-args -r __node:=gnss_calibration'].
+[ERROR] [nmea_serial_driver-1]: process has died [pid 26114, exit code -2, cmd '/home/jetson/ros2_ws/install/nmea_navsat_driver/lib/nmea_navsat_driver/nmea_serial_driver --ros-args --params-file /home/jetson/ros2_ws/install/nmea_navsat_driver/share/nmea_navsat_driver/config/nmea_serial_driver.yaml'].

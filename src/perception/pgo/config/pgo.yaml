@@ -1,0 +1,36 @@
+cloud_topic: /fastlio2/body_cloud
+odom_topic: /fastlio2/lio_odom
+# 全局地图坐标系名称
+map_frame: map # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已改动为 ROS2 标准名称 >> map
+# 局部坐标系名称（对接 FASTLIO2 的 world_frame）
+local_frame: odom # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已改动为 ROS2 标准名称 >> odom
+
+# 关键帧采集角度，每转动多少角度就会保存一个新的关键帧
+key_pose_delta_deg: 5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 从 10 改为 5（更频繁保存）
+# 关键帧采集距离，每移动多少米就会保存一个新的关键帧
+key_pose_delta_trans: 0.1 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 从 0.5 改为 0.1（更密集）
+loop_search_radius: 1.0
+loop_time_tresh: 60.0
+loop_score_tresh: 0.15
+loop_submap_half_range: 5
+submap_resolution: 0.1
+min_loop_detect_duration: 5.0
+
+# 全局点云地图发布配置（用于 rviz2 可视化）
+global_map_pub_rate: 10.0          # 全局地图发布频率 (Hz)，建议 0.5-2.0
+global_map_resolution: 0.1        # 全局地图降采样分辨率 (m)，越大数据量越小
+
+# ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
+# GPS 配置
+gps:
+  enable: true                    # 是否启用 GPS 因子
+  topic: /fix                     # GPS 话题名称（nmea_navsat_driver 默认发布到 /fix）
+  noise_xy: 0.5                   # 水平基础噪声（米）
+  noise_z: 2.0                    # 垂直基础噪声（米）
+  factor_interval: 10             # 每 N 个关键帧添加 GPS 因子
+  quality_hdop_max: 3.0           # 最大 HDOP 阈值
+  quality_sat_min: 6              # 最小卫星数量
+  drift_threshold: 2.0            # 漂移检测阈值（米）
+  alert_interval: 3               # 漂移预警时的间隔
+  emergency_interval: 1           # 严重漂移时的间隔
+# ✅ GPS 融合修改结束 - GPS 配置参数添加完成

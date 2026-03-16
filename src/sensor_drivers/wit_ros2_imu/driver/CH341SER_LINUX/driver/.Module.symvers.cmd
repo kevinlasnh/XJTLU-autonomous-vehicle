@@ -1,0 +1,1 @@
+cmd_/home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/Module.symvers := sed 's/\.ko$$/\.o/' /home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/modules.order | scripts/mod/modpost -m   -o /home/jetson/ros2_ws/src/wit_ros2_imu/driver/CH341SER_LINUX/driver/Module.symvers -e -i Module.symvers   -T -
