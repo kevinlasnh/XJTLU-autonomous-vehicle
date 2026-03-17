@@ -17,6 +17,8 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <queue>
 #include <filesystem>
+#include <algorithm>
+#include <cmath>
 // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 相关头文件
 #include <sensor_msgs/msg/nav_sat_fix.hpp>  // GPS 数据消息类型
 #include <GeographicLib/LocalCartesian.hpp> // GPS 坐标转换库
@@ -155,6 +157,7 @@ public:
         m_cloud_sub.subscribe(this, m_node_config.cloud_topic, qos.get_rmw_qos_profile());
         m_odom_sub.subscribe(this, m_node_config.odom_topic, qos.get_rmw_qos_profile());
         m_loop_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/pgo/loop_markers", 10000);
+        m_optimized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/pgo/optimized_odom", 100);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
         m_sync = std::make_shared<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>>>(message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>(50), m_cloud_sub, m_odom_sub);  // 同步器队列从 10 增加到 50
         m_sync->setAgePenalty(1.0);  // 时间容忍度从 0.1 增加到 1.0
@@ -274,45 +277,66 @@ public:
     void gpsCB(const sensor_msgs::msg::NavSatFix::ConstSharedPtr &gps_msg)
     {
         std::lock_guard<std::mutex> lock(m_state.message_mutex);
-        
-        // GPS 质量检查
-        if (gps_msg->status.status < 0) {  // GPS 无效
+
+        if (gps_msg->status.status < 0) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
                                  "GPS status invalid, skipping");
             return;
         }
-        
+
+        if (!std::isfinite(gps_msg->latitude) || !std::isfinite(gps_msg->longitude) ||
+            !std::isfinite(gps_msg->altitude)) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS sample contains non-finite values, skipping");
+            return;
+        }
+
+        if (gps_msg->position_covariance_type == sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_UNKNOWN) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS covariance type unknown, skipping");
+            return;
+        }
+
+        const double horizontal_variance = std::max(gps_msg->position_covariance[0], gps_msg->position_covariance[4]);
+        const double variance_limit = std::pow(m_node_config.gps_noise_xy * m_node_config.gps_quality_hdop_max, 2.0);
+        if (!std::isfinite(horizontal_variance) || horizontal_variance > variance_limit) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS covariance too large (%.3f > %.3f), skipping",
+                                 horizontal_variance, variance_limit);
+            return;
+        }
+
         // 设置原点（仅第一次）
         if (!m_state.gps_origin_set) {
             m_state.origin_lat = gps_msg->latitude;
             m_state.origin_lon = gps_msg->longitude;
             m_state.origin_alt = gps_msg->altitude;
             m_state.gps_origin_set = true;
-            
+
             // 初始化坐标转换器
             m_geo_converter = std::make_shared<GeographicLib::LocalCartesian>(
                 m_state.origin_lat, m_state.origin_lon, m_state.origin_alt
             );
-            
-            RCLCPP_INFO(this->get_logger(), 
-                        "GPS origin set: lat=%.8f, lon=%.8f, alt=%.2f", 
+
+            RCLCPP_INFO(this->get_logger(),
+                        "GPS origin set: lat=%.8f, lon=%.8f, alt=%.2f",
                         m_state.origin_lat, m_state.origin_lon, m_state.origin_alt);
         }
-        
+
         // 缓存 GPS 数据
         m_state.gps_buffer.push(gps_msg);
-        
+
         // 限制队列大小
         while (m_state.gps_buffer.size() > 50) {
             m_state.gps_buffer.pop();
         }
-        
+
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
             int64_t ros_timestamp = ros_time.nanoseconds();
-            m_log_file << "ROS_timestamp: " << ros_timestamp 
-                      << ", GPS received: lat=" << gps_msg->latitude 
-                      << ", lon=" << gps_msg->longitude 
+            m_log_file << "ROS_timestamp: " << ros_timestamp
+                      << ", GPS received: lat=" << gps_msg->latitude
+                      << ", lon=" << gps_msg->longitude
                       << ", status=" << (int)gps_msg->status.status << std::endl;
             m_log_file.flush();
         }
@@ -407,6 +431,32 @@ public:
         m_tf_broadcaster->sendTransform(transformStamped);
     }
 
+    void publishOptimizedOdom(const CloudWithPose &cp, builtin_interfaces::msg::Time &time)
+    {
+        if (!m_optimized_odom_pub)
+            return;
+
+        nav_msgs::msg::Odometry odom;
+        odom.header.stamp = time;
+        odom.header.frame_id = m_node_config.map_frame;
+        odom.child_frame_id = "base_link";
+
+        Eigen::Matrix3d r_global = m_pgo->offsetR() * cp.pose.r;
+        V3D t_global = m_pgo->offsetR() * cp.pose.t + m_pgo->offsetT();
+        Eigen::Quaterniond q(r_global);
+        q.normalize();
+
+        odom.pose.pose.position.x = t_global.x();
+        odom.pose.pose.position.y = t_global.y();
+        odom.pose.pose.position.z = t_global.z();
+        odom.pose.pose.orientation.x = q.x();
+        odom.pose.pose.orientation.y = q.y();
+        odom.pose.pose.orientation.z = q.z();
+        odom.pose.pose.orientation.w = q.w();
+
+        m_optimized_odom_pub->publish(odom);
+    }
+
     void publishLoopMarkers(builtin_interfaces::msg::Time &time)
     {
         if (m_loop_marker_pub->get_subscription_count() == 0)
@@ -490,6 +540,7 @@ public:
         if (!is_key_pose)
         {
             sendBroadCastTF(cur_time);
+            publishOptimizedOdom(cp, cur_time);
             return;
         }
 
@@ -531,6 +582,7 @@ public:
         m_pgo->smoothAndUpdate();
 
         sendBroadCastTF(cur_time);
+        publishOptimizedOdom(cp, cur_time);
 
         publishLoopMarkers(cur_time);
     }
@@ -673,6 +725,7 @@ private:
     std::shared_ptr<SimplePGO> m_pgo;
     rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_loop_marker_pub;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_optimized_odom_pub;
     rclcpp::Service<interface::srv::SaveMaps>::SharedPtr m_save_map_srv;
     message_filters::Subscriber<sensor_msgs::msg::PointCloud2> m_cloud_sub;
     message_filters::Subscriber<nav_msgs::msg::Odometry> m_odom_sub;

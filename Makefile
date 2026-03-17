@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-travel kill clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -49,6 +49,10 @@ launch-slam:
 launch-explore:
 	source /opt/ros/humble/setup.bash && source install/setup.bash && \
 	ros2 launch bringup system_explore.launch.py
+
+launch-explore-gps:
+	source /opt/ros/humble/setup.bash && source install/setup.bash && \
+	ros2 launch bringup system_explore_gps.launch.py
 
 launch-travel:
 	source /opt/ros/humble/setup.bash && source install/setup.bash && \

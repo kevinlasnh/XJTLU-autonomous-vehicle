@@ -1,30 +1,44 @@
-import launch
 import launch_ros.actions
-from launch.substitutions import PathJoinSubstitution
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
+
 def generate_launch_description():
+    default_pgo_config = PathJoinSubstitution(
+        [FindPackageShare("pgo"), "config", "pgo.yaml"]
+    )
+    pgo_config = LaunchConfiguration("pgo_config")
+    use_rviz = LaunchConfiguration("use_rviz")
+
     rviz_cfg = PathJoinSubstitution(
         [FindPackageShare("pgo"), "rviz", "pgo.rviz"]
     )
-    pgo_config_path = PathJoinSubstitution(
-        [FindPackageShare("pgo"), "config", "pgo.yaml"]
-    )
-
     lio_config_path = PathJoinSubstitution(
         [FindPackageShare("fastlio2"), "config", "lio.yaml"]
     )
 
-
-    return launch.LaunchDescription(
+    return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "pgo_config",
+                default_value=default_pgo_config,
+                description="Path to the PGO YAML config file",
+            ),
+            DeclareLaunchArgument(
+                "use_rviz",
+                default_value="true",
+                description="Whether to launch RViz together with PGO",
+            ),
             launch_ros.actions.Node(
                 package="fastlio2",
                 namespace="fastlio2",
                 executable="lio_node",
                 name="lio_node",
                 output="screen",
-                parameters=[{"config_path": lio_config_path.perform(launch.LaunchContext())}]
+                parameters=[{"config_path": lio_config_path}],
             ),
             launch_ros.actions.Node(
                 package="pgo",
@@ -32,19 +46,16 @@ def generate_launch_description():
                 executable="pgo_node",
                 name="pgo_node",
                 output="screen",
-                parameters=[{"config_path": pgo_config_path.perform(launch.LaunchContext())}]
+                parameters=[{"config_path": pgo_config}],
             ),
-            # 这里启动 rviz2 可视化工具
-            # 暂时就写在这里，懒得改了
             launch_ros.actions.Node(
                 package="rviz2",
-                # 这里的参数决定要启动哪个 rviz2 配置文件
-                # 改成 default 就是默认配置文件
                 namespace="pgo",
                 executable="rviz2",
                 name="rviz2",
                 output="screen",
-                arguments=["-d", rviz_cfg.perform(launch.LaunchContext())],
-            )
+                arguments=["-d", rviz_cfg],
+                condition=IfCondition(use_rviz),
+            ),
         ]
     )
