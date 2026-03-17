@@ -75,8 +75,8 @@ struct NodeConfig
 {
     std::string imu_topic = "/livox/imu";
     std::string lidar_topic = "/livox/lidar";
-    std::string body_frame = "body";
-    std::string world_frame = "lidar";
+    std::string body_frame = "base_link";
+    std::string world_frame = "odom";
     bool print_time_cost = false;
 };
 struct StateData
@@ -183,48 +183,173 @@ public:
 
     void loadParameters()
     {
-        this->declare_parameter("config_path", "");
-        std::string config_path;
-        this->get_parameter<std::string>("config_path", config_path);
+        const std::vector<double> default_t_il = {-0.011, -0.02329, 0.04412};
+        const std::vector<double> default_r_il = {
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+        };
 
+        const std::string config_path = this->declare_parameter<std::string>("config_path", "");
+
+        m_node_config.imu_topic = this->declare_parameter<std::string>("imu_topic", "/livox/imu");
+        m_node_config.lidar_topic = this->declare_parameter<std::string>("lidar_topic", "/livox/lidar");
+        m_node_config.body_frame = this->declare_parameter<std::string>("body_frame", "base_link");
+        m_node_config.world_frame = this->declare_parameter<std::string>("world_frame", "odom");
+        m_node_config.print_time_cost = this->declare_parameter<bool>("print_time_cost", false);
+
+        m_builder_config.lidar_filter_num = this->declare_parameter<int>("lidar_filter_num", 6);
+        m_builder_config.lidar_min_range = this->declare_parameter<double>("lidar_min_range", 0.5);
+        m_builder_config.lidar_max_range = this->declare_parameter<double>("lidar_max_range", 15.0);
+        m_builder_config.scan_resolution = this->declare_parameter<double>("scan_resolution", 0.15);
+        m_builder_config.map_resolution = this->declare_parameter<double>("map_resolution", 0.3);
+        m_builder_config.cube_len = this->declare_parameter<double>("cube_len", 300.0);
+        m_builder_config.det_range = this->declare_parameter<double>("det_range", 60.0);
+        m_builder_config.move_thresh = this->declare_parameter<double>("move_thresh", 1.5);
+        m_builder_config.na = this->declare_parameter<double>("na", 0.01);
+        m_builder_config.ng = this->declare_parameter<double>("ng", 0.01);
+        m_builder_config.nba = this->declare_parameter<double>("nba", 0.0001);
+        m_builder_config.nbg = this->declare_parameter<double>("nbg", 0.0001);
+        m_builder_config.imu_init_num = this->declare_parameter<int>("imu_init_num", 20);
+        m_builder_config.near_search_num = this->declare_parameter<int>("near_search_num", 5);
+        m_builder_config.ieskf_max_iter = this->declare_parameter<int>("ieskf_max_iter", 5);
+        m_builder_config.gravity_align = this->declare_parameter<bool>("gravity_align", true);
+        m_builder_config.esti_il = this->declare_parameter<bool>("esti_il", false);
+        m_builder_config.lidar_cov_inv = this->declare_parameter<double>("lidar_cov_inv", 1000.0);
+
+        auto t_il_vec = this->declare_parameter<std::vector<double>>("t_il", default_t_il);
+        auto r_il_vec = this->declare_parameter<std::vector<double>>("r_il", default_r_il);
+        applyExtrinsics(t_il_vec, r_il_vec);
+
+        if (!config_path.empty())
+        {
+            loadLegacyConfig(config_path);
+            syncParametersToRos();
+        }
+    }
+
+    void applyExtrinsics(const std::vector<double> &t_il_vec, const std::vector<double> &r_il_vec)
+    {
+        if (t_il_vec.size() != 3)
+        {
+            throw std::runtime_error("FAST-LIO2 parameter t_il must contain exactly 3 values");
+        }
+        if (r_il_vec.size() != 9)
+        {
+            throw std::runtime_error("FAST-LIO2 parameter r_il must contain exactly 9 values");
+        }
+
+        m_builder_config.t_il << t_il_vec[0], t_il_vec[1], t_il_vec[2];
+        m_builder_config.r_il << r_il_vec[0], r_il_vec[1], r_il_vec[2],
+                                 r_il_vec[3], r_il_vec[4], r_il_vec[5],
+                                 r_il_vec[6], r_il_vec[7], r_il_vec[8];
+    }
+
+    void loadLegacyConfig(const std::string &config_path)
+    {
         YAML::Node config = YAML::LoadFile(config_path);
         if (!config)
         {
-            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE!");
+            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE: %s", config_path.c_str());
             return;
         }
 
-        RCLCPP_INFO(this->get_logger(), "LOAD FROM YAML CONFIG PATH: %s", config_path.c_str());
+        RCLCPP_INFO(this->get_logger(), "LOAD FROM LEGACY YAML CONFIG PATH: %s", config_path.c_str());
 
-        m_node_config.imu_topic = config["imu_topic"].as<std::string>();
-        m_node_config.lidar_topic = config["lidar_topic"].as<std::string>();
-        m_node_config.body_frame = config["body_frame"].as<std::string>();
-        m_node_config.world_frame = config["world_frame"].as<std::string>();
-        m_node_config.print_time_cost = config["print_time_cost"].as<bool>();
+        if (config["imu_topic"])
+            m_node_config.imu_topic = config["imu_topic"].as<std::string>();
+        if (config["lidar_topic"])
+            m_node_config.lidar_topic = config["lidar_topic"].as<std::string>();
+        if (config["body_frame"])
+            m_node_config.body_frame = config["body_frame"].as<std::string>();
+        if (config["world_frame"])
+            m_node_config.world_frame = config["world_frame"].as<std::string>();
+        if (config["print_time_cost"])
+            m_node_config.print_time_cost = config["print_time_cost"].as<bool>();
 
-        m_builder_config.lidar_filter_num = config["lidar_filter_num"].as<int>();
-        m_builder_config.lidar_min_range = config["lidar_min_range"].as<double>();
-        m_builder_config.lidar_max_range = config["lidar_max_range"].as<double>();
-        m_builder_config.scan_resolution = config["scan_resolution"].as<double>();
-        m_builder_config.map_resolution = config["map_resolution"].as<double>();
-        m_builder_config.cube_len = config["cube_len"].as<double>();
-        m_builder_config.det_range = config["det_range"].as<double>();
-        m_builder_config.move_thresh = config["move_thresh"].as<double>();
-        m_builder_config.na = config["na"].as<double>();
-        m_builder_config.ng = config["ng"].as<double>();
-        m_builder_config.nba = config["nba"].as<double>();
-        m_builder_config.nbg = config["nbg"].as<double>();
+        if (config["lidar_filter_num"])
+            m_builder_config.lidar_filter_num = config["lidar_filter_num"].as<int>();
+        if (config["lidar_min_range"])
+            m_builder_config.lidar_min_range = config["lidar_min_range"].as<double>();
+        if (config["lidar_max_range"])
+            m_builder_config.lidar_max_range = config["lidar_max_range"].as<double>();
+        if (config["scan_resolution"])
+            m_builder_config.scan_resolution = config["scan_resolution"].as<double>();
+        if (config["map_resolution"])
+            m_builder_config.map_resolution = config["map_resolution"].as<double>();
+        if (config["cube_len"])
+            m_builder_config.cube_len = config["cube_len"].as<double>();
+        if (config["det_range"])
+            m_builder_config.det_range = config["det_range"].as<double>();
+        if (config["move_thresh"])
+            m_builder_config.move_thresh = config["move_thresh"].as<double>();
+        if (config["na"])
+            m_builder_config.na = config["na"].as<double>();
+        if (config["ng"])
+            m_builder_config.ng = config["ng"].as<double>();
+        if (config["nba"])
+            m_builder_config.nba = config["nba"].as<double>();
+        if (config["nbg"])
+            m_builder_config.nbg = config["nbg"].as<double>();
+        if (config["imu_init_num"])
+            m_builder_config.imu_init_num = config["imu_init_num"].as<int>();
+        if (config["near_search_num"])
+            m_builder_config.near_search_num = config["near_search_num"].as<int>();
+        if (config["ieskf_max_iter"])
+            m_builder_config.ieskf_max_iter = config["ieskf_max_iter"].as<int>();
+        if (config["gravity_align"])
+            m_builder_config.gravity_align = config["gravity_align"].as<bool>();
+        if (config["esti_il"])
+            m_builder_config.esti_il = config["esti_il"].as<bool>();
+        if (config["lidar_cov_inv"])
+            m_builder_config.lidar_cov_inv = config["lidar_cov_inv"].as<double>();
 
-        m_builder_config.imu_init_num = config["imu_init_num"].as<int>();
-        m_builder_config.near_search_num = config["near_search_num"].as<int>();
-        m_builder_config.ieskf_max_iter = config["ieskf_max_iter"].as<int>();
-        m_builder_config.gravity_align = config["gravity_align"].as<bool>();
-        m_builder_config.esti_il = config["esti_il"].as<bool>();
-        std::vector<double> t_il_vec = config["t_il"].as<std::vector<double>>();
-        std::vector<double> r_il_vec = config["r_il"].as<std::vector<double>>();
-        m_builder_config.t_il << t_il_vec[0], t_il_vec[1], t_il_vec[2];
-        m_builder_config.r_il << r_il_vec[0], r_il_vec[1], r_il_vec[2], r_il_vec[3], r_il_vec[4], r_il_vec[5], r_il_vec[6], r_il_vec[7], r_il_vec[8];
-        m_builder_config.lidar_cov_inv = config["lidar_cov_inv"].as<double>();
+        const std::vector<double> t_il_vec =
+            config["t_il"] ? config["t_il"].as<std::vector<double>>() : std::vector<double>{m_builder_config.t_il.x(), m_builder_config.t_il.y(), m_builder_config.t_il.z()};
+        const std::vector<double> r_il_vec =
+            config["r_il"] ? config["r_il"].as<std::vector<double>>() : std::vector<double>{
+                m_builder_config.r_il(0, 0), m_builder_config.r_il(0, 1), m_builder_config.r_il(0, 2),
+                m_builder_config.r_il(1, 0), m_builder_config.r_il(1, 1), m_builder_config.r_il(1, 2),
+                m_builder_config.r_il(2, 0), m_builder_config.r_il(2, 1), m_builder_config.r_il(2, 2)};
+        applyExtrinsics(t_il_vec, r_il_vec);
+    }
+
+    void syncParametersToRos()
+    {
+        const std::vector<double> t_il = {
+            m_builder_config.t_il.x(), m_builder_config.t_il.y(), m_builder_config.t_il.z()};
+        const std::vector<double> r_il = {
+            m_builder_config.r_il(0, 0), m_builder_config.r_il(0, 1), m_builder_config.r_il(0, 2),
+            m_builder_config.r_il(1, 0), m_builder_config.r_il(1, 1), m_builder_config.r_il(1, 2),
+            m_builder_config.r_il(2, 0), m_builder_config.r_il(2, 1), m_builder_config.r_il(2, 2)};
+
+        this->set_parameters({
+            rclcpp::Parameter("imu_topic", m_node_config.imu_topic),
+            rclcpp::Parameter("lidar_topic", m_node_config.lidar_topic),
+            rclcpp::Parameter("body_frame", m_node_config.body_frame),
+            rclcpp::Parameter("world_frame", m_node_config.world_frame),
+            rclcpp::Parameter("print_time_cost", m_node_config.print_time_cost),
+            rclcpp::Parameter("lidar_filter_num", m_builder_config.lidar_filter_num),
+            rclcpp::Parameter("lidar_min_range", m_builder_config.lidar_min_range),
+            rclcpp::Parameter("lidar_max_range", m_builder_config.lidar_max_range),
+            rclcpp::Parameter("scan_resolution", m_builder_config.scan_resolution),
+            rclcpp::Parameter("map_resolution", m_builder_config.map_resolution),
+            rclcpp::Parameter("cube_len", m_builder_config.cube_len),
+            rclcpp::Parameter("det_range", m_builder_config.det_range),
+            rclcpp::Parameter("move_thresh", m_builder_config.move_thresh),
+            rclcpp::Parameter("na", m_builder_config.na),
+            rclcpp::Parameter("ng", m_builder_config.ng),
+            rclcpp::Parameter("nba", m_builder_config.nba),
+            rclcpp::Parameter("nbg", m_builder_config.nbg),
+            rclcpp::Parameter("imu_init_num", m_builder_config.imu_init_num),
+            rclcpp::Parameter("near_search_num", m_builder_config.near_search_num),
+            rclcpp::Parameter("ieskf_max_iter", m_builder_config.ieskf_max_iter),
+            rclcpp::Parameter("gravity_align", m_builder_config.gravity_align),
+            rclcpp::Parameter("esti_il", m_builder_config.esti_il),
+            rclcpp::Parameter("t_il", t_il),
+            rclcpp::Parameter("r_il", r_il),
+            rclcpp::Parameter("lidar_cov_inv", m_builder_config.lidar_cov_inv),
+        });
     }
 
     void imuCB(const sensor_msgs::msg::Imu::SharedPtr msg)

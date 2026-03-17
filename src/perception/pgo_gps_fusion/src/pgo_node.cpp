@@ -79,19 +79,22 @@ using namespace std::chrono_literals;
 
 struct NodeConfig
 {
-    std::string cloud_topic = "/lio/body_cloud";
-    std::string odom_topic = "/lio/odom";
+    std::string cloud_topic = "/fastlio2/body_cloud";
+    std::string odom_topic = "/fastlio2/lio_odom";
     std::string map_frame = "map";
-    std::string local_frame = "lidar";
+    std::string local_frame = "odom";
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
     std::string gps_topic = "/gnss";              // GPS 话题名称
     bool enable_gps = true;                        // GPS 功能启用开关
-    double gps_noise_xy = 0.5;                     // GPS 水平噪声（米）
-    double gps_noise_z = 2.0;                      // GPS 垂直噪声（米）
+    double gps_noise_xy = 2.5;                     // GPS 水平噪声（米）
+    double gps_noise_z = 5.0;                      // GPS 垂直噪声（米）
     int gps_factor_interval = 10;                  // 每 N 个关键帧添加 GPS 因子
     double gps_quality_hdop_max = 3.0;             // 最大 HDOP 阈值
     int gps_quality_sat_min = 6;                   // 最小卫星数量
+    double gps_drift_threshold = 2.0;              // 漂移检测阈值（米）
+    int gps_alert_interval = 3;                    // 漂移预警间隔
+    int gps_emergency_interval = 1;                // 严重漂移间隔
     // ✅ GPS 融合修改结束 - NodeConfig 扩展完成
 };
 
@@ -233,44 +236,131 @@ public:
 
     void loadParameters()
     {
-        this->declare_parameter("config_path", "");
-        std::string config_path;
-        this->get_parameter<std::string>("config_path", config_path);
+        const std::string config_path = this->declare_parameter<std::string>("config_path", "");
+
+        m_node_config.cloud_topic = this->declare_parameter<std::string>("cloud_topic", "/fastlio2/body_cloud");
+        m_node_config.odom_topic = this->declare_parameter<std::string>("odom_topic", "/fastlio2/lio_odom");
+        m_node_config.map_frame = this->declare_parameter<std::string>("map_frame", "map");
+        m_node_config.local_frame = this->declare_parameter<std::string>("local_frame", "odom");
+
+        m_pgo_config.key_pose_delta_deg = this->declare_parameter<double>("key_pose_delta_deg", 5.0);
+        m_pgo_config.key_pose_delta_trans = this->declare_parameter<double>("key_pose_delta_trans", 0.1);
+        m_pgo_config.loop_search_radius = this->declare_parameter<double>("loop_search_radius", 1.0);
+        m_pgo_config.loop_time_tresh = this->declare_parameter<double>("loop_time_tresh", 60.0);
+        m_pgo_config.loop_score_tresh = this->declare_parameter<double>("loop_score_tresh", 0.15);
+        m_pgo_config.loop_submap_half_range = this->declare_parameter<int>("loop_submap_half_range", 5);
+        m_pgo_config.submap_resolution = this->declare_parameter<double>("submap_resolution", 0.1);
+        m_pgo_config.min_loop_detect_duration = this->declare_parameter<double>("min_loop_detect_duration", 5.0);
+
+        m_node_config.enable_gps = this->declare_parameter<bool>("gps.enable", true);
+        m_node_config.gps_topic = this->declare_parameter<std::string>("gps.topic", "/gnss");
+        m_node_config.gps_noise_xy = this->declare_parameter<double>("gps.noise_xy", 2.5);
+        m_node_config.gps_noise_z = this->declare_parameter<double>("gps.noise_z", 5.0);
+        m_node_config.gps_factor_interval = this->declare_parameter<int>("gps.factor_interval", 10);
+        m_node_config.gps_quality_hdop_max = this->declare_parameter<double>("gps.quality_hdop_max", 3.0);
+        m_node_config.gps_quality_sat_min = this->declare_parameter<int>("gps.quality_sat_min", 6);
+        m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", 2.0);
+        m_node_config.gps_alert_interval = this->declare_parameter<int>("gps.alert_interval", 3);
+        m_node_config.gps_emergency_interval = this->declare_parameter<int>("gps.emergency_interval", 1);
+
+        if (!config_path.empty())
+        {
+            loadLegacyConfig(config_path);
+            syncParametersToRos();
+        }
+
+        RCLCPP_INFO(this->get_logger(), "GPS config loaded: interval=%d, noise_xy=%.2f",
+                    m_node_config.gps_factor_interval, m_node_config.gps_noise_xy);
+    }
+
+    void loadLegacyConfig(const std::string &config_path)
+    {
         YAML::Node config = YAML::LoadFile(config_path);
         if (!config)
         {
-            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE!");
+            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE: %s", config_path.c_str());
             return;
         }
-        RCLCPP_INFO(this->get_logger(), "LOAD FROM YAML CONFIG PATH: %s", config_path.c_str());
-        m_node_config.cloud_topic = config["cloud_topic"].as<std::string>();
-        m_node_config.odom_topic = config["odom_topic"].as<std::string>();
-        m_node_config.map_frame = config["map_frame"].as<std::string>();
-        m_node_config.local_frame = config["local_frame"].as<std::string>();
 
-        m_pgo_config.key_pose_delta_deg = config["key_pose_delta_deg"].as<double>();
-        m_pgo_config.key_pose_delta_trans = config["key_pose_delta_trans"].as<double>();
-        m_pgo_config.loop_search_radius = config["loop_search_radius"].as<double>();
-        m_pgo_config.loop_time_tresh = config["loop_time_tresh"].as<double>();
-        m_pgo_config.loop_score_tresh = config["loop_score_tresh"].as<double>();
-        m_pgo_config.loop_submap_half_range = config["loop_submap_half_range"].as<int>();
-        m_pgo_config.submap_resolution = config["submap_resolution"].as<double>();
-        m_pgo_config.min_loop_detect_duration = config["min_loop_detect_duration"].as<double>();
-        
-        // ✅ GPS 融合修改开始 - 2025/12/01 - 加载 GPS 配置参数
-        if (config["gps"]) {
-            m_node_config.enable_gps = config["gps"]["enable"].as<bool>();
-            m_node_config.gps_topic = config["gps"]["topic"].as<std::string>();
-            m_node_config.gps_noise_xy = config["gps"]["noise_xy"].as<double>();
-            m_node_config.gps_noise_z = config["gps"]["noise_z"].as<double>();
-            m_node_config.gps_factor_interval = config["gps"]["factor_interval"].as<int>();
-            m_node_config.gps_quality_hdop_max = config["gps"]["quality_hdop_max"].as<double>();
-            m_node_config.gps_quality_sat_min = config["gps"]["quality_sat_min"].as<int>();
-            
-            RCLCPP_INFO(this->get_logger(), "GPS config loaded: interval=%d, noise_xy=%.2f", 
-                        m_node_config.gps_factor_interval, m_node_config.gps_noise_xy);
+        RCLCPP_INFO(this->get_logger(), "LOAD FROM LEGACY YAML CONFIG PATH: %s", config_path.c_str());
+
+        if (config["cloud_topic"])
+            m_node_config.cloud_topic = config["cloud_topic"].as<std::string>();
+        if (config["odom_topic"])
+            m_node_config.odom_topic = config["odom_topic"].as<std::string>();
+        if (config["map_frame"])
+            m_node_config.map_frame = config["map_frame"].as<std::string>();
+        if (config["local_frame"])
+            m_node_config.local_frame = config["local_frame"].as<std::string>();
+
+        if (config["key_pose_delta_deg"])
+            m_pgo_config.key_pose_delta_deg = config["key_pose_delta_deg"].as<double>();
+        if (config["key_pose_delta_trans"])
+            m_pgo_config.key_pose_delta_trans = config["key_pose_delta_trans"].as<double>();
+        if (config["loop_search_radius"])
+            m_pgo_config.loop_search_radius = config["loop_search_radius"].as<double>();
+        if (config["loop_time_tresh"])
+            m_pgo_config.loop_time_tresh = config["loop_time_tresh"].as<double>();
+        if (config["loop_score_tresh"])
+            m_pgo_config.loop_score_tresh = config["loop_score_tresh"].as<double>();
+        if (config["loop_submap_half_range"])
+            m_pgo_config.loop_submap_half_range = config["loop_submap_half_range"].as<int>();
+        if (config["submap_resolution"])
+            m_pgo_config.submap_resolution = config["submap_resolution"].as<double>();
+        if (config["min_loop_detect_duration"])
+            m_pgo_config.min_loop_detect_duration = config["min_loop_detect_duration"].as<double>();
+
+        if (config["gps"])
+        {
+            if (config["gps"]["enable"])
+                m_node_config.enable_gps = config["gps"]["enable"].as<bool>();
+            if (config["gps"]["topic"])
+                m_node_config.gps_topic = config["gps"]["topic"].as<std::string>();
+            if (config["gps"]["noise_xy"])
+                m_node_config.gps_noise_xy = config["gps"]["noise_xy"].as<double>();
+            if (config["gps"]["noise_z"])
+                m_node_config.gps_noise_z = config["gps"]["noise_z"].as<double>();
+            if (config["gps"]["factor_interval"])
+                m_node_config.gps_factor_interval = config["gps"]["factor_interval"].as<int>();
+            if (config["gps"]["quality_hdop_max"])
+                m_node_config.gps_quality_hdop_max = config["gps"]["quality_hdop_max"].as<double>();
+            if (config["gps"]["quality_sat_min"])
+                m_node_config.gps_quality_sat_min = config["gps"]["quality_sat_min"].as<int>();
+            if (config["gps"]["drift_threshold"])
+                m_node_config.gps_drift_threshold = config["gps"]["drift_threshold"].as<double>();
+            if (config["gps"]["alert_interval"])
+                m_node_config.gps_alert_interval = config["gps"]["alert_interval"].as<int>();
+            if (config["gps"]["emergency_interval"])
+                m_node_config.gps_emergency_interval = config["gps"]["emergency_interval"].as<int>();
         }
-        // ✅ GPS 融合修改结束 - GPS 参数加载完成
+    }
+
+    void syncParametersToRos()
+    {
+        this->set_parameters({
+            rclcpp::Parameter("cloud_topic", m_node_config.cloud_topic),
+            rclcpp::Parameter("odom_topic", m_node_config.odom_topic),
+            rclcpp::Parameter("map_frame", m_node_config.map_frame),
+            rclcpp::Parameter("local_frame", m_node_config.local_frame),
+            rclcpp::Parameter("key_pose_delta_deg", m_pgo_config.key_pose_delta_deg),
+            rclcpp::Parameter("key_pose_delta_trans", m_pgo_config.key_pose_delta_trans),
+            rclcpp::Parameter("loop_search_radius", m_pgo_config.loop_search_radius),
+            rclcpp::Parameter("loop_time_tresh", m_pgo_config.loop_time_tresh),
+            rclcpp::Parameter("loop_score_tresh", m_pgo_config.loop_score_tresh),
+            rclcpp::Parameter("loop_submap_half_range", m_pgo_config.loop_submap_half_range),
+            rclcpp::Parameter("submap_resolution", m_pgo_config.submap_resolution),
+            rclcpp::Parameter("min_loop_detect_duration", m_pgo_config.min_loop_detect_duration),
+            rclcpp::Parameter("gps.enable", m_node_config.enable_gps),
+            rclcpp::Parameter("gps.topic", m_node_config.gps_topic),
+            rclcpp::Parameter("gps.noise_xy", m_node_config.gps_noise_xy),
+            rclcpp::Parameter("gps.noise_z", m_node_config.gps_noise_z),
+            rclcpp::Parameter("gps.factor_interval", m_node_config.gps_factor_interval),
+            rclcpp::Parameter("gps.quality_hdop_max", m_node_config.gps_quality_hdop_max),
+            rclcpp::Parameter("gps.quality_sat_min", m_node_config.gps_quality_sat_min),
+            rclcpp::Parameter("gps.drift_threshold", m_node_config.gps_drift_threshold),
+            rclcpp::Parameter("gps.alert_interval", m_node_config.gps_alert_interval),
+            rclcpp::Parameter("gps.emergency_interval", m_node_config.gps_emergency_interval),
+        });
     }
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 GPS 回调函数

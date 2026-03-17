@@ -1,0 +1,178 @@
+/fastlio2:
+  lio_node:
+    ros__parameters:
+      # Livox IMU 数据输入话题；改错会导致惯导积分直接失效。
+      imu_topic: /livox/imu
+      # Livox 点云输入话题；改错会导致 FAST-LIO2 收不到激光数据。
+      lidar_topic: /livox/lidar
+      # 机器人本体坐标系；改动会影响 TF 树和下游导航对接。
+      body_frame: base_link
+      # 里程计坐标系；改动会影响 odom 相关 TF 链路。
+      world_frame: odom
+      # 是否打印耗时日志；打开更利于诊断，但会增加终端噪声。
+      print_time_cost: false
+
+      # 点云抽样步长；调大可减负载，但会降低细节。
+      lidar_filter_num: 6
+      # 最小有效量测距离；调大可过滤近距离噪声，但会损失近场障碍。
+      lidar_min_range: 0.5
+      # 最大有效量测距离；调大覆盖更远，但计算量增加。
+      lidar_max_range: 15.0
+      # 扫描分辨率；调小更细致，调大更省算力。
+      scan_resolution: 0.15
+      # 地图体素分辨率；调小地图更细，调大更省内存。
+      map_resolution: 0.3
+
+      # 局部地图体素边长；调大可减少切块频率，但会增加局部地图规模。
+      cube_len: 300.0
+      # 检测范围；调大覆盖更远，但近邻搜索和匹配开销上升。
+      det_range: 60.0
+      # 地图平移阈值；调大可减少地图移动，调小更敏感。
+      move_thresh: 1.5
+
+      # 加速度白噪声；调大更保守地相信 IMU。
+      na: 0.01
+      # 陀螺白噪声；调大更保守地相信 IMU 角速度。
+      ng: 0.01
+      # 加速度偏置噪声；调大更快跟踪偏置变化，但更易抖动。
+      nba: 0.0001
+      # 陀螺偏置噪声；调大更快跟踪偏置变化，但更易抖动。
+      nbg: 0.0001
+
+      # IMU 初始化样本数；调大更稳，但启动更慢。
+      imu_init_num: 20
+      # 近邻搜索点数；调大更稳但计算更重。
+      near_search_num: 5
+      # IESKF 最大迭代次数；调大更充分但算力更高。
+      ieskf_max_iter: 5
+      # 是否按重力自动对齐；关闭后更依赖外部姿态初值。
+      gravity_align: true
+      # 是否在线估计雷达到 IMU 外参；开启会增加状态维度。
+      esti_il: false
+
+      # 雷达到 IMU 旋转外参；错误会直接导致姿态和建图失真。
+      r_il: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+      # 雷达到 IMU 平移外参；错误会导致点云去畸变和里程计漂移。
+      t_il: [-0.011, -0.02329, 0.04412]
+
+      # 激光观测协方差逆；调大更相信激光匹配结果。
+      lidar_cov_inv: 1000.0
+
+/pgo:
+  pgo_node:
+    ros__parameters:
+      # PGO 输入点云话题；改错会导致图优化收不到关键帧点云。
+      cloud_topic: /fastlio2/body_cloud
+      # PGO 输入里程计话题；改错会导致图优化收不到位姿。
+      odom_topic: /fastlio2/lio_odom
+      # 全局地图坐标系；影响 map->odom TF 的父坐标系。
+      map_frame: map
+      # 局部坐标系；应与 FAST-LIO2 的 world_frame 保持一致。
+      local_frame: odom
+
+      # 关键帧角度阈值；调小更易生成关键帧，但图更密更耗内存。
+      key_pose_delta_deg: 5.0
+      # 关键帧距离阈值；调小更易生成关键帧，但图更密更耗内存。
+      key_pose_delta_trans: 0.1
+      # 回环搜索半径；调大可提升闭环机会，但误匹配和计算量都会增加。
+      loop_search_radius: 1.0
+      # 回环最小时间间隔；调小会更积极尝试闭环。
+      loop_time_tresh: 60.0
+      # 回环分数阈值；调高更保守，调低更激进。
+      loop_score_tresh: 0.15
+      # 子图半范围关键帧数；调大闭环更稳，但子图更重。
+      loop_submap_half_range: 5
+      # 子图体素分辨率；调小更细，调大更省算力。
+      submap_resolution: 0.1
+      # 最短回环检测间隔；调小可更频繁尝试闭环。
+      min_loop_detect_duration: 5.0
+
+      # 是否启用 GPS 因子；关闭后回到纯激光图优化。
+      "gps.enable": true
+      # PGO 使用的 GNSS 话题；当前主线是校准后的 /gnss。
+      "gps.topic": /gnss
+      # GPS 水平噪声；调大表示更不相信 GPS。
+      "gps.noise_xy": 2.5
+      # GPS 垂直噪声；调大表示更不相信海拔。
+      "gps.noise_z": 5.0
+      # 每隔多少关键帧加入一个 GPS 因子；调小更频繁融合。
+      "gps.factor_interval": 10
+      # GPS 水平质量阈值；调小更严格，调大更宽松。
+      "gps.quality_hdop_max": 3.0
+      # 最小卫星数阈值；当前主要作记录占位，未进入主过滤逻辑。
+      "gps.quality_sat_min": 6
+      # 漂移检测阈值；调小更敏感，调大更迟钝。
+      "gps.drift_threshold": 2.0
+      # 一般预警节流间隔；调小会更频繁报警。
+      "gps.alert_interval": 3
+      # 严重预警节流间隔；调小会更频繁报警。
+      "gps.emergency_interval": 1
+
+/serial_twistctl_node:
+  ros__parameters:
+    # 下位机控制串口设备；改错会导致速度指令发不出去。
+    port: /dev/serial_twistctl
+    # 控制串口波特率；必须和下位机固件一致。
+    baudrate: 115200
+    # 单次发送重试次数；调大更稳但控制延迟会增加。
+    send_attempts: 1
+    # 两次发送尝试之间的延迟毫秒数；调大更稳但控制更慢。
+    delay_between_attempts_ms: 0
+
+/serial_reader_node:
+  ros__parameters:
+    # 底盘回读串口设备；通常与控制串口一致。
+    port: /dev/serial_twistctl
+    # 回读串口波特率；必须和底盘一致。
+    baud: 115200
+
+/nmea_navsat_driver:
+  ros__parameters:
+    # GPS 串口设备文件；改错会导致 GNSS 驱动无法连接硬件。
+    port: /dev/wheeltec_gps
+    # GPS 串口波特率；当前硬件默认 9600。
+    baud: 9600
+    # GPS 数据坐标系 ID；影响 TF 和下游传感器语义。
+    frame_id: gps
+    # 时间参考来源标识；用于 time reference 语义说明。
+    time_ref_source: gps
+    # 是否优先使用 RMC 语句；关闭表示沿用当前驱动配置。
+    useRMC: false
+
+/pointcloud_to_laserscan:
+  ros__parameters:
+    # 目标坐标系；留空表示沿用输入点云当前坐标系。
+    target_frame: ""
+    # TF 容忍时间；调大更宽松，调小更严格。
+    transform_tolerance: 0.01
+    # 输入队列深度；调大可减少丢帧，但会增加缓存。
+    queue_size: 10
+    # 参与投影的最小高度；调大可过滤低矮点。
+    min_height: -1.0
+    # 参与投影的最大高度；调小可过滤高处点。
+    max_height: 1.0
+    # 激光扫描最小角度；影响扫描覆盖范围。
+    angle_min: -3.14159
+    # 激光扫描最大角度；影响扫描覆盖范围。
+    angle_max: 3.14159
+    # 角分辨率；调小更细但点数更多。
+    angle_increment: 0.0174533
+    # 扫描周期；影响下游对扫描频率的理解。
+    scan_time: 0.0333333
+    # 最小有效测距；调大可滤掉近场噪声。
+    range_min: 0.0
+    # 最大有效测距；调大覆盖更远但噪点更多。
+    range_max: 30.0
+    # 无限远回填值；影响超量程点的表达方式。
+    inf_epsilon: 1.0
+    # 是否对超量程使用 inf；关闭会改为数值回填。
+    use_inf: true
+
+    # /scan 发布可靠性；保持与当前 Nav2/SLAM Toolbox 调通版本一致。
+    "qos_overrides./scan.publisher.reliability": best_effort
+    # /scan 发布持久化策略；保持 volatile，避免历史包堆积。
+    "qos_overrides./scan.publisher.durability": volatile
+    # /scan 历史策略；保持 keep_last，限制缓存长度。
+    "qos_overrides./scan.publisher.history": keep_last
+    # /scan 发布深度；调大可减少抖动时丢包，但缓存增加。
+    "qos_overrides./scan.publisher.depth": 10
