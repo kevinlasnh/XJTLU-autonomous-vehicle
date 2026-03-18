@@ -43,20 +43,16 @@ test:
 	colcon test && colcon test-result --verbose
 
 launch-slam:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_slam.launch.py
+	bash scripts/launch_with_logs.sh slam
 
 launch-explore:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_explore.launch.py
+	bash scripts/launch_with_logs.sh explore
 
 launch-explore-gps:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_explore_gps.launch.py
+	bash scripts/launch_with_logs.sh explore-gps
 
 launch-travel:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_travel.launch.py
+	bash scripts/launch_with_logs.sh travel
 
 kill:
 	pkill -f ros2 || true

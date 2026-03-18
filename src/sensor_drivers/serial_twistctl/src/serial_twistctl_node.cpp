@@ -64,6 +64,34 @@ bool ensureDirectory(const std::string& directory) {
     }
     return true;
 }
+
+std::string getSessionLogPath(const std::string& filename, const std::string& fallback_subdir) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::string dir(session_dir);
+        ensureDirectory(dir);
+        return dir + "/" + filename;
+    }
+
+    std::string dir = getRuntimePath(fallback_subdir);
+    ensureDirectory(dir);
+
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_time);
+
+    std::ostringstream ss;
+    ss << dir << "/log_"
+       << (now_tm->tm_year + 1900)
+       << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+       << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+       << "_"
+       << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+       << std::setw(2) << std::setfill('0') << now_tm->tm_min
+       << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+       << ".txt";
+    return ss.str();
+}
 }
 
 // 检查是否启用日志的辅助函数
@@ -99,37 +127,11 @@ public:
         bool enable_log = shouldEnableLogging("serial_twistctl_node");
         
         if (enable_log) {
-            // 获取当前系统时间
-            auto now = std::chrono::system_clock::now();
-            // 将时间转换为time_t类型
-            std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-            // 将time_t转换为本地时间结构体
-            std::tm* now_tm = std::localtime(&now_time);
+            std::string log_path = getSessionLogPath("serial_twistctl.log", "logs/twist_log");
+            log_file_.open(log_path, std::ios::app);
 
-            std::string log_dir = getRuntimePath("logs/twist_log");
-            ensureDirectory(log_dir);
-
-            // 创建文件名输出流
-            std::ostringstream filename_stream;
-            // 构建日志文件名，包含年月日时分秒
-            filename_stream << log_dir << "/log_"
-                            << (now_tm->tm_year + 1900)  // 年份
-                            << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1) // 月份
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_mday // 日期
-                            << "_"
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_hour // 小时
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_min // 分钟
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_sec // 秒
-                            << ".txt"; // 文件扩展名
-
-            // 以追加模式打开日志文件
-            log_file_.open(filename_stream.str(), std::ios::app);
-
-            // 检查文件是否成功打开
             if (!log_file_.is_open()) {
-                // 记录错误日志，表示无法打开日志文件
                 RCLCPP_ERROR(this->get_logger(), "Unable to open log file");
-                // 抛出运行时错误
                 throw std::runtime_error("Unable to open log file");
             }
         } else {

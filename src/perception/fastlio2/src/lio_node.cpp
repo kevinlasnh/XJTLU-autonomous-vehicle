@@ -68,6 +68,34 @@ bool ensureDirectory(const std::string& directory) {
     }
     return true;
 }
+
+std::string getSessionLogPath(const std::string& filename, const std::string& fallback_subdir) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::string dir(session_dir);
+        ensureDirectory(dir);
+        return dir + "/" + filename;
+    }
+
+    std::string dir = getRuntimePath(fallback_subdir);
+    ensureDirectory(dir);
+
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_time);
+
+    std::ostringstream ss;
+    ss << dir << "/log_"
+       << (now_tm->tm_year + 1900)
+       << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+       << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+       << "_"
+       << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+       << std::setw(2) << std::setfill('0') << now_tm->tm_min
+       << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+       << ".txt";
+    return ss.str();
+}
 }
 
 using namespace std::chrono_literals;
@@ -102,31 +130,14 @@ public:
         bool enable_log = shouldEnableLogging("fastlio2_lio_node");
         
         if (enable_log) {
-            auto now = std::chrono::system_clock::now();
-            std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-            std::tm* now_tm = std::localtime(&now_time);
-
-            std::string log_dir = getRuntimePath("logs/fastlio2");
-            ensureDirectory(log_dir);
-
-            std::ostringstream filename_stream;
-            filename_stream << log_dir << "/log_"
-                            << (now_tm->tm_year + 1900)  // 年份
-                            << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1) // 月份
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_mday // 日期
-                            << "_"
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_hour // 小时
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_min // 分钟
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_sec // 秒
-                            << ".txt"; // 文件扩展名
-
-            m_log_file.open(filename_stream.str(), std::ios::app);
+            std::string log_path = getSessionLogPath("fastlio2.log", "logs/fastlio2");
+            m_log_file.open(log_path, std::ios::app);
 
             if (!m_log_file.is_open()) {
                 RCLCPP_ERROR(this->get_logger(), "Unable to open log file");
                 throw std::runtime_error("Unable to open log file");
             } else {
-                RCLCPP_INFO(this->get_logger(), "Logging enabled: %s", filename_stream.str().c_str());
+                RCLCPP_INFO(this->get_logger(), "Logging enabled: %s", log_path.c_str());
             }
         } else {
             RCLCPP_INFO(this->get_logger(), "Logging disabled by config");

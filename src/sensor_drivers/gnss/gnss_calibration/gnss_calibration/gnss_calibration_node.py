@@ -33,6 +33,18 @@ def get_runtime_root():
 def get_runtime_path(*parts):
     return get_runtime_root().joinpath(*parts)
 
+
+def get_session_log_path(filename, fallback_subdir):
+    session_dir = os.environ.get("FYP_LOG_SESSION_DIR")
+    if session_dir:
+        os.makedirs(session_dir, exist_ok=True)
+        return str(Path(session_dir) / filename)
+
+    log_dir = get_runtime_path(fallback_subdir)
+    os.makedirs(log_dir, exist_ok=True)
+    now = datetime.now()
+    return str(Path(log_dir) / f"log_{now.strftime('%Y%m%d_%H%M%S')}.txt")
+
 LOG_SWITCH_PATH = get_runtime_path("config", "log_switch.yaml")
 OFFSET_FILE_PATH = get_runtime_path("gnss", "gnss_offset.txt")
 START_ID_FILE_PATH = get_runtime_path("gnss", "startid.txt")
@@ -104,12 +116,7 @@ class GnssCalibrationNode(Node):
         enable_log = self.should_enable_logging("gnss_calibration_node")
         
         if enable_log:
-            # Grok 进行了改动
-            # Generate log path with timestamp
-            log_dir = get_runtime_path("logs", "gnss_calibration")
-            os.makedirs(log_dir, exist_ok=True)
-            now = datetime.now()
-            self.log_path = f"{log_dir}/log_{now.strftime('%Y%m%d_%H%M%S')}.txt"
+            self.log_path = get_session_log_path("gnss_calibration.log", "logs/gnss_calibration")
             self.get_logger().info(f'Logging enabled: {self.log_path}')
         else:
             self.log_path = None

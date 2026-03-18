@@ -37,6 +37,18 @@ def get_runtime_root():
 def get_runtime_path(*parts):
     return get_runtime_root().joinpath(*parts)
 
+
+def get_session_log_path(filename, fallback_subdir):
+    session_dir = os.environ.get("FYP_LOG_SESSION_DIR")
+    if session_dir:
+        os.makedirs(session_dir, exist_ok=True)
+        return str(Path(session_dir) / filename)
+
+    log_dir = get_runtime_path(fallback_subdir)
+    os.makedirs(log_dir, exist_ok=True)
+    now = datetime.now()
+    return str(Path(log_dir) / f"log_{now.strftime('%Y%m%d_%H%M%S')}.txt")
+
 # 文件最新改动时间：2025.10.9
 # 文件改动人：鹏
 
@@ -215,16 +227,7 @@ class IMUDriverNode(Node):
         enable_log = should_enable_logging('imu_driver_node')
         
         if enable_log:
-            # 创建日志目录
-            log_dir = get_runtime_path("logs", "wit_imu_log")
-            os.makedirs(log_dir, exist_ok=True)
-
-            # 生成日志文件名
-            now = datetime.now()
-            filename = f"wit_imu_log_{now.strftime('%Y%m%d_%H%M%S')}.txt"
-            self.log_file_path = os.path.join(log_dir, filename)
-
-            # 打开日志文件
+            self.log_file_path = get_session_log_path("wit_imu.log", "logs/wit_imu_log")
             self.log_file = open(self.log_file_path, 'a')
             self.get_logger().info(f"Log file opened: {self.log_file_path}")
         else:

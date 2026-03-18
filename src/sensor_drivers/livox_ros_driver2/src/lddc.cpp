@@ -79,6 +79,16 @@ bool ensureDirectory(const std::string& directory) {
     }
     return true;
 }
+
+std::string getSessionLogPath(const std::string& filename) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::string dir(session_dir);
+        ensureDirectory(dir);
+        return dir + "/" + filename;
+    }
+    return "";
+}
 }
 
 #include "include/ros_headers.h"
@@ -128,44 +138,44 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
   bool enable_log = shouldEnableLogging("livox_ros_driver2");
   
   if (enable_log) {
-    // 创建日志目录
-    std::string log_dir = getRuntimePath("logs/raw_LiDAR");
-    ensureDirectory(log_dir);
+    std::string filename = getSessionLogPath("livox_imu.log");
+    std::string pointcloud_filename = getSessionLogPath("livox_pointcloud.log");
 
-    // 创建点云数据日志目录
-    std::string pointcloud_log_dir = getRuntimePath("logs/raw_LiDAR_pointcloud");
-    ensureDirectory(pointcloud_log_dir);
+    if (filename.empty() || pointcloud_filename.empty()) {
+      std::string log_dir = getRuntimePath("logs/raw_LiDAR");
+      ensureDirectory(log_dir);
 
-    // 生成日志文件名
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-    std::tm* now_tm = std::localtime(&now_time);
-    std::stringstream filename_stream;
-    filename_stream << log_dir << "/raw_lidar_log_"
-                    << (now_tm->tm_year + 1900)
-                    << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_mday
-                    << "_"
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_hour
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_min
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_sec
-                    << ".txt";
-    std::string filename = filename_stream.str();
+      std::string pointcloud_log_dir = getRuntimePath("logs/raw_LiDAR_pointcloud");
+      ensureDirectory(pointcloud_log_dir);
 
-    // 生成点云数据日志文件名
-    std::stringstream pointcloud_filename_stream;
-    pointcloud_filename_stream << pointcloud_log_dir << "/pointcloud_log_"
-                    << (now_tm->tm_year + 1900)
-                    << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_mday
-                    << "_"
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_hour
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_min
-                    << std::setw(2) << std::setfill('0') << now_tm->tm_sec
-                    << ".txt";
-    std::string pointcloud_filename = pointcloud_filename_stream.str();
+      auto now = std::chrono::system_clock::now();
+      std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+      std::tm* now_tm = std::localtime(&now_time);
+      std::stringstream filename_stream;
+      filename_stream << log_dir << "/raw_lidar_log_"
+                      << (now_tm->tm_year + 1900)
+                      << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+                      << "_"
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_min
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+                      << ".txt";
+      filename = filename_stream.str();
 
-    // 打开日志文件
+      std::stringstream pointcloud_filename_stream;
+      pointcloud_filename_stream << pointcloud_log_dir << "/pointcloud_log_"
+                      << (now_tm->tm_year + 1900)
+                      << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+                      << "_"
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_min
+                      << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+                      << ".txt";
+      pointcloud_filename = pointcloud_filename_stream.str();
+    }
+
     log_file_.open(filename, std::ios::out | std::ios::app);
     if (!log_file_.is_open()) {
       std::cerr << "Failed to open log file: " << filename << std::endl;
@@ -173,13 +183,11 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
       std::cout << "Logging enabled: " << filename << std::endl;
     }
 
-    // 打开点云数据日志文件
     pointcloud_log_file_.open(pointcloud_filename, std::ios::out | std::ios::app);
     if (!pointcloud_log_file_.is_open()) {
       std::cerr << "Failed to open pointcloud log file: " << pointcloud_filename << std::endl;
     } else {
       std::cout << "Pointcloud logging enabled: " << pointcloud_filename << std::endl;
-      // 写入CSV头部
       pointcloud_log_file_ << "x,y,z,reflectivity,tag,line,timestamp\n";
     }
   } else {

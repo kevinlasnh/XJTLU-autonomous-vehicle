@@ -26,6 +26,15 @@ std::string getRuntimeRoot() {
 std::string getRuntimePath(const std::string& relative_path) {
     return getRuntimeRoot() + "/" + relative_path;
 }
+
+std::string getSessionLogPath(const std::string& filename) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::filesystem::create_directories(session_dir);
+        return std::string(session_dir) + "/" + filename;
+    }
+    return "";
+}
 }
 
 #define EARTH_RADIUS 6378.137
@@ -47,33 +56,32 @@ public:
         bool enable_log = shouldEnableLogging("wheeltec_gps_path");
         
         if (enable_log) {
-            // Grok 进行了改动
-            // 原因：重新配置日志路径
-            // 内容：修改日志文件的保存路径
-            // 影响：日志文件将保存在新的路径中
-            // Create log directory if it doesn't exist
-            std::string log_dir = getRuntimePath("logs/wheeltec_gps_path");
-            std::filesystem::create_directories(log_dir);
+            std::string session_log_path = getSessionLogPath("wheeltec_gps_path.log");
+            if (!session_log_path.empty()) {
+                log_filepath_ = session_log_path;
+            } else {
+                std::string log_dir = getRuntimePath("logs/wheeltec_gps_path");
+                std::filesystem::create_directories(log_dir);
 
-            // Generate log filename based on current time
-            auto now = std::chrono::system_clock::now();
-            auto now_time = std::chrono::system_clock::to_time_t(now);
-            std::tm* now_tm = std::localtime(&now_time);
-            
-            std::ostringstream filename_stream;
-            filename_stream << log_dir << "/log_"
-                            << (now_tm->tm_year + 1900)
-                            << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_mday
-                            << "_"
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_hour
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_min
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_sec
-                            << ".txt";
+                auto now = std::chrono::system_clock::now();
+                auto now_time = std::chrono::system_clock::to_time_t(now);
+                std::tm* now_tm = std::localtime(&now_time);
 
-            log_filepath_ = filename_stream.str();
+                std::ostringstream filename_stream;
+                filename_stream << log_dir << "/log_"
+                                << (now_tm->tm_year + 1900)
+                                << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+                                << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+                                << "_"
+                                << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+                                << std::setw(2) << std::setfill('0') << now_tm->tm_min
+                                << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+                                << ".txt";
+                log_filepath_ = filename_stream.str();
+            }
+
             log_file_.open(log_filepath_, std::ios::app);
-            
+
             if (!log_file_.is_open()) {
                 RCLCPP_ERROR(this->get_logger(), "Unable to open log file: %s", log_filepath_.c_str());
             } else {
@@ -130,7 +138,10 @@ public:
     void save_to_file(double latitude, double longitude)
     {
         std::ofstream file;
-        const auto file_path = getRuntimePath("logs/wheeltec_gps_path/gps_path_std.txt");
+        auto file_path = getSessionLogPath("wheeltec_gps_path_std.txt");
+        if (file_path.empty()) {
+            file_path = getRuntimePath("logs/wheeltec_gps_path/gps_path_std.txt");
+        }
         std::filesystem::create_directories(std::filesystem::path(file_path).parent_path());
         file.open(file_path, std::ios::app);
 
