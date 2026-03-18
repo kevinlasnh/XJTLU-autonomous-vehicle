@@ -130,7 +130,7 @@ struct NodeState
 {
     std::mutex message_mutex;
     std::queue<CloudWithPose> cloud_buffer;
-    double last_message_time;
+    double last_message_time = 0.0;  // Initialize monotonic sync state so the first matched pair is accepted.
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 状态变量
     std::queue<sensor_msgs::msg::NavSatFix::ConstSharedPtr> gps_buffer;  // GPS 数据缓存队列
