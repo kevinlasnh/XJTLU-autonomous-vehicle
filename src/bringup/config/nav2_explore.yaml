@@ -1,614 +1,508 @@
-# =====================================================
-# 此参数文件为手动调整，请在此参数文件中一律进行手动调整谢谢
-# =====================================================
+# Nav2 Explore 模式参数；当前实车主线请在本文件维护调参结果。
+# 本次仅统一注释和排版；不在此文件中改动任何参数值。
 
-
-
-
+# AMCL 定位参数；影响静态地图定位收敛和粒子滤波稳定性。
 amcl:
   ros__parameters:
-    use_sim_time: True
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: true
+# AMCL 运动模型噪声；影响里程计误差在粒子滤波中的传播。
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
     alpha4: 0.2
     alpha5: 0.2
+# AMCL 关键坐标系；应与整车 TF 定义保持一致。
     base_frame_id: "base_footprint"
+# Beam skip 参数；用于处理激光异常点和遮挡。
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
     do_beamskip: false
     global_frame_id: "map"
+# 激光测量模型；影响短量测和命中概率分布。
     lambda_short: 0.1
     laser_likelihood_max_dist: 2.0
     laser_max_range: 100.0
     laser_min_range: -1.0
     laser_model_type: "likelihood_field"
+# 粒子滤波规模；调大更稳但算力和延迟都会上升。
     max_beams: 60
     max_particles: 2000
     min_particles: 500
     odom_frame_id: "odom"
+# 粒子滤波收敛阈值；影响采样数量自适应。
     pf_err: 0.05
     pf_z: 0.99
+# 恢复项参数；用于粒子集退化时的再注入策略。
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
     resample_interval: 1
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     save_pose_rate: 0.5
+# 激光命中模型；影响匹配时对测量误差的容忍度。
     sigma_hit: 0.2
     tf_broadcast: true
+# TF 容忍时间；调大更宽松，调小更严格。
     transform_tolerance: 1.0
+# 更新触发阈值；控制机器人移动多大后才重新更新定位。
     update_min_a: 0.2
     update_min_d: 0.25
+# 测量模型权重；决定命中、随机和短量测的相对占比。
     z_hit: 0.5
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
     scan_topic: scan
 
-
-
-
-# =====================================================
-# 行为树导航器配置
-# =====================================================
-# bt_navigator 负责执行导航任务的行为树逻辑，协调路径规划、跟踪和恢复行为
+# 行为树导航器；负责组织规划、控制和恢复动作。
 bt_navigator:
   ros__parameters:
-    # 是否使用仿真时间：False 表示使用真实系统时间
-    use_sim_time: False
-    # 全局坐标系：map 坐标系用于全局导航
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 导航关键坐标系；应与 map 和 base_link 相关 TF 保持一致。
     global_frame: map
-    # 机器人基础坐标系：机器人中心坐标系
     robot_base_frame: base_link
-    # 里程计话题：订阅 FASTLIO2 发布的里程计数据用于位置估计
     odom_topic: /fastlio2/lio_odom
-    # 行为树循环周期（毫秒）：每 10 毫秒执行一次行为树逻辑
+# 行为树循环周期；调小响应更快，但 CPU 开销更高。
     bt_loop_duration: 10
-    # 默认服务器超时时间（秒）：等待服务响应的最大时间
+# 动作和服务默认超时；过小会导致慢节点被误判失败。
     default_server_timeout: 20
-    # 等待服务超时时间（秒）：等待服务可用的最大时间
     wait_for_service_timeout: 1000
-    # 行为树插件库列表：定义可用的行为树节点类型
+# 行为树插件列表；缺项会导致导航树节点无法加载。
     plugin_lib_names:
-      # 计算到单个目标点的路径
       - nav2_compute_path_to_pose_action_bt_node
-      # 计算通过多个目标点的路径
       - nav2_compute_path_through_poses_action_bt_node
-      # 路径平滑处理
       - nav2_smooth_path_action_bt_node
-      # 路径跟踪执行
       - nav2_follow_path_action_bt_node
-      # 原地旋转行为
       - nav2_spin_action_bt_node
-      # 等待行为
       - nav2_wait_action_bt_node
-      # 辅助遥控行为
       - nav2_assisted_teleop_action_bt_node
-      # 后退行为
       - nav2_back_up_action_bt_node
-      # 沿朝向方向行驶
       - nav2_drive_on_heading_bt_node
-      # 清除代价地图服务
       - nav2_clear_costmap_service_bt_node
-      # 检测机器人是否卡住
       - nav2_is_stuck_condition_bt_node
-      # 检测是否到达目标点
       - nav2_goal_reached_condition_bt_node
-      # 检测目标点是否更新
       - nav2_goal_updated_condition_bt_node
-      # 检测全局目标点是否更新
       - nav2_globally_updated_goal_condition_bt_node
-      # 检测路径是否有效
       - nav2_is_path_valid_condition_bt_node
-      # 检测是否接收到初始位姿
       - nav2_initial_pose_received_condition_bt_node
-      # 重新初始化全局定位服务
       - nav2_reinitialize_global_localization_service_bt_node
-      # 频率控制器：控制节点执行频率
       - nav2_rate_controller_bt_node
-      # 距离控制器：基于距离触发行为
       - nav2_distance_controller_bt_node
-      # 速度控制器：基于速度触发行为
       - nav2_speed_controller_bt_node
-      # 截断路径到指定长度
       - nav2_truncate_path_action_bt_node
-      # 截断局部路径
       - nav2_truncate_path_local_action_bt_node
-      # 目标点更新节点
       - nav2_goal_updater_node_bt_node
-      # 恢复行为节点：执行故障恢复
       - nav2_recovery_node_bt_node
-      # 管道序列节点：顺序执行子节点
       - nav2_pipeline_sequence_bt_node
-      # 轮询节点：循环执行子节点
       - nav2_round_robin_node_bt_node
-      # 检测坐标变换是否可用
       - nav2_transform_available_condition_bt_node
-      # 检测时间是否超时
       - nav2_time_expired_condition_bt_node
-      # 路径过期计时器条件
       - nav2_path_expiring_timer_condition
-      # 检测行驶距离条件
       - nav2_distance_traveled_condition_bt_node
-      # 单次触发节点
       - nav2_single_trigger_bt_node
-      # 目标点更新控制器
       - nav2_goal_updated_controller_bt_node
-      # 检测电池电量低条件
       - nav2_is_battery_low_condition_bt_node
-      # 导航通过多个目标点动作
       - nav2_navigate_through_poses_action_bt_node
-      # 导航到单个目标点动作
       - nav2_navigate_to_pose_action_bt_node
-      # 移除已通过的目标点
       - nav2_remove_passed_goals_action_bt_node
-      # 规划器选择器
       - nav2_planner_selector_bt_node
-      # 控制器选择器
       - nav2_controller_selector_bt_node
-      # 目标检查器选择器
       - nav2_goal_checker_selector_bt_node
-      # 控制器取消节点
       - nav2_controller_cancel_bt_node
-      # 检测路径接近时是否变长
       - nav2_path_longer_on_approach_bt_node
-      # 等待行为取消节点
       - nav2_wait_cancel_bt_node
-      # 旋转行为取消节点
       - nav2_spin_cancel_bt_node
-      # 后退行为取消节点
       - nav2_back_up_cancel_bt_node
-      # 辅助遥控取消节点
       - nav2_assisted_teleop_cancel_bt_node
-      # 沿朝向行驶取消节点
       - nav2_drive_on_heading_cancel_bt_node
-      # 检测电池是否正在充电
       - nav2_is_battery_charging_condition_bt_node
 
-
-
-
+# 行为树 Through Poses 辅助节点；保持基础 ROS 参数一致。
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: false
 
-
-
-
+# 行为树 To Pose 辅助节点；保持基础 ROS 参数一致。
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: false
 
-
-
-
-# =====================================================
-# 控制器服务器配置
-# =====================================================
-# controller_server 负责局部路径跟踪，将全局路径转换为实时速度指令
-# 主要功能：动态窗口法(DWB)局部规划、障碍物避障、目标点到达判定
+# 控制器服务；影响局部跟踪、速度约束和到点判定。
 controller_server:
   ros__parameters:
-    # 坐标变换容差（秒）：允许 TF 数据延迟 0.5 秒，适应传感器延迟
+# TF 容忍时间；仅在该模式文件里启用时生效。
     transform_tolerance: 0.5
-    # 是否使用仿真时间：False 表示使用真实系统时间
-    use_sim_time: False
-    # 控制器运行频率（Hz）：20Hz 提供平滑的速度指令，平衡响应性和计算负担
-    controller_frequency: 20.0    
-    # 速度阈值：低于此值认为机器人静止，用于判断是否到达目标或卡住
-    # X方向最小速度阈值（米/秒）：0.001 米/秒接近静止
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 控制循环频率；调大响应更快，但控制线程负载更高。
+    controller_frequency: 20.0
+# 速度阈值；用于过滤过小指令，避免抖动。
     min_x_velocity_threshold: 0.001
-    # Y方向最小速度阈值（米/秒）：0.5 米/秒（差分驱动不使用Y方向）
     min_y_velocity_threshold: 0.5
-    # 旋转最小速度阈值（弧度/秒）：0.001 弧度/秒接近静止
-    min_theta_velocity_threshold: 0.001    
-    # 失败容差：控制器失败后允许重试的时间（秒），0.3 秒后触发恢复行为
-    failure_tolerance: 0.3    
-    # 插件配置：指定使用的进度检查器、目标检查器和路径跟踪器
+    min_theta_velocity_threshold: 0.001
+# 控制失败容忍度；调大更宽松，调小更严格。
+    failure_tolerance: 0.3
+# 进度检查器入口；用于判断机器人是否卡住。
     progress_checker_plugin: "progress_checker"
+# 目标检查器列表；控制到点和到向判定逻辑。
     goal_checker_plugins: ["general_goal_checker"]
+# 局部控制器列表；当前主线使用 DWB 跟踪。
     controller_plugins: ["FollowPath"]
-    # =====================================================
-    # 进度检查器配置
-    # =====================================================
-    # 检测机器人是否卡住或无法前进
+# 前进度检查器；用于限制长时间不动的情况。
     progress_checker:
+# 进度检查器插件；保持与当前 Nav2 版本一致。
       plugin: "nav2_controller::SimpleProgressChecker"
-      # 要求移动半径（米）：10 秒内必须移动 0.5 米，否则判定为卡住
+# 最小有效移动半径；低于该位移会被视为原地停滞。
       required_movement_radius: 0.5
-      # 移动时间限制（秒）：允许的最大静止时间
-      movement_time_allowance: 3.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 3.0 秒，减少卡住判定时间，提升导航效率
-    # =====================================================
-    # 目标检查器配置
-    # =====================================================
-    # 判断机器人是否到达目标点
+# 移动超时时间；调大更宽松，调小更容易触发卡住。
+      movement_time_allowance: 3.0
+# 目标检查器；控制位置和朝向容差。
     general_goal_checker:
-      # 有状态模式：True 表示记忆上次检查状态，避免抖动
-      stateful: True
+# 是否保留目标检查状态；开启后更利于连续导航。
+      stateful: true
+# 目标检查器插件；保持与当前 Nav2 版本一致。
       plugin: "nav2_controller::SimpleGoalChecker"
-      # XY位置容差（米）：到达目标点 0.25 米范围内即判定成功
+# 位置到点容差；调大更宽松，调小更严格。
       xy_goal_tolerance: 0.25
-      # 航向角容差（弧度）：到达目标方向 0.25 弧度(约14度)范围内即判定成功
-      yaw_goal_tolerance: 0.25    
-    # =====================================================
-    # 路径跟踪器配置 - DWB局部规划器
-    # =====================================================
-    # DWB(Dynamic Window Approach)算法：通过采样速度空间找到最优轨迹
+# 朝向到点容差；调大更宽松，调小更严格。
+      yaw_goal_tolerance: 0.25
+# DWB 局部规划器；影响速度采样、轨迹评估和避障策略。
     FollowPath:
+# DWB 插件实现；保持与当前 Nav2 控制栈一致。
       plugin: "dwb_core::DWBLocalPlanner"
-      # 是否输出轨迹调试信息：True 便于调试但增加日志量
-      debug_trajectory_details: True      
-      # -------------------------
-      # 速度限制配置
-      # -------------------------
-      # 最小速度：设为 0 允许完全停止
-      min_vel_x: 0.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.0 米/秒，不允许车辆倒车
-      min_vel_y: 0.0        # Y方向最小速度（米/秒，差分驱动不使用）      
-      # 最大线速度（米/秒）：0.5 米/秒，调高可提升行驶速度但降低安全性
-      # 建议范围：0.3-1.0 米/秒，根据环境复杂度调整
-      max_vel_x: 0.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.5 米/秒，保险起见没有调整太高
-      max_vel_y: 0.0        # Y方向最大速度（差分驱动固定为0）
-      # 最大角速度（弧度/秒）：1.0 弧度/秒(约57度/秒)，调高可提升转弯灵活性
-      # 这个参数可以控制车辆的双向旋转速度（顺时针和逆时针）
-      max_vel_theta: 1.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 根据 Jia He 学长论文中的测试得到的最大角速度值，保持 1.0 弧度/秒不变      
-      # 最小合成速度：0 表示允许原地旋转
+# 是否输出轨迹调试信息；打开更利于诊断但日志更多。
+      debug_trajectory_details: true
+# 速度上下界；直接限制控制器可采样的线速度范围。
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.5
+      max_vel_y: 0.0
+      max_vel_theta: 1.0
       min_speed_xy: 0.0
-      # 最大合成速度（米/秒）：0.5 米/秒，限制实际行驶速度
-      max_speed_xy: 0.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.5 米/秒，和 max_vel_x 保持一致
-      min_speed_theta: 0.0      
-      # -------------------------
-      # 加速度限制配置
-      # -------------------------
-      # 加速度限制（米/秒²）：2.5 平衡响应速度和平稳性
-      # 调高：响应更快但可能抖动；调低：更平稳但反应慢
-      acc_lim_x: 3.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 3.0 米/秒²，略微提高加速响应速度
+      max_speed_xy: 0.5
+      min_speed_theta: 0.0
+# 加减速度限制；影响起步、刹车和转向响应。
+      acc_lim_x: 3.0
       acc_lim_y: 0.0
-      # 角加速度限制（弧度/秒²）：3.2 控制转弯平滑度
-      acc_lim_theta: 3.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 3.5 弧度/秒²，略微提高转弯响应速度      
-      # 减速度限制（米/秒²）：-2.5 控制刹车性能
-      decel_lim_x: -3.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 -3.0 米/秒²，略微提高减速响应速度
+      acc_lim_theta: 3.5
+      decel_lim_x: -3.0
       decel_lim_y: 0.0
-      decel_lim_theta: -3.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 -3.5 弧度/秒²，略微提高转弯减速响应速度      
-      # -------------------------
-      # 轨迹采样配置
-      # -------------------------
-      # 速度采样数：采样越多轨迹越优但计算量越大
-      vx_samples: 20        # X方向速度采样数
-      vy_samples: 5         # Y方向速度采样数（差分驱动可设为1）
-      vtheta_samples: 20    # 角速度采样数      
-      # -------------------------
-      # 轨迹仿真配置
-      # -------------------------
-      # 仿真时长（秒）：1.7 秒，预测未来轨迹的时间跨度
-      # 调高：前瞻性更好但计算量大；调低：反应快但可能撞障碍物
+      decel_lim_theta: -3.5
+# 速度采样数量；调大更细但计算更重。
+      vx_samples: 20
+      vy_samples: 5
+      vtheta_samples: 20
+# 前向仿真时长；调大更有前瞻性但也更保守。
       sim_time: 1.7
-      # 线性粒度（米）：轨迹采样点间距 0.05 米
       linear_granularity: 0.05
-      # 角度粒度（弧度）：轨迹采样角度间隔 0.025 弧度
-      angular_granularity: 0.025      
-      # 坐标变换容差（秒）：0.4 秒，与全局设置一致
+      angular_granularity: 0.025
+# DWB 使用的 TF 容忍时间；过小更容易因 TF 抖动失败。
       transform_tolerance: 0.4
-      # XY到达容差（米）：0.25 米范围内判定到达目标
       xy_goal_tolerance: 0.25
-      # 停止判定速度（米/秒）：低于 0.25 米/秒判定为停止
-      trans_stopped_velocity: 0.25      
-      # 是否短路轨迹评估：True 可提前终止明显不可行的轨迹评估，节省计算
-      short_circuit_trajectory_evaluation: True
-      # 有状态模式：True 记忆上次规划状态，提升连续性
-      stateful: True      
-      # -------------------------
-      # 评分函数配置
-      # -------------------------
-      # critics 列表定义轨迹评分标准，顺序影响优先级
-      # RotateToGoal: 优先旋转到目标方向
-      # Oscillation: 惩罚震荡行为
-      # BaseObstacle: 避开障碍物
-      # GoalAlign: 保持朝向目标
-      # PathAlign: 贴合全局路径
-      # PathDist: 靠近路径
-      # GoalDist: 靠近目标点
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]      
-      # 障碍物代价权重：0.02 较低，允许靠近障碍物以通过狭窄通道
-      # 调高：更安全但可能无法通过窄道；调低：通过性好但风险高
-      BaseObstacle.scale: 0.002 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.02，略微降低避障权重以提升通过狭窄环境的能力      
-      # 路径对齐权重：32.0 高权重确保跟随全局路径
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: true
+      stateful: true
+# 轨迹评分器列表；顺序和组合会影响控制行为。
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+# 障碍物代价权重；调大更保守，调小更激进。
+      BaseObstacle.scale: 0.002
+# 路径贴合权重；调大更强调沿全局路径行驶。
       PathAlign.scale: 32.0
-      PathAlign.forward_point_distance: 0.1  # 前视距离（米）      
-      # 目标对齐权重：24.0 保持朝向目标
-      GoalAlign.scale: 300.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 300.0，保证小车优先以车头朝向目标的方式来行驶
-      GoalAlign.forward_point_distance: 0.1      
-      # 路径距离权重：32.0 高权重避免偏离路径
+      PathAlign.forward_point_distance: 0.1
+# 朝向对齐权重；调大更强调车头朝向目标。
+      GoalAlign.scale: 300.0
+      GoalAlign.forward_point_distance: 0.1
+# 路径距离权重；调大更不容易偏离规划路径。
       PathDist.scale: 32.0
-      # 目标距离权重：24.0 吸引机器人向目标移动
+# 目标距离权重；调大更积极靠近目标点。
       GoalDist.scale: 24.0
-      # 旋转到目标权重：32.0 优先调整朝向
-      RotateToGoal.scale: 300.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 300.0，保证小车优先以车头朝向目标的方式来行驶
-      RotateToGoal.slowing_factor: 5.0       # 接近目标时的减速因子
-      RotateToGoal.lookahead_time: -1.0      # -1.0 表示不使用前视时间
+# 到点转向权重；调大更强调先对正再结束。
+      RotateToGoal.scale: 300.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
 
-
-
-
-# 局部代价地图配置
+# 局部代价地图；供近场避障和局部控制使用。
 local_costmap:
   local_costmap:
     ros__parameters:
-      # 代价地图更新频率（Hz）：控制障碍物检测和地图更新的频率，20.0Hz 适合动态环境
+# 代价地图更新频率；调大刷新更快但 CPU 开销更高。
       update_frequency: 40.0
-      # 代价地图发布频率（Hz）：控制向其他节点发布地图的频率，20.0Hz 减少带宽占用
       publish_frequency: 40.0
-      # 全局坐标系：odom 坐标系用于局部规划，提供短期内相对稳定的参考
+# 局部规划参考坐标系；应与下游控制和 TF 链保持一致。
       global_frame: odom
-      # 机器人基础坐标系：机器人中心坐标系，用于坐标变换
       robot_base_frame: base_link
-      # 是否使用仿真时间：False 表示使用真实系统时间
-      use_sim_time: False
-      # 滚动窗口模式：True 表示地图随机器人移动而移动，保持机器人在中心
+      use_sim_time: false
+# 滚动窗口开关；开启后地图会跟随机器人移动。
       rolling_window: true
-      # 地图宽度（米）：局部地图覆盖机器人周围 15x15 米区域
+# 地图尺寸；调大覆盖更广，但内存和更新开销都会增加。
       width: 15
-      # 地图高度（米）：与宽度相同，形成正方形区域
       height: 15
-      # 地图分辨率（米/像素）
-      resolution: 0.02 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.02 米，提高局部地图分辨率以提升障碍物检测精度  
-      # 机器人半径（米）：用于碰撞检测，0.30 米适合小型移动机器人
-      robot_radius: 0.38625 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已修改为无人车的真实物理参数 0.38625 米，此值为无人车的最大旋转半径加上一定的安全余量所的出的值，详情请参考 doc
-      # 插件列表：使用障碍物层处理点云数据和膨胀层进行安全边界扩展
+# 地图分辨率；调小更细致，调大更省内存。
+      resolution: 0.02
+# 机器人安全半径；直接影响碰撞检测和膨胀结果。
+      robot_radius: 0.38625
+# 代价地图插件列表；决定当前地图叠加哪些层。
       plugins: ["obstacle_layer", "inflation_layer"]
-      # 膨胀层配置：在障碍物周围创建安全缓冲区
+# 膨胀层；负责给障碍物预留安全边界。
       inflation_layer:
+# 膨胀层插件；保持与当前 Nav2 版本一致。
         plugin: "nav2_costmap_2d::InflationLayer"
-        # 代价缩放因子：控制代价值随距离的衰减，值越低无人车的走位越激进，如果要过比较狭窄的地方可以尝试调高此值
-        cost_scaling_factor: 2.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 2.5，略微提高代价衰减速度，提升通过狭窄环境的能力
-        # 膨胀半径（米）：危险区域距离，这个值必要要基于 robot_radius 来设置，确保机器人有足够的安全距离，要略微大于 robot_radius 的值
-        inflation_radius: 0.4 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.4 米，略微增加安全缓冲区，确保车辆在狭窄环境下有足够的安全距离
-      # 障碍物层配置：将点云数据投影到 2D 平面进行局部规划
+# 代价衰减系数；调大衰减更快，调小更保守。
+        cost_scaling_factor: 2.5
+# 膨胀半径；应与机器人半径和安全裕量匹配。
+        inflation_radius: 0.4
+# 障碍物层；将传感器观测直接写入二维代价地图。
       obstacle_layer:
+# 障碍物层插件；保持与当前 Nav2 版本一致。
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        # 是否启用该层：True 表示启用障碍物检测
-        enabled: True
-        # 观测数据源：指定使用的传感器数据源名称
+# 障碍物层启用开关；关闭后动态障碍不会进入局部地图。
+        enabled: true
+# 观测源列表；应与下方传感器配置名称对应。
         observation_sources: pointcloud
-        # 点云数据源配置
+# 点云观测配置；负责把点云投影为局部障碍。
         pointcloud:
-          # 点云话题：订阅 FASTLIO2 发布的世界坐标系点云
+# 输入点云话题；改错会导致局部避障收不到障碍物。
           topic: /fastlio2/body_cloud
-          # 数据类型：ROS2 标准点云消息类型
+# 输入消息类型；应与传感器发布类型保持一致。
           data_type: "PointCloud2"
-          # 最大障碍物高度（米）：已调整为 1.5 米，忽略天花板上的指示牌等高处障碍物
+# 高度过滤上限；用于剔除过高障碍。
           max_obstacle_height: 1.5
-          # 最小障碍物高度（米）：低于 -0.3 米的点被视为地面或坑洼，不标记为障碍物
           min_obstacle_height: -0.3
-          # 清除标志：True 表示可以清除之前标记的障碍物
-          clearing: True
-          # 标记标志：True 表示可以标记新的障碍物
-          marking: True
-          # 障碍物最大范围（米）：8.0 米内的点会被标记为障碍物
+          clearing: true
+          marking: true
+# 障碍物标记距离；调大覆盖更远但噪点更多。
           obstacle_max_range: 15.0
-          # 障碍物最小范围（米）：0.3 米内的点被忽略，避免检测到机器人本身
           obstacle_min_range: 0.3
-          # 光线追踪最大范围（米）：10.0 米内进行空间清除操作
+# 清障光线追踪距离；调大可清更远，但计算更重。
           raytrace_max_range: 15.0
-          # 光线追踪最小范围（米）：0.0 米表示从机器人位置开始追踪
           raytrace_min_range: 0.0
-          # 无穷大值是否有效：false 表示无穷大距离值无效
           inf_is_valid: false
-          # 是否启用清除功能：true 允许清除旧的障碍物标记
           clearing_enabled: true
-          # 是否启用标记功能：true 允许标记新的障碍物
           marking_enabled: true
-      # 静态层配置：用于加载预先存在的静态地图
+# 静态层；用于加载地图服务器提供的静态障碍。
       static_layer:
+# 静态层插件；用于订阅静态地图。
         plugin: "nav2_costmap_2d::StaticLayer"
-        # 地图订阅持久化：True 表示使用 transient local QoS，可以接收延迟到达的地图消息
-        map_subscribe_transient_local: True
-      # 始终发送完整代价地图：True 表示每次发布完整地图而非增量更新，确保数据完整性
+# 地图 QoS 设置；保持 true 可接收延迟到达的地图。
+        map_subscribe_transient_local: true
+# 是否总是发送完整代价地图；开启更稳但带宽更高。
       always_send_full_costmap: false
 
-
-
-
-# 全局代价地图配置
+# 全局代价地图；供全局规划和大范围障碍表达使用。
 global_costmap:
   global_costmap:
     ros__parameters:
-      # 代价地图更新频率（Hz）：1.0Hz 适合全局地图，更新较慢以减少计算负担
+# 代价地图更新频率；调大刷新更快但 CPU 开销更高。
       update_frequency: 5.0
-      # 代价地图发布频率（Hz）：1.0Hz 与更新频率一致，保持同步
       publish_frequency: 5.0
-      # 全局坐标系：map 坐标系用于全局规划，由 PGO 提供全局一致性
+# 全局规划参考坐标系；通常保持 map。
       global_frame: map
-      # 机器人基础坐标系：机器人中心坐标系，用于坐标变换
       robot_base_frame: base_link
-      # 是否使用仿真时间：False 表示使用真实系统时间
-      use_sim_time: False
-      # 机器人半径（米）：用于碰撞检测，与局部地图保持一致
-      robot_radius: 0.38625 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已修改为无人车的真实物理参数 0.38625 米，同本地代价地图保持一致
-      # 地图分辨率（米/像素）
-      resolution: 0.02 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.02 米，提高全局地图分辨率以提升路径规划精度
-      # 追踪未知空间：true 表示记录未探索区域，用于路径规划时避开未知区域
+      use_sim_time: false
+# 机器人安全半径；应与局部代价地图保持一致。
+      robot_radius: 0.38625
+# 地图分辨率；调小更细致，调大更省内存。
+      resolution: 0.02
+# 是否记录未知区域；会直接影响全局路径是否可穿越未知空间。
       track_unknown_space: true
-      # 滚动窗口模式：true 表示地图随机器人移动，保持机器人在中心附近
+# 滚动窗口开关；开启后全局地图会跟随机器人移动。
       rolling_window: true
-      # 地图宽度（米）：全局地图覆盖 50x50 米区域，比局部地图大 10 倍
-      width: 50 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 50 米，提高全局地图覆盖范围以适应更大环境
-      # 地图高度（米）：与宽度相同，形成正方形大范围区域
-      height: 50 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 50 米，提高全局地图覆盖范围以适应更大环境
-      # 插件列表：使用障碍物层处理 2D 投影和膨胀层进行安全边界扩展
-      plugins: ["obstacle_layer", "inflation_layer"]      
-      # 膨胀层配置：在障碍物周围创建安全缓冲区
+# 地图尺寸；调大覆盖更广，但内存和更新开销都会增加。
+      width: 50
+      height: 50
+# 代价地图插件列表；决定当前地图叠加哪些层。
+      plugins: ["obstacle_layer", "inflation_layer"]
+# 膨胀层；负责给障碍物预留安全边界。
       inflation_layer:
+# 膨胀层插件；保持与当前 Nav2 版本一致。
         plugin: "nav2_costmap_2d::InflationLayer"
-        # 代价缩放因子：1.5 与局部地图一致，保持规划行为统一
-        cost_scaling_factor: 2.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 2.5，和局部代价地图保持一致
-        # 膨胀半径（米）：危险区域距离
-        inflation_radius: 0.4 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 0.4 米，和局部代价地图保持一致
-      # 障碍物层配置：将 3D 点云投影到 2D 平面进行全局规划
+# 代价衰减系数；调大衰减更快，调小更保守。
+        cost_scaling_factor: 2.5
+# 膨胀半径；应与机器人半径和安全裕量匹配。
+        inflation_radius: 0.4
+# 障碍物层；将传感器观测直接写入全局代价地图。
       obstacle_layer:
+# 障碍物层插件；保持与当前 Nav2 版本一致。
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        # 是否启用该层：True 表示启用障碍物检测
-        enabled: True
-        # 观测数据源：指定使用的传感器数据源名称
+# 障碍物层启用开关；关闭后动态障碍不会进入全局地图。
+        enabled: true
+# 观测源列表；应与下方传感器配置名称对应。
         observation_sources: pointcloud
-        # 点云数据源配置
+# 点云观测配置；负责把点云投影为全局障碍。
         pointcloud:
-          # 点云话题：订阅 FASTLIO2 发布的世界坐标系点云
-          topic: /fastlio2/body_cloud # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 调整为 body_cloud 以使用车体坐标系下的点云数据
-          # 数据类型：ROS2 标准点云消息类型
+# 输入点云话题；改错会导致全局规划收不到障碍物。
+          topic: /fastlio2/body_cloud
+# 输入消息类型；应与传感器发布类型保持一致。
           data_type: "PointCloud2"
-          # 最大障碍物高度（米）：已调整为 1.5 米，忽略天花板上的指示牌等高处障碍物
+# 高度过滤上限；用于剔除过高障碍。
           max_obstacle_height: 1.5
-          # 最小障碍物高度（米）：-0.3 米以上才标记为障碍物，过滤地面
           min_obstacle_height: -0.3
-          # 清除标志：True 表示可以清除之前标记的障碍物
-          clearing: True
-          # 标记标志：True 表示可以标记新的障碍物
-          marking: True
-          # 障碍物最大范围（米）：15.0 米内的点会被标记为障碍物，比局部地图范围大
+          clearing: true
+          marking: true
+# 障碍物标记距离；调大覆盖更远但噪点更多。
           obstacle_max_range: 50.0
-          # 障碍物最小范围（米）：0.3 米内的点被忽略，避免检测到机器人本身
           obstacle_min_range: 0.3
-          # 光线追踪最大范围（米）：20.0 米内进行空间清除操作，覆盖更大区域
+# 清障光线追踪距离；调大可清更远，但计算更重。
           raytrace_max_range: 50.0
-          # 光线追踪最小范围（米）：0.0 米表示从机器人位置开始追踪
           raytrace_min_range: 0.0
-          # 无穷大值是否有效：false 表示无穷大距离值无效
           inf_is_valid: false
-          # 是否启用清除功能：true 允许清除旧的障碍物标记
           clearing_enabled: true
-          # 是否启用标记功能：true 允许标记新的障碍物
           marking_enabled: true
-      # 始终发送完整代价地图：True 表示每次发布完整地图而非增量更新，确保全局规划器获得完整信息
+# 是否总是发送完整代价地图；开启更稳但带宽更高。
       always_send_full_costmap: false
 
-
-
-
+# 地图服务；负责加载静态地图文件。
 map_server:
   ros__parameters:
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 地图文件路径；通常由 launch 层在运行时覆盖。
     yaml_filename: ""
 
-
-
-
+# 地图保存服务；用于导出当前地图。
 map_saver:
   ros__parameters:
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 地图保存超时；调大可容纳更慢的磁盘写入。
     save_map_timeout: 5.0
+# 空闲栅格阈值；影响导出地图时的空白判定。
     free_thresh_default: 0.25
+# 占用栅格阈值；影响导出地图时的障碍判定。
     occupied_thresh_default: 0.65
-    map_subscribe_transient_local: True
+# 地图 QoS 设置；保持 true 可接收延迟到达的地图。
+    map_subscribe_transient_local: true
 
-
-
-
+# 全局规划服务；负责生成从起点到目标点的全局路径。
 planner_server:
   ros__parameters:
+# TF 容忍时间；仅在该模式文件里启用时生效。
     transform_tolerance: 0.5
+# 规划频率期望值；用于监控规划线程是否掉速。
     expected_planner_frequency: 20.0
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 规划器列表；当前主线使用 NavFn 规划。
     planner_plugins: ["GridBased"]
+# 全局规划器参数；影响路径生成策略。
     GridBased:
+# 规划器插件；保持与当前 Nav2 版本一致。
       plugin: "nav2_navfn_planner/NavfnPlanner"
+# 目标容忍半径；调大更宽松，调小更严格。
       tolerance: 0.5
+# 是否启用 A*；关闭时使用 NavFn 默认搜索策略。
       use_astar: false
+# 是否允许穿越未知区域；会直接影响全局路径可达性。
       allow_unknown: true
 
-
-
-
+# 路径平滑服务；用于优化规划路径的可执行性。
 smoother_server:
   ros__parameters:
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 平滑器列表；决定路径后处理策略。
     smoother_plugins: ["simple_smoother"]
+# Simple Smoother 参数；影响路径平滑程度和迭代次数。
     simple_smoother:
+# 平滑器插件；保持与当前 Nav2 版本一致。
       plugin: "nav2_smoother::SimpleSmoother"
+# 平滑收敛阈值；调小更严格，调大更快停止。
       tolerance: 1.0e-10
+# 最大迭代次数；调大更充分但耗时更长。
       max_its: 1000
-      do_refinement: True
+# 是否做细化；开启后路径更平滑但计算更重。
+      do_refinement: true
 
-
-
-
+# 恢复行为服务；负责原地转向、后退和等待等动作。
 behavior_server:
   ros__parameters:
+# 恢复行为使用的代价地图输入；改错会导致行为节点拿不到环境信息。
     costmap_topic: local_costmap/costmap_raw
+# 恢复行为使用的足迹输入；改错会导致碰撞检查失真。
     footprint_topic: local_costmap/published_footprint
+# 恢复行为循环频率；调大响应更快但 CPU 开销更高。
     cycle_frequency: 10.0
+# 恢复行为列表；决定可用的恢复动作集合。
     behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+# 原地转向行为；用于狭窄区域重新定向。
     spin:
       plugin: "nav2_behaviors/Spin"
+# 后退行为；用于脱离局部卡死。
     backup:
       plugin: "nav2_behaviors/BackUp"
+# 定向直行行为；用于短距离脱困。
     drive_on_heading:
       plugin: "nav2_behaviors/DriveOnHeading"
+# 等待行为；用于短时阻塞场景。
     wait:
       plugin: "nav2_behaviors/Wait"
+# 辅助遥控行为；用于人工接管下的安全移动。
     assisted_teleop:
       plugin: "nav2_behaviors/AssistedTeleop"
+# 恢复行为参考坐标系；应与局部控制链保持一致。
     global_frame: odom
     robot_base_frame: base_link
+# TF 容忍时间；调大更宽松，调小更严格。
     transform_tolerance: 0.1
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 前向模拟时长；影响恢复动作的碰撞预判。
     simulate_ahead_time: 2.0
-    max_rotational_vel: 1.0 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 1.0 弧度/秒，和 controller_server 中的 max_vel_theta 保持一致
+# 恢复动作最大角速度；调大转向更快但也更激进。
+    max_rotational_vel: 1.0
     min_rotational_vel: 0.4
-    rotational_acc_lim: 3.5 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 已调整为 3.5 弧度/秒，和 controller_server 中的 acc_lim_theta 保持一致
+# 恢复动作角加速度；调大响应更快但也更激进。
+    rotational_acc_lim: 3.5
 
-
-
-
+# 机器人状态发布器；保持基础 URDF 和 TF 参数一致。
 robot_state_publisher:
   ros__parameters:
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
 
-
-
-
+# 航点跟随器；控制多目标点任务的执行策略。
 waypoint_follower:
   ros__parameters:
-    use_sim_time: False
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 航点执行循环频率；调大响应更快但线程负载更高。
     loop_rate: 20
+# 失败即停开关；开启后任一航点失败都会中断任务。
     stop_on_failure: false
+# 航点任务执行器入口；决定到点后的附加动作。
     waypoint_task_executor_plugin: "wait_at_waypoint"
+# 到点等待任务；用于在每个航点执行固定停留。
     wait_at_waypoint:
+# 航点任务插件；保持与当前 Nav2 版本一致。
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
-      enabled: True
+# 是否启用到点等待；关闭后到点立即继续下一个航点。
+      enabled: true
+# 到点等待时长；调大可留更多稳定时间。
       waypoint_pause_duration: 200
 
-
-
-
-# =====================================================
-# 速度平滑器配置
-# =====================================================
-# velocity_smoother 负责平滑速度指令，避免突变造成机器人抖动或打滑
+# 速度平滑器；用于限制速度突变并降低控制抖动。
 velocity_smoother:
   ros__parameters:
-    # 是否使用仿真时间：False 表示使用真实系统时间
-    use_sim_time: False
-    # 平滑处理频率（Hz）：20Hz 提供足够的控制精度，平衡响应性和计算负担
+# 是否使用仿真时间；实车环境通常保持 false。
+    use_sim_time: false
+# 速度平滑频率；调大响应更快但输出更敏感。
     smoothing_frequency: 20.0
-    # 是否缩放速度：False 表示不进行速度归一化处理
-    scale_velocities: False
-    # 反馈模式：OPEN_LOOP 表示开环控制，不使用里程计反馈
-    feedback: "OPEN_LOOP" # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 改动成 OPEN_LOOP 模式，暂时不开启闭环控制模式
-    # 最大速度限制 [x, y, theta]（米/秒，米/秒，弧度/秒）：限制输出速度的上限
-    max_velocity: [0.5, 0.0, 1.0] # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 首个参数已调整为 0.5 米/秒，和 controller_server 中的 max_vel_x 保持一致
-    # 最小速度限制 [x, y, theta]（米/秒，米/秒，弧度/秒）：限制输出速度的下限，负值表示可后退
-    min_velocity: [0.0, 0.0, -1.0] # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 首个参数已调整为 -0.0 米/秒，与 controller_server 中的 min_vel_x 保持一致，允许以相同速度倒退
-    # 最大加速度限制 [x, y, theta]（米/秒²，米/秒²，弧度/秒²）：限制速度变化率，避免急加速
-    max_accel: [3.0, 0.0, 3.5] # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 同步 control_server 中的设置，已调整为 [3.0, 0.0, 3.5]，略微提高加速响应速度
-    # 最大减速度限制 [x, y, theta]（米/秒²，米/秒²，弧度/秒²）：限制刹车速率，避免急停
-    max_decel: [-3.0, 0.0, -3.5] # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 同步 control_server 中的设置，已调整为 [-3.0, 0.0, -3.5]，略微提高减速响应速度
-    # 里程计话题：订阅的里程计数据源，用于闭环反馈（当 feedback 为 CLOSED_LOOP 时使用）
-    # 当前为 OPEN_LOOP 模式，此参数不生效
-    odom_topic: "odom_CBoar" # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 配置为底层 C 板的里程计数据
-    # 里程计数据有效时长（秒）：超过 0.1 秒的里程计数据视为过期
+# 是否缩放速度向量；开启后会按比例压缩三轴指令。
+    scale_velocities: false
+# 反馈模式；决定开环还是闭环平滑。
+    feedback: "OPEN_LOOP"
+# 速度上限；应与控制器输出能力保持一致。
+    max_velocity: [0.5, 0.0, 1.0]
+    min_velocity: [0.0, 0.0, -1.0]
+# 加速度上限；用于限制速度变化斜率。
+    max_accel: [3.0, 0.0, 3.5]
+    max_decel: [-3.0, 0.0, -3.5]
+# 反馈里程计话题；仅在闭环模式下真正使用。
+    odom_topic: "odom_CBoar"
+# 里程计有效时长；过期反馈会被视为无效。
     odom_duration: 0.1
-    # 死区速度 [x, y, theta]（米/秒，米/秒，弧度/秒）：低于此值的速度指令会被置零，避免微小抖动
     deadband_velocity: [0.0, 0.0, 0.0]
-    # 速度指令超时时间（秒）：超过 1.0 秒未收到新指令则停止输出，防止失控
+# 速度指令超时；超时后会输出停车指令。
     velocity_timeout: 1.0
