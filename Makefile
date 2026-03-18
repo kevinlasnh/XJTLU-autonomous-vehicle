@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-travel kill clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -43,16 +43,16 @@ test:
 	colcon test && colcon test-result --verbose
 
 launch-slam:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_slam.launch.py
+	bash scripts/launch_with_logs.sh slam
 
 launch-explore:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_explore.launch.py
+	bash scripts/launch_with_logs.sh explore
+
+launch-explore-gps:
+	bash scripts/launch_with_logs.sh explore-gps
 
 launch-travel:
-	source /opt/ros/humble/setup.bash && source install/setup.bash && \
-	ros2 launch bringup system_travel.launch.py
+	bash scripts/launch_with_logs.sh travel
 
 kill:
 	pkill -f ros2 || true

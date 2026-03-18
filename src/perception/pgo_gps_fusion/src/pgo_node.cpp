@@ -17,6 +17,8 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <queue>
 #include <filesystem>
+#include <algorithm>
+#include <cmath>
 // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 相关头文件
 #include <sensor_msgs/msg/nav_sat_fix.hpp>  // GPS 数据消息类型
 #include <GeographicLib/LocalCartesian.hpp> // GPS 坐标转换库
@@ -71,25 +73,56 @@ bool ensureDirectory(const std::string& directory) {
     }
     return true;
 }
+
+std::string getSessionLogPath(const std::string& filename, const std::string& fallback_subdir) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::string dir(session_dir);
+        ensureDirectory(dir);
+        return dir + "/" + filename;
+    }
+
+    std::string dir = getRuntimePath(fallback_subdir);
+    ensureDirectory(dir);
+
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_time);
+
+    std::ostringstream ss;
+    ss << dir << "/log_"
+       << (now_tm->tm_year + 1900)
+       << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+       << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+       << "_"
+       << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+       << std::setw(2) << std::setfill('0') << now_tm->tm_min
+       << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+       << ".txt";
+    return ss.str();
+}
 }
 
 using namespace std::chrono_literals;
 
 struct NodeConfig
 {
-    std::string cloud_topic = "/lio/body_cloud";
-    std::string odom_topic = "/lio/odom";
+    std::string cloud_topic = "/fastlio2/body_cloud";
+    std::string odom_topic = "/fastlio2/lio_odom";
     std::string map_frame = "map";
-    std::string local_frame = "lidar";
+    std::string local_frame = "odom";
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
     std::string gps_topic = "/gnss";              // GPS 话题名称
     bool enable_gps = true;                        // GPS 功能启用开关
-    double gps_noise_xy = 0.5;                     // GPS 水平噪声（米）
-    double gps_noise_z = 2.0;                      // GPS 垂直噪声（米）
+    double gps_noise_xy = 2.5;                     // GPS 水平噪声（米）
+    double gps_noise_z = 5.0;                      // GPS 垂直噪声（米）
     int gps_factor_interval = 10;                  // 每 N 个关键帧添加 GPS 因子
     double gps_quality_hdop_max = 3.0;             // 最大 HDOP 阈值
     int gps_quality_sat_min = 6;                   // 最小卫星数量
+    double gps_drift_threshold = 2.0;              // 漂移检测阈值（米）
+    int gps_alert_interval = 3;                    // 漂移预警间隔
+    int gps_emergency_interval = 1;                // 严重漂移间隔
     // ✅ GPS 融合修改结束 - NodeConfig 扩展完成
 };
 
@@ -97,7 +130,7 @@ struct NodeState
 {
     std::mutex message_mutex;
     std::queue<CloudWithPose> cloud_buffer;
-    double last_message_time;
+    double last_message_time = 0.0;  // Initialize monotonic sync state so the first matched pair is accepted.
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 状态变量
     std::queue<sensor_msgs::msg::NavSatFix::ConstSharedPtr> gps_buffer;  // GPS 数据缓存队列
@@ -118,31 +151,14 @@ public:
         bool enable_log = shouldEnableLogging("pgo_node");
         
         if (enable_log) {
-            auto now = std::chrono::system_clock::now();
-            std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-            std::tm* now_tm = std::localtime(&now_time);
-
-            std::string log_dir = getRuntimePath("logs/pgo");
-            ensureDirectory(log_dir);
-
-            std::ostringstream filename_stream;
-            filename_stream << log_dir << "/log_"
-                            << (now_tm->tm_year + 1900)  // 年份
-                            << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1) // 月份
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_mday // 日期
-                            << "_"
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_hour // 小时
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_min // 分钟
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_sec // 秒
-                            << ".txt"; // 文件扩展名
-
-            m_log_file.open(filename_stream.str(), std::ios::app);
+            std::string log_path = getSessionLogPath("pgo.log", "logs/pgo");
+            m_log_file.open(log_path, std::ios::app);
 
             if (!m_log_file.is_open()) {
                 RCLCPP_ERROR(this->get_logger(), "Unable to open log file");
                 throw std::runtime_error("Unable to open log file");
             } else {
-                RCLCPP_INFO(this->get_logger(), "Logging enabled: %s", filename_stream.str().c_str());
+                RCLCPP_INFO(this->get_logger(), "Logging enabled: %s", log_path.c_str());
             }
         } else {
             RCLCPP_INFO(this->get_logger(), "Logging disabled by config");
@@ -155,6 +171,7 @@ public:
         m_cloud_sub.subscribe(this, m_node_config.cloud_topic, qos.get_rmw_qos_profile());
         m_odom_sub.subscribe(this, m_node_config.odom_topic, qos.get_rmw_qos_profile());
         m_loop_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/pgo/loop_markers", 10000);
+        m_optimized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/pgo/optimized_odom", 100);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
         m_sync = std::make_shared<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>>>(message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>(50), m_cloud_sub, m_odom_sub);  // 同步器队列从 10 增加到 50
         m_sync->setAgePenalty(1.0);  // 时间容忍度从 0.1 增加到 1.0
@@ -230,89 +247,197 @@ public:
 
     void loadParameters()
     {
-        this->declare_parameter("config_path", "");
-        std::string config_path;
-        this->get_parameter<std::string>("config_path", config_path);
+        const std::string config_path = this->declare_parameter<std::string>("config_path", "");
+
+        m_node_config.cloud_topic = this->declare_parameter<std::string>("cloud_topic", "/fastlio2/body_cloud");
+        m_node_config.odom_topic = this->declare_parameter<std::string>("odom_topic", "/fastlio2/lio_odom");
+        m_node_config.map_frame = this->declare_parameter<std::string>("map_frame", "map");
+        m_node_config.local_frame = this->declare_parameter<std::string>("local_frame", "odom");
+
+        m_pgo_config.key_pose_delta_deg = this->declare_parameter<double>("key_pose_delta_deg", 5.0);
+        m_pgo_config.key_pose_delta_trans = this->declare_parameter<double>("key_pose_delta_trans", 0.1);
+        m_pgo_config.loop_search_radius = this->declare_parameter<double>("loop_search_radius", 1.0);
+        m_pgo_config.loop_time_tresh = this->declare_parameter<double>("loop_time_tresh", 60.0);
+        m_pgo_config.loop_score_tresh = this->declare_parameter<double>("loop_score_tresh", 0.15);
+        m_pgo_config.loop_submap_half_range = this->declare_parameter<int>("loop_submap_half_range", 5);
+        m_pgo_config.submap_resolution = this->declare_parameter<double>("submap_resolution", 0.1);
+        m_pgo_config.min_loop_detect_duration = this->declare_parameter<double>("min_loop_detect_duration", 5.0);
+
+        m_node_config.enable_gps = this->declare_parameter<bool>("gps.enable", true);
+        m_node_config.gps_topic = this->declare_parameter<std::string>("gps.topic", "/gnss");
+        m_node_config.gps_noise_xy = this->declare_parameter<double>("gps.noise_xy", 2.5);
+        m_node_config.gps_noise_z = this->declare_parameter<double>("gps.noise_z", 5.0);
+        m_node_config.gps_factor_interval = this->declare_parameter<int>("gps.factor_interval", 10);
+        m_node_config.gps_quality_hdop_max = this->declare_parameter<double>("gps.quality_hdop_max", 3.0);
+        m_node_config.gps_quality_sat_min = this->declare_parameter<int>("gps.quality_sat_min", 6);
+        m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", 2.0);
+        m_node_config.gps_alert_interval = this->declare_parameter<int>("gps.alert_interval", 3);
+        m_node_config.gps_emergency_interval = this->declare_parameter<int>("gps.emergency_interval", 1);
+
+        if (!config_path.empty())
+        {
+            loadLegacyConfig(config_path);
+            syncParametersToRos();
+        }
+
+        RCLCPP_INFO(this->get_logger(), "GPS config loaded: interval=%d, noise_xy=%.2f",
+                    m_node_config.gps_factor_interval, m_node_config.gps_noise_xy);
+    }
+
+    void loadLegacyConfig(const std::string &config_path)
+    {
         YAML::Node config = YAML::LoadFile(config_path);
         if (!config)
         {
-            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE!");
+            RCLCPP_WARN(this->get_logger(), "FAIL TO LOAD YAML FILE: %s", config_path.c_str());
             return;
         }
-        RCLCPP_INFO(this->get_logger(), "LOAD FROM YAML CONFIG PATH: %s", config_path.c_str());
-        m_node_config.cloud_topic = config["cloud_topic"].as<std::string>();
-        m_node_config.odom_topic = config["odom_topic"].as<std::string>();
-        m_node_config.map_frame = config["map_frame"].as<std::string>();
-        m_node_config.local_frame = config["local_frame"].as<std::string>();
 
-        m_pgo_config.key_pose_delta_deg = config["key_pose_delta_deg"].as<double>();
-        m_pgo_config.key_pose_delta_trans = config["key_pose_delta_trans"].as<double>();
-        m_pgo_config.loop_search_radius = config["loop_search_radius"].as<double>();
-        m_pgo_config.loop_time_tresh = config["loop_time_tresh"].as<double>();
-        m_pgo_config.loop_score_tresh = config["loop_score_tresh"].as<double>();
-        m_pgo_config.loop_submap_half_range = config["loop_submap_half_range"].as<int>();
-        m_pgo_config.submap_resolution = config["submap_resolution"].as<double>();
-        m_pgo_config.min_loop_detect_duration = config["min_loop_detect_duration"].as<double>();
-        
-        // ✅ GPS 融合修改开始 - 2025/12/01 - 加载 GPS 配置参数
-        if (config["gps"]) {
-            m_node_config.enable_gps = config["gps"]["enable"].as<bool>();
-            m_node_config.gps_topic = config["gps"]["topic"].as<std::string>();
-            m_node_config.gps_noise_xy = config["gps"]["noise_xy"].as<double>();
-            m_node_config.gps_noise_z = config["gps"]["noise_z"].as<double>();
-            m_node_config.gps_factor_interval = config["gps"]["factor_interval"].as<int>();
-            m_node_config.gps_quality_hdop_max = config["gps"]["quality_hdop_max"].as<double>();
-            m_node_config.gps_quality_sat_min = config["gps"]["quality_sat_min"].as<int>();
-            
-            RCLCPP_INFO(this->get_logger(), "GPS config loaded: interval=%d, noise_xy=%.2f", 
-                        m_node_config.gps_factor_interval, m_node_config.gps_noise_xy);
+        RCLCPP_INFO(this->get_logger(), "LOAD FROM LEGACY YAML CONFIG PATH: %s", config_path.c_str());
+
+        if (config["cloud_topic"])
+            m_node_config.cloud_topic = config["cloud_topic"].as<std::string>();
+        if (config["odom_topic"])
+            m_node_config.odom_topic = config["odom_topic"].as<std::string>();
+        if (config["map_frame"])
+            m_node_config.map_frame = config["map_frame"].as<std::string>();
+        if (config["local_frame"])
+            m_node_config.local_frame = config["local_frame"].as<std::string>();
+
+        if (config["key_pose_delta_deg"])
+            m_pgo_config.key_pose_delta_deg = config["key_pose_delta_deg"].as<double>();
+        if (config["key_pose_delta_trans"])
+            m_pgo_config.key_pose_delta_trans = config["key_pose_delta_trans"].as<double>();
+        if (config["loop_search_radius"])
+            m_pgo_config.loop_search_radius = config["loop_search_radius"].as<double>();
+        if (config["loop_time_tresh"])
+            m_pgo_config.loop_time_tresh = config["loop_time_tresh"].as<double>();
+        if (config["loop_score_tresh"])
+            m_pgo_config.loop_score_tresh = config["loop_score_tresh"].as<double>();
+        if (config["loop_submap_half_range"])
+            m_pgo_config.loop_submap_half_range = config["loop_submap_half_range"].as<int>();
+        if (config["submap_resolution"])
+            m_pgo_config.submap_resolution = config["submap_resolution"].as<double>();
+        if (config["min_loop_detect_duration"])
+            m_pgo_config.min_loop_detect_duration = config["min_loop_detect_duration"].as<double>();
+
+        if (config["gps"])
+        {
+            if (config["gps"]["enable"])
+                m_node_config.enable_gps = config["gps"]["enable"].as<bool>();
+            if (config["gps"]["topic"])
+                m_node_config.gps_topic = config["gps"]["topic"].as<std::string>();
+            if (config["gps"]["noise_xy"])
+                m_node_config.gps_noise_xy = config["gps"]["noise_xy"].as<double>();
+            if (config["gps"]["noise_z"])
+                m_node_config.gps_noise_z = config["gps"]["noise_z"].as<double>();
+            if (config["gps"]["factor_interval"])
+                m_node_config.gps_factor_interval = config["gps"]["factor_interval"].as<int>();
+            if (config["gps"]["quality_hdop_max"])
+                m_node_config.gps_quality_hdop_max = config["gps"]["quality_hdop_max"].as<double>();
+            if (config["gps"]["quality_sat_min"])
+                m_node_config.gps_quality_sat_min = config["gps"]["quality_sat_min"].as<int>();
+            if (config["gps"]["drift_threshold"])
+                m_node_config.gps_drift_threshold = config["gps"]["drift_threshold"].as<double>();
+            if (config["gps"]["alert_interval"])
+                m_node_config.gps_alert_interval = config["gps"]["alert_interval"].as<int>();
+            if (config["gps"]["emergency_interval"])
+                m_node_config.gps_emergency_interval = config["gps"]["emergency_interval"].as<int>();
         }
-        // ✅ GPS 融合修改结束 - GPS 参数加载完成
+    }
+
+    void syncParametersToRos()
+    {
+        this->set_parameters({
+            rclcpp::Parameter("cloud_topic", m_node_config.cloud_topic),
+            rclcpp::Parameter("odom_topic", m_node_config.odom_topic),
+            rclcpp::Parameter("map_frame", m_node_config.map_frame),
+            rclcpp::Parameter("local_frame", m_node_config.local_frame),
+            rclcpp::Parameter("key_pose_delta_deg", m_pgo_config.key_pose_delta_deg),
+            rclcpp::Parameter("key_pose_delta_trans", m_pgo_config.key_pose_delta_trans),
+            rclcpp::Parameter("loop_search_radius", m_pgo_config.loop_search_radius),
+            rclcpp::Parameter("loop_time_tresh", m_pgo_config.loop_time_tresh),
+            rclcpp::Parameter("loop_score_tresh", m_pgo_config.loop_score_tresh),
+            rclcpp::Parameter("loop_submap_half_range", m_pgo_config.loop_submap_half_range),
+            rclcpp::Parameter("submap_resolution", m_pgo_config.submap_resolution),
+            rclcpp::Parameter("min_loop_detect_duration", m_pgo_config.min_loop_detect_duration),
+            rclcpp::Parameter("gps.enable", m_node_config.enable_gps),
+            rclcpp::Parameter("gps.topic", m_node_config.gps_topic),
+            rclcpp::Parameter("gps.noise_xy", m_node_config.gps_noise_xy),
+            rclcpp::Parameter("gps.noise_z", m_node_config.gps_noise_z),
+            rclcpp::Parameter("gps.factor_interval", m_node_config.gps_factor_interval),
+            rclcpp::Parameter("gps.quality_hdop_max", m_node_config.gps_quality_hdop_max),
+            rclcpp::Parameter("gps.quality_sat_min", m_node_config.gps_quality_sat_min),
+            rclcpp::Parameter("gps.drift_threshold", m_node_config.gps_drift_threshold),
+            rclcpp::Parameter("gps.alert_interval", m_node_config.gps_alert_interval),
+            rclcpp::Parameter("gps.emergency_interval", m_node_config.gps_emergency_interval),
+        });
     }
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 GPS 回调函数
     void gpsCB(const sensor_msgs::msg::NavSatFix::ConstSharedPtr &gps_msg)
     {
         std::lock_guard<std::mutex> lock(m_state.message_mutex);
-        
-        // GPS 质量检查
-        if (gps_msg->status.status < 0) {  // GPS 无效
+
+        if (gps_msg->status.status < 0) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
                                  "GPS status invalid, skipping");
             return;
         }
-        
+
+        if (!std::isfinite(gps_msg->latitude) || !std::isfinite(gps_msg->longitude) ||
+            !std::isfinite(gps_msg->altitude)) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS sample contains non-finite values, skipping");
+            return;
+        }
+
+        if (gps_msg->position_covariance_type == sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_UNKNOWN) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS covariance type unknown, skipping");
+            return;
+        }
+
+        const double horizontal_variance = std::max(gps_msg->position_covariance[0], gps_msg->position_covariance[4]);
+        const double variance_limit = std::pow(m_node_config.gps_noise_xy * m_node_config.gps_quality_hdop_max, 2.0);
+        if (!std::isfinite(horizontal_variance) || horizontal_variance > variance_limit) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS covariance too large (%.3f > %.3f), skipping",
+                                 horizontal_variance, variance_limit);
+            return;
+        }
+
         // 设置原点（仅第一次）
         if (!m_state.gps_origin_set) {
             m_state.origin_lat = gps_msg->latitude;
             m_state.origin_lon = gps_msg->longitude;
             m_state.origin_alt = gps_msg->altitude;
             m_state.gps_origin_set = true;
-            
+
             // 初始化坐标转换器
             m_geo_converter = std::make_shared<GeographicLib::LocalCartesian>(
                 m_state.origin_lat, m_state.origin_lon, m_state.origin_alt
             );
-            
-            RCLCPP_INFO(this->get_logger(), 
-                        "GPS origin set: lat=%.8f, lon=%.8f, alt=%.2f", 
+
+            RCLCPP_INFO(this->get_logger(),
+                        "GPS origin set: lat=%.8f, lon=%.8f, alt=%.2f",
                         m_state.origin_lat, m_state.origin_lon, m_state.origin_alt);
         }
-        
+
         // 缓存 GPS 数据
         m_state.gps_buffer.push(gps_msg);
-        
+
         // 限制队列大小
         while (m_state.gps_buffer.size() > 50) {
             m_state.gps_buffer.pop();
         }
-        
+
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
             int64_t ros_timestamp = ros_time.nanoseconds();
-            m_log_file << "ROS_timestamp: " << ros_timestamp 
-                      << ", GPS received: lat=" << gps_msg->latitude 
-                      << ", lon=" << gps_msg->longitude 
+            m_log_file << "ROS_timestamp: " << ros_timestamp
+                      << ", GPS received: lat=" << gps_msg->latitude
+                      << ", lon=" << gps_msg->longitude
                       << ", status=" << (int)gps_msg->status.status << std::endl;
             m_log_file.flush();
         }
@@ -407,6 +532,32 @@ public:
         m_tf_broadcaster->sendTransform(transformStamped);
     }
 
+    void publishOptimizedOdom(const CloudWithPose &cp, builtin_interfaces::msg::Time &time)
+    {
+        if (!m_optimized_odom_pub)
+            return;
+
+        nav_msgs::msg::Odometry odom;
+        odom.header.stamp = time;
+        odom.header.frame_id = m_node_config.map_frame;
+        odom.child_frame_id = "base_link";
+
+        Eigen::Matrix3d r_global = m_pgo->offsetR() * cp.pose.r;
+        V3D t_global = m_pgo->offsetR() * cp.pose.t + m_pgo->offsetT();
+        Eigen::Quaterniond q(r_global);
+        q.normalize();
+
+        odom.pose.pose.position.x = t_global.x();
+        odom.pose.pose.position.y = t_global.y();
+        odom.pose.pose.position.z = t_global.z();
+        odom.pose.pose.orientation.x = q.x();
+        odom.pose.pose.orientation.y = q.y();
+        odom.pose.pose.orientation.z = q.z();
+        odom.pose.pose.orientation.w = q.w();
+
+        m_optimized_odom_pub->publish(odom);
+    }
+
     void publishLoopMarkers(builtin_interfaces::msg::Time &time)
     {
         if (m_loop_marker_pub->get_subscription_count() == 0)
@@ -490,6 +641,7 @@ public:
         if (!is_key_pose)
         {
             sendBroadCastTF(cur_time);
+            publishOptimizedOdom(cp, cur_time);
             return;
         }
 
@@ -531,6 +683,7 @@ public:
         m_pgo->smoothAndUpdate();
 
         sendBroadCastTF(cur_time);
+        publishOptimizedOdom(cp, cur_time);
 
         publishLoopMarkers(cur_time);
     }
@@ -673,6 +826,7 @@ private:
     std::shared_ptr<SimplePGO> m_pgo;
     rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_loop_marker_pub;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_optimized_odom_pub;
     rclcpp::Service<interface::srv::SaveMaps>::SharedPtr m_save_map_srv;
     message_filters::Subscriber<sensor_msgs::msg::PointCloud2> m_cloud_sub;
     message_filters::Subscriber<nav_msgs::msg::Odometry> m_odom_sub;

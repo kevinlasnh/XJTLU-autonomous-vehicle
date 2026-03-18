@@ -19,7 +19,7 @@ min_loop_detect_duration: 5.0
 # ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
 # GPS 配置
 gps:
-  enable: true                    # 是否启用 GPS 因子
+  enable: false                   # 是否启用 GPS 因子
   topic: /gnss                    # GPS 话题名称（默认使用校准后的 /gnss）
   noise_xy: 2.5                   # 水平基础噪声（米）
   noise_z: 5.0                    # 垂直基础噪声（米）

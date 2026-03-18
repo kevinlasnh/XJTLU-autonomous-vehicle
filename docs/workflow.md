@@ -76,6 +76,77 @@ main (受保护，需 PR + Review)
 └── experiment/xxx 实验性改动
 ```
 
+### 3.1.1 铁律：绝对不在 main 上直接改代码
+
+**开机第一件事**:
+On branch feature/unified-params
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   src/bringup/launch/system_explore.launch.py
+	modified:   src/bringup/launch/system_explore_gps.launch.py
+	modified:   src/bringup/launch/system_slam.launch.py
+	modified:   src/bringup/launch/system_travel.launch.py
+	modified:   src/perception/fastlio2/launch/lio_no_rviz.py
+	modified:   src/perception/fastlio2/src/lio_node.cpp
+	modified:   src/perception/pgo_gps_fusion/launch/pgo_launch.py
+	modified:   src/perception/pgo_gps_fusion/src/pgo_node.cpp
+	modified:   src/sensor_drivers/gnss/gnss_calibration/launch/gnss_calibration_launch.py
+	modified:   src/sensor_drivers/gnss/nmea_navsat_driver/launch/nmea_serial_driver.launch.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	 2
+	src/bringup/config/master_params.yaml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+  feature/gps-factor
+* feature/unified-params
+  main
+
+如果发现当前在 main 分支且有未提交的改动:
+Saved working directory and index state WIP on unified-params: 224ef1e Document persistent service shutdown validation
+On branch feature/你的功能
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   src/bringup/launch/system_explore.launch.py
+	modified:   src/bringup/launch/system_explore_gps.launch.py
+	modified:   src/bringup/launch/system_slam.launch.py
+	modified:   src/bringup/launch/system_travel.launch.py
+	modified:   src/perception/fastlio2/launch/lio_no_rviz.py
+	modified:   src/perception/fastlio2/src/lio_node.cpp
+	modified:   src/perception/pgo_gps_fusion/launch/pgo_launch.py
+	modified:   src/perception/pgo_gps_fusion/src/pgo_node.cpp
+	modified:   src/sensor_drivers/gnss/gnss_calibration/launch/gnss_calibration_launch.py
+	modified:   src/sensor_drivers/gnss/nmea_navsat_driver/launch/nmea_serial_driver.launch.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	 2
+	src/bringup/config/master_params.yaml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (469d112ba1ce03eea871ea16faa6539e6b39daf6)
+
+**为什么**: 车上的代码仓就是生产环境。main 是所有人共用的稳定版本。在 main 上直接改代码，别人不知道你改了什么，出 bug 没法回滚，测试结果不可复现。
+
+**即使只是试一下也要开分支。** experiment/xxx 分支就是干这个的。
+
+### 3.1.2 学弟开发完整流程
+
+1. SSH 到车上
+2. 开机检查（每次必做）: git status + git checkout main + git pull
+3. 创建分支: git checkout -b feature/你的功能名
+4. 开发 + colcon build + 实车测试（必须有人在旁边随时急停）
+5. 测试通过后: git add 具体文件 + git commit
+6. git push -u origin feature/你的功能名
+7. GitHub 上创建 PR，必须填写: 改了什么、为什么、怎么测的、影响哪些层
+8. 等 Kevin Review，按反馈修改后再 push
+9. Kevin 合并
+
+**测试完觉得没问题 ≠ 真的没问题。** PR 里没写怎么测的一律打回。
+
 ### 3.2 标准开发流程
 
 ```

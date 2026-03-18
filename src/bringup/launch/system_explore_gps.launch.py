@@ -1,26 +1,21 @@
 import os
 
-import launch
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    """
-    Explore 模式 launch 文件（导航专用）
-
-    启动顺序：
-    1. 同时启动：Livox MID360 激光雷达、PGO(FASTLIO2+SLAM)+RViz、串口控制节点
-    2. 启动 Nav2 导航系统（延时 5 秒）
-    """
-
     bringup_share = get_package_share_directory("bringup")
-    master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
+    default_master_params = os.path.join(bringup_share, "config", "master_params.yaml")
+
+    params_file = LaunchConfiguration("params_file")
+    pgo_config = LaunchConfiguration("pgo_config")
+    use_rviz = LaunchConfiguration("use_rviz")
 
     livox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -36,6 +31,21 @@ def generate_launch_description():
         )
     )
 
+    gnss_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("gnss_calibration"),
+                        "launch",
+                        "gnss_calibration_launch.py",
+                    ]
+                )
+            ]
+        ),
+        launch_arguments={"params_file": params_file}.items(),
+    )
+
     pgo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
@@ -44,7 +54,11 @@ def generate_launch_description():
                 )
             ]
         ),
-        launch_arguments={"params_file": master_params_file}.items(),
+        launch_arguments={
+            "params_file": params_file,
+            "pgo_config": pgo_config,
+            "use_rviz": use_rviz,
+        }.items(),
     )
 
     serial_node = launch_ros.actions.Node(
@@ -52,7 +66,7 @@ def generate_launch_description():
         executable="serial_twistctl_node",
         name="serial_twistctl_node",
         output="screen",
-        parameters=[master_params_file],
+        parameters=[params_file],
     )
 
     serial_reader_node = launch_ros.actions.Node(
@@ -60,7 +74,7 @@ def generate_launch_description():
         executable="serial_reader_node",
         name="serial_reader_node",
         output="screen",
-        parameters=[master_params_file],
+        parameters=[params_file],
     )
 
     nav2_launch = IncludeLaunchDescription(
@@ -81,7 +95,23 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "params_file",
+                default_value=default_master_params,
+                description="Unified ROS2 parameter file for explore-gps mode",
+            ),
+            DeclareLaunchArgument(
+                "pgo_config",
+                default_value="",
+                description="Optional legacy PGO flat YAML override such as pgo_no_gps.yaml",
+            ),
+            DeclareLaunchArgument(
+                "use_rviz",
+                default_value="true",
+                description="Whether to launch RViz together with PGO",
+            ),
             livox_launch,
+            gnss_launch,
             pgo_launch,
             serial_node,
             serial_reader_node,

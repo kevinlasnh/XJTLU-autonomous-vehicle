@@ -50,6 +50,18 @@ def get_runtime_path(*parts):
     return get_runtime_root().joinpath(*parts)
 
 
+def get_session_log_path(filename, fallback_subdir):
+    session_dir = os.environ.get("FYP_LOG_SESSION_DIR")
+    if session_dir:
+        os.makedirs(session_dir, exist_ok=True)
+        return str(Path(session_dir) / filename)
+
+    log_dir = get_runtime_path(fallback_subdir)
+    os.makedirs(log_dir, exist_ok=True)
+    now = datetime.now()
+    return str(Path(log_dir) / f"log_{now.strftime('%Y%m%d_%H%M%S')}.txt")
+
+
 def should_enable_logging(node_key):
     """检查是否应该启用日志"""
     try:
@@ -83,17 +95,8 @@ def main(args=None):
     
     log_file = None
     if enable_log:
-        # 这里由 grok 进行了改动
-        # Create log directory if it doesn't exist
-        log_dir = get_runtime_path("logs", "nmea_navsat")
-        os.makedirs(log_dir, exist_ok=True)
+        log_filepath = get_session_log_path("nmea_navsat.log", "logs/nmea_navsat")
 
-        # Generate log filename based on current time
-        now = datetime.now()
-        log_filename = f"log_{now.year}{now.month:02d}{now.day:02d}_{now.hour:02d}{now.minute:02d}{now.second:02d}.txt"
-        log_filepath = os.path.join(log_dir, log_filename)
-
-        # Open log file
         try:
             log_file = open(log_filepath, 'a')
             driver.get_logger().info(f"Logging enabled: {log_filepath}")

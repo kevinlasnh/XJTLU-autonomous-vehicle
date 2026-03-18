@@ -16,6 +16,7 @@ from collections import deque
 # 从math模块导入radians, sin, cos, sqrt, atan2函数，用于数学计算
 from math import radians, sin, cos, sqrt, atan2
 # 导入sys模块，用于系统相关功能
+import math
 import sys
 # 导入yaml模块，用于读取配置文件
 import yaml
@@ -31,6 +32,18 @@ def get_runtime_root():
 
 def get_runtime_path(*parts):
     return get_runtime_root().joinpath(*parts)
+
+
+def get_session_log_path(filename, fallback_subdir):
+    session_dir = os.environ.get("FYP_LOG_SESSION_DIR")
+    if session_dir:
+        os.makedirs(session_dir, exist_ok=True)
+        return str(Path(session_dir) / filename)
+
+    log_dir = get_runtime_path(fallback_subdir)
+    os.makedirs(log_dir, exist_ok=True)
+    now = datetime.now()
+    return str(Path(log_dir) / f"log_{now.strftime('%Y%m%d_%H%M%S')}.txt")
 
 LOG_SWITCH_PATH = get_runtime_path("config", "log_switch.yaml")
 OFFSET_FILE_PATH = get_runtime_path("gnss", "gnss_offset.txt")
@@ -103,12 +116,7 @@ class GnssCalibrationNode(Node):
         enable_log = self.should_enable_logging("gnss_calibration_node")
         
         if enable_log:
-            # Grok 进行了改动
-            # Generate log path with timestamp
-            log_dir = get_runtime_path("logs", "gnss_calibration")
-            os.makedirs(log_dir, exist_ok=True)
-            now = datetime.now()
-            self.log_path = f"{log_dir}/log_{now.strftime('%Y%m%d_%H%M%S')}.txt"
+            self.log_path = get_session_log_path("gnss_calibration.log", "logs/gnss_calibration")
             self.get_logger().info(f'Logging enabled: {self.log_path}')
         else:
             self.log_path = None
@@ -139,11 +147,21 @@ class GnssCalibrationNode(Node):
 
     # 定义监听器回调函数，处理接收到的NavSatFix消息
     def listener_callback(self, msg):
+        if msg.status.status < 0:
+            self.get_logger().warn('GNSS status indicates no fix, skipping sample')
+            return
+
+        if not all(math.isfinite(value) for value in (msg.latitude, msg.longitude, msg.altitude)):
+            self.get_logger().warn('Invalid GNSS sample (non-finite lat/lon/alt), skipping sample')
+            return
+
         # 检查纬度和经度是否为0.0，如果是则认为是无效数据
         if msg.latitude == 0.0 and msg.longitude == 0.0:
-            # 记录警告日志，表示GNSS数据无效
             self.get_logger().warn('Invalid GNSS data')
-            # 返回，不处理无效数据
+            return
+
+        if msg.position_covariance_type == NavSatFix.COVARIANCE_TYPE_UNKNOWN:
+            self.get_logger().warn('GNSS covariance type unknown, skipping sample')
             return
 
         # 如果校准尚未完成
@@ -198,6 +216,10 @@ class GnssCalibrationNode(Node):
     def save_offsets(self):
         # 尝试打开偏移量文件进行写入
         try:
+            if not math.isfinite(self.lat_offset) or not math.isfinite(self.lon_offset):
+                self.get_logger().error('Refusing to save non-finite GNSS offsets')
+                return
+
             OFFSET_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
             with open(OFFSET_FILE_PATH, 'w') as offset_file:
                 # 写入纬度偏移量和经度偏移量，每行一个
@@ -225,14 +247,18 @@ class GnssCalibrationNode(Node):
                         lat_offset = float(lines[0].strip())
                         # 解析经度偏移量
                         lon_offset = float(lines[1].strip())
+
+                        if not math.isfinite(lat_offset) or not math.isfinite(lon_offset):
+                            self.get_logger().warn(f'偏移量文件包含无效数值，忽略: {OFFSET_FILE_PATH}')
+                            return None
+
                         # 返回加载的偏移量
                         return lat_offset, lon_offset
         # 捕获异常
         except Exception as e:
             # 记录警告日志，表示加载失败
             self.get_logger().warn(f'加载偏移量失败: {e}')
-        # 返回默认偏移量0.0, 0.0
-        return 0.0, 0.0
+        return None
 
     # 定义检查数据是否稳定的方法
     def is_data_stable(self):
@@ -256,15 +282,20 @@ class GnssCalibrationNode(Node):
     def publish_calibrated_data(self):
         # 如果有最新有效数据
         if self.latest_valid_data:
-            # 优先从文件加载偏移量
-            loaded_lat_offset, loaded_lon_offset = self.load_offsets()
+            loaded_offsets = self.load_offsets()
 
-            # 如果加载的偏移量都是0.0，表示加载失败
-            if loaded_lat_offset == 0.0 and loaded_lon_offset == 0.0:
-                # 记录警告日志，使用变量中的偏移量
+            if loaded_offsets is None:
                 self.get_logger().warn('从文件加载偏移量失败，使用变量中的偏移量')
-                # 使用实例变量中的偏移量
+                if not math.isfinite(self.lat_offset) or not math.isfinite(self.lon_offset):
+                    self.get_logger().error('内存中的 GNSS 偏移量无效，跳过发布 /gnss')
+                    return
                 loaded_lat_offset, loaded_lon_offset = self.lat_offset, self.lon_offset
+            else:
+                loaded_lat_offset, loaded_lon_offset = loaded_offsets
+
+            if not math.isfinite(loaded_lat_offset) or not math.isfinite(loaded_lon_offset):
+                self.get_logger().error('GNSS 偏移量非有限数，跳过发布 /gnss')
+                return
 
             # 创建校准后的NavSatFix消息
             calibrated_msg = NavSatFix()

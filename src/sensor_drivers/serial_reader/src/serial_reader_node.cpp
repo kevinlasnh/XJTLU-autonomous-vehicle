@@ -77,6 +77,34 @@ bool ensureDirectory(const std::string& directory) {
     }
     return true;
 }
+
+std::string getSessionLogPath(const std::string& filename, const std::string& fallback_subdir) {
+    const char* session_dir = std::getenv("FYP_LOG_SESSION_DIR");
+    if (session_dir != nullptr && session_dir[0] != '\0') {
+        std::string dir(session_dir);
+        ensureDirectory(dir);
+        return dir + "/" + filename;
+    }
+
+    std::string dir = getRuntimePath(fallback_subdir);
+    ensureDirectory(dir);
+
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_time);
+
+    std::ostringstream ss;
+    ss << dir << "/log_"
+       << (now_tm->tm_year + 1900)
+       << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1)
+       << std::setw(2) << std::setfill('0') << now_tm->tm_mday
+       << "_"
+       << std::setw(2) << std::setfill('0') << now_tm->tm_hour
+       << std::setw(2) << std::setfill('0') << now_tm->tm_min
+       << std::setw(2) << std::setfill('0') << now_tm->tm_sec
+       << ".txt";
+    return ss.str();
+}
 }
 
 // 检查是否启用日志的辅助函数
@@ -134,34 +162,12 @@ public:
         bool enable_log = shouldEnableLogging("serial_reader_node");
         
         if (enable_log) {
-            // 创建日志目录
-            std::string log_dir = getRuntimePath("logs/reader_log");
-            if (!ensureDirectory(log_dir)) {
-                RCLCPP_ERROR(this->get_logger(), "Failed to create log directory: %s", log_dir.c_str());
-            }
-
-            // 生成日志文件名
-            auto now = std::chrono::system_clock::now();
-            std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-            std::tm* now_tm = std::localtime(&now_time);
-            std::stringstream filename_stream;
-            filename_stream << log_dir << "/log_"
-                            << (now_tm->tm_year + 1900)  // 年份
-                            << std::setw(2) << std::setfill('0') << (now_tm->tm_mon + 1) // 月份
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_mday // 日期
-                            << "_"
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_hour // 小时
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_min // 分钟
-                            << std::setw(2) << std::setfill('0') << now_tm->tm_sec // 秒
-                            << ".txt"; // 文件扩展名
-            std::string filename = filename_stream.str();
-
-            // 打开日志文件
-            log_file_.open(filename, std::ios::out | std::ios::app);
+            std::string log_path = getSessionLogPath("serial_reader.log", "logs/reader_log");
+            log_file_.open(log_path, std::ios::out | std::ios::app);
             if (!log_file_.is_open()) {
-                RCLCPP_ERROR(this->get_logger(), "Failed to open log file: %s", filename.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Failed to open log file: %s", log_path.c_str());
             } else {
-                RCLCPP_INFO(this->get_logger(), "Log file opened: %s", filename.c_str());
+                RCLCPP_INFO(this->get_logger(), "Log file opened: %s", log_path.c_str());
             }
         } else {
             RCLCPP_INFO(this->get_logger(), "Logging disabled by config");

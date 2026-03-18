@@ -12,44 +12,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" A simple launch file for the nmea_serial_driver node. """
+"""A simple launch file for the nmea_serial_driver node."""
 
 import os
 import sys
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription, LaunchIntrospector, LaunchService
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros import actions
 
 
 def generate_launch_description():
     """Generate a launch description for a single serial driver."""
-    config_file = os.path.join(get_package_share_directory("nmea_navsat_driver"), "config", "nmea_serial_driver.yaml")
-    driver_node = actions.Node(
-        package='nmea_navsat_driver',
-        executable='nmea_serial_driver',
-        output='screen',
-        parameters=[config_file])
+    default_config_file = os.path.join(
+        get_package_share_directory("nmea_navsat_driver"),
+        "config",
+        "nmea_serial_driver.yaml",
+    )
+    params_file = LaunchConfiguration("params_file")
 
-    return LaunchDescription([driver_node])
+    driver_node = actions.Node(
+        package="nmea_navsat_driver",
+        executable="nmea_serial_driver",
+        output="screen",
+        parameters=[params_file],
+    )
+
+    return LaunchDescription(
+        [
+            DeclareLaunchArgument(
+                "params_file",
+                default_value=default_config_file,
+                description="ROS2 parameter file used by nmea_navsat_driver",
+            ),
+            driver_node,
+        ]
+    )
 
 
 def main(argv):
     ld = generate_launch_description()
 
-    print('Starting introspection of launch description...')
-    print('')
+    print("Starting introspection of launch description...")
+    print("")
 
     print(LaunchIntrospector().format_launch_description(ld))
+    print("")
+    print("Starting launch of launch description...")
+    print("")
 
-    print('')
-    print('Starting launch of launch description...')
-    print('')
-
-    ls = LaunchService()
+    ls = LaunchService(argv=argv[1:])
     ls.include_launch_description(ld)
     return ls.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv)
