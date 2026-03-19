@@ -1,5 +1,21 @@
 # FASTLIO2 算法详解
 
+## 当前项目中的位置
+
+- 包名: `fastlio2`
+- 当前主输出:
+  - `/fastlio2/lio_odom`
+  - `/fastlio2/body_cloud`
+- 当前主入口:
+
+```bash
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+```
+
+- 当前参数来源以 `src/bringup/config/master_params.yaml` 为主；`lio_no_rviz.py` 保留 legacy `fastlio2/config/lio.yaml` 回退能力。
+- 下游的 `pgo` 节点直接消费 `/fastlio2/lio_odom` 和 `/fastlio2/body_cloud`。
+- 这份文档主要解释算法原理；整车链路请同时参考 `docs/architecture.md` 和 `docs/knowledge/pgo.md`。
+
 ## 1. odom 里程计数据解读
 
 FASTLIO2 输出的 odom（`nav_msgs/Odometry`）包含两部分核心数据：

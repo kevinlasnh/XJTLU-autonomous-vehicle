@@ -1,400 +1,149 @@
 # 项目工作流指南
 
-> 本文档描述 FYP 自主导航车辆项目的完整开发工作流，对标公司级 ROS2 项目管理标准。
+> 当前标准: 代码与文档改动都走分支 + PR，`main` 只接收已验证结果。
 
----
+## 1. 角色分工
 
-## 一、团队角色与分工
+| 角色 | 责任 |
+|------|------|
+| kevinlasnh | 提需求、做最终决策、执行实车测试 |
+| Claude | 架构、调研、方案设计、结果复审 |
+| Codex | 执行实现、构建验证、提交、PR、文档同步 |
+| 团队开发者 | 按同样分支和 PR 规则协作 |
 
-| 角色 | 人员 | 职责 |
-|------|------|------|
-| 项目负责人 | kevinlasnh | 需求定义、Code Review、实车测试、最终决策 |
-| AI 开发助手 | Claude Code | SSH 远程编码、构建、调试、文档维护 |
-| AI 执行助手 | Codex | 批量迁移、重构等大规模操作 |
-| 开发者 | 暑期学弟 (2026 夏) | 分支开发、提交 PR、参与测试 |
+## 2. 标准开发流
 
-**核心原则**: kevinlasnh 不直接写代码，所有代码修改通过 AI agent 或团队开发者完成。
-
----
-
-## 二、环境搭建（新成员必读）
-
-### 2.1 SSH 连接
+### 2.1 会话开始
 
 ```bash
-# 局域网内
-ssh jetson@<jetson-ip>
-
-# 非局域网（通过 Tailscale）
-# 1. 下载 Tailscale: https://tailscale.com/download
-# 2. 登录（账号联系 Kevin）
-# 3. 连接
 ssh jetson@100.97.227.24
-```
-
-### 2.2 首次构建
-
-```bash
 cd ~/fyp_autonomous_vehicle
+git status
+git checkout main
+git pull --ff-only
+git branch -v
+git log --oneline -5
+```
 
-# 拉取第三方依赖（Nav2, slam_toolbox）+ 安装 rosdep
-make setup
+如果上次已经构建过并准备继续调试：
 
-# 全量构建（约 20-30 分钟）
-make build
-
-# Source 工作空间
+```bash
 source install/setup.bash
-
-# 验证
-ros2 pkg list | grep bringup
 ```
 
-### 2.3 运行时数据初始化
+### 2.2 创建分支
 
 ```bash
-# 首次部署需要初始化运行时数据目录
-bash scripts/init_runtime_data.sh
-
-# 验证
-ls ~/fyp_runtime_data/
-# 应包含: config/ gnss/ maps/ planning/
+git checkout -b feature/your-topic
 ```
 
----
+允许的前缀：
 
-## 三、日常开发流程
+- `feature/`
+- `fix/`
+- `tune/`
+- `docs/`
+- `experiment/`
 
-### 3.1 分支管理
+### 2.3 研究与实施
 
-```
-main (受保护，需 PR + Review)
-├── feature/xxx    新功能开发
-├── fix/xxx        Bug 修复
-├── tune/xxx       参数调优
-├── docs/xxx       文档更新
-└── experiment/xxx 实验性改动
-```
+1. 先核对真实代码状态、launch 链和当前参数。
+2. 再做改动，不凭历史记忆直接写。
+3. 如果改动涉及系统行为，先确认影响的运行模式。
 
-### 3.1.1 铁律：绝对不在 main 上直接改代码
-
-**开机第一件事**:
-On branch feature/unified-params
-Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
-  (use "git restore <file>..." to discard changes in working directory)
-	modified:   src/bringup/launch/system_explore.launch.py
-	modified:   src/bringup/launch/system_explore_gps.launch.py
-	modified:   src/bringup/launch/system_slam.launch.py
-	modified:   src/bringup/launch/system_travel.launch.py
-	modified:   src/perception/fastlio2/launch/lio_no_rviz.py
-	modified:   src/perception/fastlio2/src/lio_node.cpp
-	modified:   src/perception/pgo_gps_fusion/launch/pgo_launch.py
-	modified:   src/perception/pgo_gps_fusion/src/pgo_node.cpp
-	modified:   src/sensor_drivers/gnss/gnss_calibration/launch/gnss_calibration_launch.py
-	modified:   src/sensor_drivers/gnss/nmea_navsat_driver/launch/nmea_serial_driver.launch.py
-
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-	 2
-	src/bringup/config/master_params.yaml
-
-no changes added to commit (use "git add" and/or "git commit -a")
-  feature/gps-factor
-* feature/unified-params
-  main
-
-如果发现当前在 main 分支且有未提交的改动:
-Saved working directory and index state WIP on unified-params: 224ef1e Document persistent service shutdown validation
-On branch feature/你的功能
-Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
-  (use "git restore <file>..." to discard changes in working directory)
-	modified:   src/bringup/launch/system_explore.launch.py
-	modified:   src/bringup/launch/system_explore_gps.launch.py
-	modified:   src/bringup/launch/system_slam.launch.py
-	modified:   src/bringup/launch/system_travel.launch.py
-	modified:   src/perception/fastlio2/launch/lio_no_rviz.py
-	modified:   src/perception/fastlio2/src/lio_node.cpp
-	modified:   src/perception/pgo_gps_fusion/launch/pgo_launch.py
-	modified:   src/perception/pgo_gps_fusion/src/pgo_node.cpp
-	modified:   src/sensor_drivers/gnss/gnss_calibration/launch/gnss_calibration_launch.py
-	modified:   src/sensor_drivers/gnss/nmea_navsat_driver/launch/nmea_serial_driver.launch.py
-
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-	 2
-	src/bringup/config/master_params.yaml
-
-no changes added to commit (use "git add" and/or "git commit -a")
-Dropped refs/stash@{0} (469d112ba1ce03eea871ea16faa6539e6b39daf6)
-
-**为什么**: 车上的代码仓就是生产环境。main 是所有人共用的稳定版本。在 main 上直接改代码，别人不知道你改了什么，出 bug 没法回滚，测试结果不可复现。
-
-**即使只是试一下也要开分支。** experiment/xxx 分支就是干这个的。
-
-### 3.1.2 学弟开发完整流程
-
-1. SSH 到车上
-2. 开机检查（每次必做）: git status + git checkout main + git pull
-3. 创建分支: git checkout -b feature/你的功能名
-4. 开发 + colcon build + 实车测试（必须有人在旁边随时急停）
-5. 测试通过后: git add 具体文件 + git commit
-6. git push -u origin feature/你的功能名
-7. GitHub 上创建 PR，必须填写: 改了什么、为什么、怎么测的、影响哪些层
-8. 等 Kevin Review，按反馈修改后再 push
-9. Kevin 合并
-
-**测试完觉得没问题 ≠ 真的没问题。** PR 里没写怎么测的一律打回。
-
-### 3.2 标准开发流程
-
-```
-1. 创建分支
-   git checkout main && git pull
-   git checkout -b feature/你的功能
-
-2. 开发
-   修改代码 → colcon build → source → 测试
-
-3. 提交
-   git add <具体文件>          # 不要 git add -A
-   git commit -m "描述改动"    # 英文，描述每个文件
-
-4. 推送
-   git push -u origin feature/你的功能
-
-5. 创建 PR
-   在 GitHub 上创建 Pull Request
-   填写 PR 模板（改了什么、为什么、怎么测的）
-
-6. Code Review
-   等待 @kevinlasnh 审核
-   根据反馈修改 → 追加 commit → 再次请求 review
-
-7. 合并
-   Review 通过后由 kevinlasnh 合并到 main
-```
-
-### 3.3 Claude 协作开发流程
-
-当通过 Claude Code 开发时，流程简化为:
-
-```
-1. kevinlasnh 描述需求
-2. Claude SSH 到 Jetson 执行开发
-3. Claude 构建 + 初步验证
-4. kevinlasnh 实车测试
-5. Claude 提交代码 + 更新文档
-6. 推送到 main（Claude 有直接推送权限）
-```
-
----
-
-## 四、构建规范
-
-### 4.1 构建命令
+### 2.4 构建
 
 ```bash
-# 全量构建
-make build
-
-# 按层构建（更快）
-make build-sensor       # 传感器层
-make build-perception   # 感知层
-make build-planning     # 规划层
-make build-navigation   # 导航层
-
-# 单包构建（最快）
 colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
-
-# 构建后必须 source
 source install/setup.bash
 ```
 
-### 4.2 构建注意事项
+规则：
 
-- **必须** `--parallel-workers 1`（Jetson 内存限制）
-- **必须** `--symlink-install`（加速开发迭代）
-- C++ 包修改后必须重新 build
-- Python 包用 `--symlink-install` 后改源码即生效，无需重新 build
-- 修改 CMakeLists.txt 后需要 `rm -rf build/<pkg>` 再 build
+1. `--parallel-workers 1` 是硬性要求。
+2. 每次构建后都要重新 `source install/setup.bash`。
+3. Python 包虽可借助 `--symlink-install` 免重编，但仍要做运行验证。
 
----
+### 2.5 启动与验证
 
-## 五、测试规范
+按改动范围选择合适模式：
 
-### 5.1 构建测试（每次提交前）
-
-```bash
-# 至少确保修改的包能编译通过
-colcon build --packages-select <你修改的包> --symlink-install --parallel-workers 1
-```
-
-### 5.2 实车测试
-
-**测试前准备:**
-1. 确认 PS2 手柄电池充足（7 号电池）
-2. 一人负责随时按 X 键急停
-3. 确认 RViz 中 fix_frame 设为 `map`
-4. 先进入串口遥控模式 → 打开电机使能
-
-**SLAM 模式测试:**
 ```bash
 make launch-slam
-# 预期: LiDAR 启动 → FASTLIO2 里程计 → SLAM Toolbox 建图 → RViz 显示地图
-```
-
-**Explore 模式测试:**
-```bash
 make launch-explore
-# 预期: LiDAR + PGO → Nav2(延迟5秒) → RViz 设目标点 → 车辆自主避障行驶
+make launch-explore-gps
+make launch-travel
 ```
 
-**测试后:**
-1. `make kill` 停止所有 ROS2 进程
-2. 检查日志: `ls ~/fyp_runtime_data/logs/`
-3. 确认充电电源关闭 + 电池关闭
+验证时至少检查：
 
-### 5.3 紧急停车
+- 相关节点是否都在线
+- 关键 topic 是否有数据
+- `map -> odom -> base_link` TF 是否完整
+- session 日志是否落到 `~/fyp_runtime_data/logs/latest/`
 
-| 方法 | 操作 | 优先级 |
-|------|------|--------|
-| PS2 X 键 | 关闭电机，车辆自由滑行 | 首选 |
-| 物理红色按钮 | 按下断电，旋转释放恢复 | 情急时 |
-| 终端 | `make kill` 或 `pkill -f ros2` | 远程 |
+实车相关改动需要补上人工现场测试结论。
 
----
+## 3. AI 协作流
 
-## 六、参数调优规范
+当任务由 Claude + Codex 共同执行时，控制面不在这个仓库内，而在 PC command-center 仓库中维护：
 
-### 6.1 规则
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
 
-1. 调参前必须知道**为什么**要调这个参数
-2. 少量调参: 注释掉原值，不要删除
-3. 大量调参: 先备份 YAML 文件
-4. 调完**立即**测试验证，不要隔几天
-5. 在 YAML 中用 `# >>>>>>` 标注被调整的参数
+这个 Jetson 仓库负责真实实现、构建、运行和归档文档。
 
-### 6.2 记录
+## 4. 提交与 PR
 
-参数调整必须记录到 `docs/knowledge/nav2_tuning.md`，格式:
-```
-- 参数名: 新值 (原值: xxx)
-- 原因: 为什么调
-- 效果: 调了之后车的表现
-- 日期: YYYY.MM.DD
-```
-
----
-
-## 七、文档维护
-
-### 7.1 文档结构
-
-```
-docs/
-├── index.md              入口导航
-├── commands.md           操作命令手册
-├── conventions.md        开发规范
-├── architecture.md       系统架构
-├── known_issues.md       已知问题追踪
-├── workflow.md           本文件
-├── knowledge/            技术深度文档
-│   ├── fastlio2.md       FASTLIO2 算法
-│   ├── pgo.md            PGO 算法
-│   ├── nav2_tuning.md    Nav2 调优记录
-│   └── gps_planning.md   GPS 规划设计
-└── devlog/               开发日志
-    ├── YYYY-MM.md        月度日志
-    └── legacy/           原始文档归档
-```
-
-### 7.2 Claude 自动维护
-
-每次开发 session 结束时，Claude 自动更新:
-
-| 触发条件 | 更新文件 |
-|---------|---------|
-| 任何开发工作完成 | `devlog/YYYY-MM.md` 追加条目 |
-| 发现或解决问题 | `known_issues.md` 更新状态 |
-| 新增常用命令 | `commands.md` 追加 |
-| 参数调整 | `knowledge/nav2_tuning.md` 追加 |
-| 架构变更 | `architecture.md` 更新 |
-
-### 7.3 开发日志格式
-
-```markdown
-## YYYY.MM.DD
-### [层级标签]
-- 做了什么
-```
-
-层级标签: `[项目管理]` `[传感器层]` `[感知层]` `[Nav2]` `[全局规划]` `[Launch]`
-
----
-
-## 八、Git 规范
-
-### 8.1 Commit Message
-
-- **语言**: 英文
-- **格式**: 简洁描述改动内容
-- **粒度**: 按文件/功能分开 commit，不要一个 commit 包含所有改动
+### 4.1 提交
 
 ```bash
-# 好的例子
-git commit -m "Adjust DWB BaseObstacle.scale from 0.002 to 0.02 to fix obstacle avoidance"
-git commit -m "Add PreferForward critic to prevent reverse driving"
-
-# 坏的例子
-git commit -m "update files"
-git commit -m "fix stuff"
+git add path/to/file1 path/to/file2
+git commit -m "Explain what changed and why"
+git push -u origin feature/your-topic
 ```
 
-### 8.2 PR 规范
+要求：
 
-每个 PR 必须包含:
-1. **改了什么** — 简述改动内容
-2. **为什么改** — 改动原因
-3. **怎么测的** — 测试方法（colcon build / 实车测试 / 仿真）
-4. **影响范围** — 勾选受影响的层级
+1. 只添加具体文件。
+2. 不提交无关改动。
+3. Commit message 用英文。
 
-### 8.3 Git 代理处理
-
-Jetson 配有 Clash 代理（127.0.0.1:7890），如果 push 失败:
+### 4.2 PR 与合并
 
 ```bash
-# 临时绕过代理
-git -c http.proxy= -c https.proxy= push
-
-# 或永久禁用
-git config --global --unset http.proxy
-git config --global --unset https.proxy
+gh auth status
+gh pr create
+gh pr merge --merge --delete-branch
+git checkout main
+git pull --ff-only
+git fetch --prune
 ```
 
----
+如果 Jetson 上 `gh auth status` 失败，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 PR 和 merge，然后再让 Jetson 回拉 `main`。
 
-## 九、运行时数据管理
+## 5. 文档触发规则
 
-```
-~/fyp_runtime_data/        运行时数据根目录（不在 git 中）
-├── config/
-│   └── log_switch.yaml    各节点日志开关
-├── gnss/
-│   ├── gnss_offset.txt    GNSS 标定偏移
-│   └── startid.txt        GNSS 起始 ID
-├── logs/                  各节点运行日志
-│   ├── fastlio2/
-│   ├── pgo/
-│   ├── twist_log/
-│   └── ...
-├── maps/                  地图文件
-│   └── *.geojson
-└── planning/
-    └── angle_offset.txt   角度偏移标定
-```
+以下变化发生时，不允许只改代码不改文档：
 
-- 节点通过 `FYP_RUNTIME_ROOT` 环境变量定位此目录
-- 默认值: `~/fyp_runtime_data`
-- 此目录不纳入 git 管理
+| 变化类型 | 最少要同步的文档 |
+|----------|------------------|
+| 节点源码 | `devlog`、相关 `knowledge`、必要时 `architecture.md` |
+| launch 文件 | `devlog`、`commands.md`、`workflow.md`、必要时 `architecture.md` |
+| YAML 参数 | `devlog`、对应知识文档 |
+| 脚本与工具 | `devlog`、`commands.md`、必要时 `workflow.md` |
+| bug 修复 / 新 bug | `devlog`、`known_issues.md` |
+| 系统环境变化 | `devlog`、`commands.md`、`workflow.md` |
+| 工作流变化 | `workflow.md`、`conventions.md` |
+
+## 6. 会话结束检查表
+
+会话在以下项目全部完成前不算收口：
+
+1. 改动已验证。
+2. 相关文档已同步。
+3. 分支已推送。
+4. PR 已创建并合并。
+5. Jetson 已回到最新 `main`。
+6. 如果有新的系统事实、问题或阻塞，已写入开发日志和问题追踪。

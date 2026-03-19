@@ -1,58 +1,68 @@
 # GNSS 全局路径规划器
 
-## 项目简介
-该 ROS2 包提供了一种基于 GNSS 数据的全局路径规划解决方案。利用 A* 算法生成从当前 GNSS 位置到用户定义目标点的路径，并通过发布下一个导航节点来引导机器人行驶。
+## 当前定位
 
-## 安装步骤
+这个包保留了基于 GeoJSON + A* 的 GNSS 全局路径规划实验链，但它还没有接成当前主运行链里的生产级远距离导航能力。
 
+当前生产环境里的 GPS 主链是：
 
- **编译项目**
+```text
+/fix -> gnss_calibration -> /gnss -> PGO GPS factor
+```
+
+而这个包更多用于继续推进：
+
+- GPS 地图读取
+- A* 节点级全局路径规划
+- `/next_node` 发布实验
+
+## 编译
+
 ```bash
-cd ~/ros2_ws
-colcon build --packages-select gnss_global_path_planner
+cd ~/fyp_autonomous_vehicle
+colcon build --packages-select gnss_global_path_planner --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
 
 ## 启动方法
-### 1. 启动 GNSS 校准与路径规划
+
+### 1. 包级联调
+
 ```bash
 ros2 launch gnss_global_path_planner gnss_combined_launch.py
 ```
-此命令会启动三个节点：
-- `nmea_navsat_driver`：接收原始 NMEA 格式的 GNSS 数据。
-- `gnss_calibration`：校准 GNSS 数据，消除静态误差。
-- `global_path_planner`：路径规划节点，订阅校准后的 GNSS 数据，并发布下一导航点。
 
-### 2. 单独启动路径规划器（调试用）
+该 launch 会拉起：
+
+- `nmea_navsat_driver`
+- `gnss_calibration`
+- `global_path_planner`
+- `global2local_tf`
+
+### 2. 单独启动规划器
+
 ```bash
 ros2 run gnss_global_path_planner global_path_planner.py
 ```
 
-## 节点说明
-- **`/gnss`**：订阅校准后的 GNSS 数据（NMEA 格式）。
-- **`/next_node`**：发布下一个路径点的经纬度坐标（字符串格式 "lon,lat"）。
+## 关键接口
+
+| 接口 | 类型 | 说明 |
+|------|------|------|
+| `/gnss` | `sensor_msgs/NavSatFix` | 规划器订阅的校准后 GNSS 数据 |
+| `/next_node` | `std_msgs/String` | 规划器发布的下一目标节点，经纬度格式为 `"lon,lat"` |
 
 ## 地图格式
-地图使用 `GeoJSON` 格式存储，包含：
-- **节点（Points）**：表示路径点的经纬度。
-- **边（Linestrings）**：表示路径点之间的连接关系。
 
-示例：
-```json
-{
-  "type": "FeatureCollection",
-  "features": [
-    {"type": "Feature", "geometry": {"type": "Point", "coordinates": [120.7492308, 31.2788677]}},
-    {"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[120.7492308, 31.2788677], [120.7500000, 31.2790000]]}}
-  ]
-}
-```
+地图使用 `GeoJSON`，当前仓库示例地图位于 `map/` 目录。
 
-## 配置参数
-- **`INTERPOLATION_THRESHOLD`**：插值节点的距离阈值（米）。
-- **`PROXIMITY_THRESHOLD`**：到达判定的范围阈值（米）。
-- **`YAW_THRESHOLD_FACTOR`**：偏航检测放大系数，用于调整偏航判断的阈值。
-- **`INITIAL_GNSS`**：初始 GNSS 定位点，用于模拟环境。
+其中：
 
+- `Point` 表示节点
+- `LineString` 表示节点间连边
 
+## 当前状态说明
 
+1. 该包仍处于继续开发阶段。
+2. 它不是 `make launch-explore-gps` 的生产主入口。
+3. GPS -> Nav2 目标点转换仍未形成生产级闭环。

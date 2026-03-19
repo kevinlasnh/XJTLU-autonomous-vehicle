@@ -1,260 +1,112 @@
-# PGO 位姿图优化算法详解
+# PGO 位姿图优化说明
 
-## 1. PGO 节点功能
+## 1. 当前工程实现（2026-03）
 
-PGO（Pose Graph Optimization，位姿图优化）节点在 FASTLIO2 的基础上提供全局一致性优化，主要负责以下功能：
+当前主用 PGO 实现在：
 
-1. **关键帧收集**：从 FASTLIO2 接收 `body_cloud`（体坐标系下的点云）和 `odom`（里程计位姿），筛选关键帧
-2. **回环检测**：判断载体是否回到曾经经过的地方
-3. **图优化**：利用 GTSAM 库进行因子图优化，消除累积漂移
-4. **TF 发布**：发布 `map → odom` 坐标变换，提供全局一致的位姿
+- 目录: `src/perception/pgo_gps_fusion/`
+- colcon 包名: `pgo`
+- 启动入口: `ros2 launch pgo pgo_launch.py`
 
-### 1.1 关键帧收集策略
+这个实现不是“纯回环 PGO”了，而是：
 
-并非每帧 FASTLIO2 输出都会被保存为关键帧，PGO 节点会根据 **运动量** 进行筛选：
+- FAST-LIO2 局部里程计
+- PGO 回环图优化
+- 可选 GPS factor 绝对位置约束
 
-- **位移阈值**：当前帧与上一个关键帧之间的距离 **> 0.5m**
-- **旋转阈值**：当前帧与上一个关键帧之间的旋转角度 **> 10 度**
+## 2. 当前输入与输出
 
-满足任一条件即保存为关键帧。这样做的目的是：
-- 避免载体静止或缓慢移动时保存大量冗余帧
-- 保证关键帧之间有足够的位移，提高回环检测和图优化的质量
+### 输入
 
-### 1.2 关键帧数据结构
+- 点云: `/fastlio2/body_cloud`
+- 里程计: `/fastlio2/lio_odom`
+- GNSS: `/gnss`（当 `gps.enable=true` 时）
 
-每个关键帧保存在 `m_key_poses[]` 列表中，包含：
+### 输出
 
-```
-m_key_poses[i] = {
-    position: (x, y, z),          // 关键帧的位置
-    orientation: (x, y, z, w),    // 关键帧的姿态（四元数）
-    body_cloud: PointCloud,       // 该帧的体坐标系点云
-    timestamp: double,            // 时间戳
-    index: int                    // 关键帧索引
-}
-```
+- TF: `map -> odom`
+- 里程计: `/pgo/optimized_odom`
+- 可视化: `/pgo/loop_markers`
 
----
+## 3. 节点职责
 
-## 2. 回环检测
+PGO 当前承担 5 件事：
 
-回环检测是 PGO 的核心功能之一，用于识别载体是否回到了之前经过的位置。检测分为 **3 个步骤**，逐步过滤：
+1. 从 FAST-LIO2 收集关键帧
+2. 做回环搜索与 ICP 确认
+3. 用 GTSAM 做位姿图优化
+4. 在启用时周期性加入 GPS factor
+5. 发布 `map -> odom` 和 `/pgo/optimized_odom`
 
-### Step 1: 位置粗筛（KdTree 搜索）
+## 4. 当前主配置参数
 
-```
-候选帧 = KdTree.radiusSearch(当前位置, radius=15m)
-```
+这些值来自当前主线 `master_params.yaml`：
 
-- 利用 KdTree 对所有历史关键帧的位置进行空间索引
-- 搜索当前位置 **15 米半径** 内的所有历史关键帧
-- 如果没有找到任何候选帧，直接跳过回环检测
-- **作用**：快速排除大量不可能构成回环的帧，降低计算量
+- `key_pose_delta_deg: 5.0`
+- `key_pose_delta_trans: 0.1`
+- `loop_search_radius: 1.0`
+- `loop_time_tresh: 60.0`
+- `loop_score_tresh: 0.15`
+- `loop_submap_half_range: 5`
+- `submap_resolution: 0.1`
+- `min_loop_detect_duration: 5.0`
 
-### Step 2: 时间过滤
+这说明当前工程配置比早期设计更激进地保留关键帧，也把回环搜索半径收得更小，更偏向实际车辆场景而不是泛化演示参数。
 
-```
-有效候选帧 = 候选帧.filter(|当前时间 - 候选帧时间| > time_threshold)
-```
+## 5. GPS Factor 行为
 
-- 候选帧必须是 **足够久以前** 的帧（时间差超过阈值）
-- **原因**：刚经过的地方形成的"回环"没有意义，因为短时间内 FASTLIO2 的里程计漂移很小，不需要回环修正
-- 只有经过较长时间后回到同一位置，累积漂移才会明显，此时回环修正才有价值
+当 `gps.enable=true` 时，PGO 会使用以下 GNSS 相关参数：
 
-### Step 3: 点云确认（ICP 算法）
+- `gps.topic: /gnss`
+- `gps.noise_xy: 2.5`
+- `gps.noise_z: 5.0`
+- `gps.factor_interval: 10`
+- `gps.quality_hdop_max: 3.0`
+- `gps.quality_sat_min: 6`
+- `gps.drift_threshold: 2.0`
 
-通过位置和时间筛选后，使用 **ICP（Iterative Closest Point，迭代最近点）** 算法进行最终确认：
+当前 GPS 因子职责是给关键帧的位置增加绝对约束，降低长距离运行时的全局漂移；它不是完整的 GPS 全局导航方案。
 
-**ICP 匹配过程**：
+## 6. TF 关系
 
-1. 取当前帧的 `body_cloud` 和候选帧的 `body_cloud`
-2. 将两帧点云进行配准（alignment），寻找最优的刚体变换
-3. ICP 输出三个关键结果：
-
-```
-ICP 输出：
-├── success:   bool    // 是否收敛成功
-├── fitness:   double  // 匹配得分（越小越好）
-└── T_matrix:  4×4     // 两帧之间的变换矩阵
+```text
+map -> odom -> base_link
 ```
 
-**匹配得分阈值**：
+- FAST-LIO2 提供 `odom -> base_link`
+- PGO 提供 `map -> odom`
+- 组合后得到全局位姿
 
-```
-loop_score_thresh: 0.15
-```
+如果 PGO 没有进入正常关键帧和优化流程，`map -> odom` 就可能消失，RViz 在 `map` fixed frame 下会表现为点云和 costmap 看起来像“空白”。
 
-- `fitness < 0.15`：认为回环有效，两帧确实是在同一位置采集的
-- `fitness >= 0.15`：拒绝该回环候选，匹配质量不够
+## 7. 2026-03-18 启动回归修复
 
-**变换矩阵 T**：
+### 现象
 
-```
-T = | R  t |
-    | 0  1 |
-```
+- `pgo_node` 启动后持续刷 `Received out of order message`
+- 没有稳定关键帧
+- 没有稳定 `map -> odom`
+- `/pgo/optimized_odom` 不稳定或不发布
 
-- **`R`**：3×3 旋转矩阵，描述两帧之间的相对旋转
-- **`t`**：3×1 平移向量，描述两帧之间的相对位移
-- 这个 `T` 矩阵将作为 **回环因子（Loop Factor）** 加入 GTSAM 因子图
+### 根因
 
----
+同步状态中的 `last_message_time` 未初始化，第一对同步消息会被错误判定为 out-of-order。
 
-## 3. GTSAM 图优化
+### 修复
 
-### 3.1 因子图结构
+将 `last_message_time` 初始化为 `0.0`，保证第一对匹配消息被正常接受。
 
-GTSAM 使用 **因子图（Factor Graph）** 来表示所有约束关系。图中有两类元素：
+### 结果
 
-**变量节点**（待优化量）：
-- 每个关键帧的全局位姿 `{R_i, t_i}`
+该修复已经合并到 `main`，当前主线的 PGO 启动同步状态是稳定初始化版本。
 
-**因子**（约束）：
-- **先验因子（Prior Factor）**：第 0 帧的位姿固定为原点，提供全局参考
-- **里程计因子（Odometry Factor）**：相邻关键帧之间的相对位姿变换，来自 FASTLIO2 的里程计
-- **回环因子（Loop Factor）**：回环检测成功时，ICP 计算得到的两帧间相对变换
+## 8. 接口速查
 
-```
-因子图结构：
-
-[Prior] → [Pose_0] ←→ [Pose_1] ←→ [Pose_2] ←→ ... ←→ [Pose_n]
-              ↑                                              ↑
-              └──────────── [Loop Factor] ──────────────────┘
-```
-
-### 3.2 弹簧类比
-
-可以将因子图理解为一个 **弹簧网络**：
-
-- 每个关键帧位姿是一个 **可移动的节点**
-- 里程计因子是连接相邻节点的 **弹簧**，弹簧的自然长度就是 FASTLIO2 计算的相对位移
-- 回环因子是连接非相邻节点的 **额外弹簧**，它会"拉"节点到正确的位置
-- **优化过程**就是让整个弹簧网络达到能量最低的平衡状态
-
-当回环因子与里程计因子存在矛盾时（说明有累积漂移），优化会 **均匀地分配误差** 到所有帧上，而不是把误差集中在某一帧。
-
-### 3.3 优化输出
-
-```
-优化结果 = GTSAM.optimize(因子图)
-```
-
-输出为所有关键帧的 **优化后全局位姿**：
-
-```
-optimized_poses = {
-    Pose_0: {R_0_opt, t_0_opt},
-    Pose_1: {R_1_opt, t_1_opt},
-    ...
-    Pose_n: {R_n_opt, t_n_opt}
-}
-```
-
-### 3.4 偏移量计算
-
-对于最新的关键帧（Pose_n），计算优化前后的偏移量：
-
-```
-offset_position = t_n_opt - t_n_original
-offset_rotation = R_n_opt × R_n_original^(-1)
-```
-
-这个偏移量就是 FASTLIO2 里程计累积到当前帧的漂移量。
-
-### 3.5 TF 发布：map → odom
-
-```
-map → odom 变换 = {offset_rotation, offset_position}
-```
-
-PGO 节点将上述偏移量作为 `map → odom` 的 TF 变换发布。这样：
-- FASTLIO2 提供 `odom → base_link`（带累积漂移的局部位姿）
-- PGO 提供 `map → odom`（补偿漂移的校正量）
-- 两者组合得到 `map → base_link`（全局一致的位姿）
-
----
-
-## 4. TF 转换链
-
-整个系统的坐标变换链如下：
-
-```
-map → odom → base_link
- ↑       ↑
- |       └── FASTLIO2 提供: t_wi 位置 + R_wi 旋转
- |
- └── PGO 提供: 图优化后的偏移量
-```
-
-### 4.1 odom → base_link
-
-由 **FASTLIO2** 发布：
-
-- **平移**：`t_wi`（IMU 积分 + LiDAR 校正后的位置）
-- **旋转**：`R_wi`（IMU 积分 + LiDAR 校正后的旋转矩阵，以四元数发布）
-- **更新频率**：10Hz（与 LiDAR 帧率一致）
-- **特点**：短时间内非常精确，但长时间会有累积漂移
-
-### 4.2 map → odom
-
-由 **PGO** 发布：
-
-- **平移**：优化后位姿与 FASTLIO2 原始位姿的位置差
-- **旋转**：优化后位姿与 FASTLIO2 原始位姿的旋转差
-- **更新频率**：每次图优化后更新（通常在检测到回环时触发）
-- **特点**：提供全局一致性的校正，但更新频率较低
-
-### 4.3 组合结果：map → base_link
-
-```
-T_map_to_base = T_map_to_odom × T_odom_to_base
-```
-
-即：
-
-```
-全局位姿 = PGO偏移量 × FASTLIO2里程计位姿
-```
-
-这就是载体在全局地图坐标系下的 **真实位姿**，供 Nav2 导航栈使用。
-
----
-
-## 5. FASTLIO2 和 PGO 节点的关联
-
-### 5.1 数据流
-
-```
-FASTLIO2 节点                          PGO 节点
-    |                                     |
-    |-- body_cloud (点云，body坐标系) ---->|
-    |                                     |
-    |-- odom (里程计位姿) --------------->|
-    |                                     |
-    |                                     |-- 关键帧筛选
-    |                                     |-- 回环检测
-    |                                     |-- GTSAM 图优化
-    |                                     |
-    |                                     |-- map→odom TF
-    |-- odom→base_link TF                 |
-    |                                     |
-    └─────── 组合后 ──────────────────────┘
-                    ↓
-          map→base_link (全局位姿)
-```
-
-### 5.2 关键接口
-
-| 数据 | 话题/TF | 来源 | 消费者 |
-|------|---------|------|--------|
-| body_cloud | `/cloud_registered_body` | FASTLIO2 | PGO |
-| odom | `/Odometry` | FASTLIO2 | PGO |
-| odom→base_link TF | TF tree | FASTLIO2 | Nav2, RViz |
-| map→odom TF | TF tree | PGO | Nav2, RViz |
-
-### 5.3 协作关系
-
-- **FASTLIO2** 是 **局部定位** 引擎，提供高频、高精度的短时位姿估计
-- **PGO** 是 **全局一致性** 保障，通过回环检测和图优化消除长期漂移
-- 两者协作实现了 **既高频又全局一致** 的定位系统
-- FASTLIO2 不知道 PGO 的存在（单向数据流），PGO 是 FASTLIO2 的上层消费者
+| 接口 | 类型 | 说明 |
+|------|------|------|
+| `/fastlio2/body_cloud` | `sensor_msgs/PointCloud2` | PGO 关键帧点云输入 |
+| `/fastlio2/lio_odom` | `nav_msgs/Odometry` | PGO 位姿输入 |
+| `/gnss` | `sensor_msgs/NavSatFix` | GPS factor 输入 |
+| `/pgo/optimized_odom` | `nav_msgs/Odometry` | 优化后位姿输出 |
+| `map -> odom` | TF | 全局校正偏移 |
+| `/pgo/loop_markers` | Marker | 回环可视化 |
