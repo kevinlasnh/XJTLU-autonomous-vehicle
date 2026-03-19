@@ -1,223 +1,251 @@
 # 操作命令手册
 
-本文档汇总项目所有常用命令，路径已更新为新 monorepo 工作空间 `~/fyp_autonomous_vehicle`。
+本文档只记录当前仓库和当前 Jetson 环境下确认可执行的命令。
 
-
----
-
-
-## 1. 构建 & Source
+## 1. 构建与 Source
 
 ```bash
-# 完整构建（受内存限制，必须 --parallel-workers 1）
-cd ~/fyp_autonomous_vehicle && colcon build --symlink-install --parallel-workers 1
+cd ~/fyp_autonomous_vehicle
 
-# Source 环境
-source /opt/ros/humble/setup.bash && source ~/fyp_autonomous_vehicle/install/setup.bash
-
-# 通过 Makefile 构建（推荐）
-make build                # 全量构建
-make build-sensor         # 仅构建传感器层
-make build-perception     # 仅构建感知层
-make build-planning       # 仅构建规划层
-make build-navigation     # 仅构建导航层
-
-# 构建单个包
-colcon build --packages-select <pkg_name> --symlink-install
-
-# 首次搭建：拉取第三方依赖 + rosdep 安装
+# 首次依赖初始化
 make setup
+
+# 全量构建
+make build
+
+# 分层构建
+make build-sensor
+make build-perception
+make build-planning
+make build-navigation
+
+# 单包构建
+colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
+
+# 每次构建后必须重新 source
+source /opt/ros/humble/setup.bash
+source ~/fyp_autonomous_vehicle/install/setup.bash
 ```
 
-
----
-
-
-## 2. 启动系统
+## 2. 初始化运行时数据
 
 ```bash
-# 三种运行模式（通过 Makefile）
-make launch-slam          # SLAM 建图模式
-make launch-explore       # 实时避障模式（当前主要模式）
-make launch-travel        # 静态地图导航模式
+cd ~/fyp_autonomous_vehicle
+bash scripts/init_runtime_data.sh
 
-# 手动启动（等效）
+ls ~/fyp_runtime_data
+```
+
+## 3. 启动四种运行模式
+
+```bash
+cd ~/fyp_autonomous_vehicle
+
+make launch-slam
+make launch-explore
+make launch-explore-gps
+make launch-travel
+```
+
+等效的 wrapper 直调方式：
+
+```bash
+bash scripts/launch_with_logs.sh slam
+bash scripts/launch_with_logs.sh explore
+bash scripts/launch_with_logs.sh explore-gps
+bash scripts/launch_with_logs.sh travel
+```
+
+等效的 `ros2 launch` 方式：
+
+```bash
 ros2 launch bringup system_slam.launch.py
 ros2 launch bringup system_explore.launch.py
+ros2 launch bringup system_explore_gps.launch.py
 ros2 launch bringup system_travel.launch.py
-
-# 手动启动 Nav2
-ros2 launch nav2_bringup navigation_launch.py use_sim_time:=false params_file:=<path>
 ```
 
-
----
-
-
-## 3. 单独启动传感器
+## 4. 单独启动核心组件
 
 ```bash
-# LiDAR（Livox MID360）
+# Livox
 ros2 launch livox_ros_driver2 msg_MID360_launch.py
 
-# IMU（WIT）
+# WIT IMU
 ros2 run wit_ros2_imu wit_ros2_imu
 
-# 串口读取（下位机数据）
-ros2 run serial_reader serial_reader_node
-
-# 串口控制（发送速度指令）
-ros2 run serial_twistctl serial_twistctl_node
-
-# GNSS
+# GNSS 原始驱动
 ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py
 
-# GPS 路径
-ros2 launch wheeltec_gps_path gps_path.launch.py
-
-# GNSS 标定（带超时）
+# GNSS 标定
 timeout 100 ros2 launch gnss_calibration gnss_calibration_launch.py
+
+# FAST-LIO2
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+
+# PGO + FAST-LIO2
+ros2 launch pgo pgo_launch.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+
+# 兼容旧平铺 PGO 配置
+ros2 launch pgo pgo_launch.py pgo_config:=pgo_no_gps.yaml
+
+# 串口节点
+ros2 run serial_reader serial_reader_node
+ros2 run serial_twistctl serial_twistctl_node
+
+# waypoint_collector
+ros2 run waypoint_collector waypoint_node
 ```
 
-
----
-
-
-## 4. 感知层单独启动
+## 5. 调试与状态检查
 
 ```bash
-# PGO + FASTLIO2 + RViz（完整感知链路）
-ros2 launch pgo pgo_launch.py
-
-# 仅 FASTLIO2
-ros2 launch fastlio2 lio_launch.py
-```
-
-
----
-
-
-## 5. 运行中调试
-
-```bash
-# Topic 相关
+# topic / node
 ros2 topic list
-ros2 topic echo <topic>
-ros2 topic hz <topic>
-ros2 topic hz /scan
-
-# Node 相关
 ros2 node list
-ros2 node info <node>
-ros2 node list | grep waypoint
+ros2 node info /pgo/pgo_node
 
-# 参数查询
-ros2 param get /tf_buffer_node buffer_length
+# 频率与消息
+ros2 topic hz /livox/lidar
+ros2 topic hz /fastlio2/body_cloud
+ros2 topic echo /pgo/optimized_odom --once
+ros2 topic echo /fix --once
+ros2 topic echo /gnss --once
 
-# TF 调试
-ros2 run tf2_ros tf2_monitor                    # 查看所有 TF
-ros2 run tf2_ros tf2_monitor map odom           # 监控 map→odom
-ros2 run tf2_ros tf2_monitor odom base_link     # 监控 odom→base_link
-ros2 run tf2_tools tf2_echo map base_link       # 输出 map→base_link 变换
+# 参数
+ros2 param get /fastlio2/lio_node lidar_max_range
+ros2 param get /pgo/pgo_node gps.enable
+ros2 param get /pgo/pgo_node gps.topic
 
-# 地图元数据
-ros2 topic echo /map_metadata --once
+# TF
+ros2 run tf2_ros tf2_monitor
+ros2 run tf2_ros tf2_monitor map odom
+ros2 run tf2_ros tf2_monitor odom base_link
+ros2 run tf2_tools tf2_echo map base_link
 ```
 
+常见诊断重点：
 
----
+- `map -> odom` 是否存在
+- `/pgo/optimized_odom` 是否在持续发布
+- `/fix` 与 `/gnss` 是否为有效 GNSS 数据
+- RViz fixed frame 是否为 `map`
 
-
-## 6. 地图保存
+## 6. 日志与运行时数据
 
 ```bash
-# 保存 3D 点云地图（PCD）
+# 查看当前 latest 指向
+readlink -f ~/fyp_runtime_data/logs/latest
+
+# 查看当前 session 元信息
+cat ~/fyp_runtime_data/logs/latest/system/session_info.yaml
+
+# 查看 tegrastats
+tail -f ~/fyp_runtime_data/logs/latest/system/tegrastats.log
+
+# 查看 console 日志目录
+ls ~/fyp_runtime_data/logs/latest/console
+
+# 查看 data 日志目录
+ls ~/fyp_runtime_data/logs/latest/data
+```
+
+## 7. 数据采集与评测
+
+```bash
+# 录制 rosbag
+bash scripts/data_collection/record_bag.sh
+bash scripts/data_collection/record_bag.sh ~/fyp_runtime_data/bags/my_run
+
+# 单独录 tegrastats
+bash scripts/data_collection/record_perf.sh
+bash scripts/data_collection/record_perf.sh ~/fyp_runtime_data/perf/my_run.log
+
+# 导出 TUM 轨迹
+python3 scripts/data_collection/bag_to_tum.py \
+  ~/fyp_runtime_data/bags/my_run/rosbag2 \
+  /pgo/optimized_odom \
+  ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
+```
+
+## 8. 地图保存
+
+```bash
+# 保存 3D 点云地图
 ros2 service call /pgo/save_maps interface/srv/SaveMaps \
   "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
 
 # 保存 2D 栅格地图
 ros2 run nav2_map_server map_saver_cli -f ~/fyp_runtime_data/maps/2d/<dir>/map
 
-# 查看 3D 点云地图
+# 查看 PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 ```
 
-
----
-
-
-## 7. 紧急停车
+## 9. 停止系统与紧急停车
 
 ```bash
-# 软件层面：杀死所有 ROS2 进程
-pkill -f ros2
-
-# 通过 Makefile
 make kill
+pkill -f ros2
 ```
 
-**硬件层面：**
+硬件层面的急停优先级：
 
-| 方式 | 操作 | 说明 |
-|------|------|------|
-| PS2 手柄 X 键 | 按下 | 失能电机（车轮自由滑行） |
-| PS2 手柄 B 键 | **禁止使用** | 紧急刹车会导致车轮严重反转 |
-| 车身红色急停按钮 | 按下停车，旋转释放 | 物理级别断电 |
+1. PS2 手柄 `X` 键失能电机
+2. 车身红色物理急停按钮
 
-
----
-
-
-## 8. ROS2 Daemon
+## 10. Git 与 PR
 
 ```bash
-# 重启 daemon（topic/node 列表异常时使用）
-ros2 daemon stop && sleep 2 && ros2 daemon start && sleep 2
+# 同步 main
+git checkout main
+git pull --ff-only
 
-# 查看 daemon 状态
-ros2 daemon status
+# 创建分支
+git checkout -b docs/sync-current-state
+
+# 检查状态
+git status
+git branch -v
+git log --oneline -5
+
+# 推送分支
+git push -u origin docs/sync-current-state
 ```
 
-
----
-
-
-## 9. Git 操作
+GitHub CLI：
 
 ```bash
-# 推送代码（绕过 Clash 代理）
-git -c http.proxy= -c https.proxy= push -u origin main
-
-# 关闭全局代理
-git config --global --unset http.proxy
-git config --global --unset https.proxy
-
-# 重新启用代理
-git config --global http.proxy http://127.0.0.1:7890
+gh auth status
+gh pr create
+gh pr merge --merge --delete-branch
 ```
 
-
----
-
-
-## 10. 系统维护
+如果 Jetson 上 `gh auth status` 返回 token 无效，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 `gh pr create` / `gh pr merge`，然后回 Jetson 执行：
 
 ```bash
-# 磁盘使用
+git checkout main
+git pull --ff-only
+git fetch --prune
+```
+
+## 11. 系统维护
+
+```bash
+# 磁盘 / 内存
 df -h /
-
-# 内存使用
 free -h
-
-# 系统监控
 htop
 
-# JetPack 版本
+# JetPack / 机型
 cat /etc/nv_tegra_release
-
-# 板卡型号
 cat /proc/device-tree/model
 
-# SSH 连接（通过 Tailscale）
-ssh jetson@100.97.227.24
+# NetworkManager 与有线网口自启动状态
+systemctl is-enabled NetworkManager
+systemctl is-active NetworkManager
+nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --active
+
+# 检查当前机器是否具备无密码 sudo
+sudo -n true && echo sudo_ok
 ```

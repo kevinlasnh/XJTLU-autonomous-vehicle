@@ -1,46 +1,83 @@
 # GPS 全局路径规划设计
 
-### 设计思路 (2025.11.25-27)
+## 1. 当前已落地能力（2026-03）
 
-#### 全局路径概念
-1. 全局地图是GPS地图, 全局路径从一个GPS点到另一个GPS点
-2. 长距离路径分割为多个GPS航点: 起点 → 中间航点1 → 中间航点2 → ... → 终点
-3. 所有GPS航点按顺序存入数据结构, 每个航点有特定index
+当前仓库已经具备下面这些 GPS 相关能力：
 
-#### GPS→Nav2 转换 (核心未解决问题)
-1. GPS点不能直接用作Nav2目标点, 需要转换
-2. 两个关键转换:
-   - 初始GPS位置 → Nav2初始位姿
-   - 目标GPS位置 → Nav2目标位姿
-3. 转换方案: Nav2上电时反馈全局地图初始位姿[0,0,?]给GPS规划系统, GPS系统将当前GPS位置与Nav2初始位姿绑定(x↔经度, y↔纬度), 然后反向推算所有航点的Nav2目标位姿
+1. `make launch-explore-gps`
+   - 启动 Livox、FAST-LIO2、PGO、Nav2
+   - 同时拉起 `nmea_navsat_driver` 与 `gnss_calibration`
+   - 把校准后的 `/gnss` 注入 PGO GPS 因子
+2. `master_params.yaml`
+   - 统一管理 GNSS 串口、PGO GPS 因子、FAST-LIO2 等参数
+3. `gnss_calibration` no-fix 保护
+   - 室内无卫星时不会写出假的有效偏移
+4. 数据采集脚本
+   - `record_bag.sh`
+   - `record_perf.sh`
+   - `bag_to_tum.py`
 
-#### Nav2 角色定位
-- Nav2只负责航点到航点的导航
-- Nav2范畴下的全局地图 = 整个系统框架下的局部地图
-- 只需要一个代价地图进行导航(注意: Nav2原生不支持单代价地图, 需特殊配置)
+## 2. 当前没有落地的部分
 
-#### 航点执行策略
-- 方案A: 逐航点导航, 到达后再发送下一个 (内存友好, 每次可重新初始化)
-- 方案B: 一次性将所有GPS航点转换为Nav2航点数组, 利用Nav2自带waypoint_follower (简单但可能内存爆炸)
+下面这些还不是生产可用状态：
 
-#### GPS 校准问题 (2025.11.27)
-1. 长距离单向导航时PGO无法触发回环, 漂移累积
-2. PGO只保证地图内部一致性(相对位置正确), 不保证绝对位置正确
-3. 需要GPS实时校准: 定期比较Nav2全局坐标系位置的GPS反推值与实际GPS值, 修正偏移
-4. 类比: 蒙着车窗开车, 定期揭开看看位置对不对
+1. GPS 航点直接转 Nav2 目标点
+2. 长距离 GPS 全局路线自动执行
+3. 基于高质量室外 fix 的整套论文采样流程
 
-#### 三融合算法思路 (perception_doc)
-1. GPS校准实时位姿: 防止机器人全局坐标系与物理世界偏移
-2. GPS校准目标位姿: 确保目标在物理世界中的位置正确映射到Nav2坐标系
-3. 两个校准缺一不可
+也就是说，当前已经完成的是“GNSS -> PGO GPS 因子 -> 全局位姿约束”这条链，而不是“GPS 地图 -> Nav2 全自动远距离路线执行”这条链。
 
-### 当前代码状态
-- gnss_global_path_planner: A*路径规划框架已有, 地图使用GeoJSON格式
-- global2local_tf: 坐标转换节点, 有多个备份版本(active development)
-- gnss_calibration: GPS标定节点, 使用gnss_offset.txt和startid.txt
+## 3. 当前运行事实
 
-### 待解决问题
-1. 如何保证GPS地图精准
-2. 起点GPS值和预定义节点不匹配时的处理
-3. GPS漂移的实时维护机制
-4. Nav2单代价地图配置的源码级改动
+### 3.1 GNSS 数据链
+
+```text
+GNSS serial -> /fix -> gnss_calibration -> /gnss -> PGO GPS factor
+```
+
+### 3.2 室内行为
+
+- `status=-1`
+- 坐标为 `NaN`
+- `gnss_calibration` 跳过 no-fix 样本
+
+这些在室内都是预期现象，不应被误判为软件异常。
+
+### 3.3 当前 Jetson 运行时痕迹
+
+截至 2026-03-19，Jetson 上 `~/fyp_runtime_data/gnss/` 现状为：
+
+- `startid.txt` 存在
+- 有 `gnss_offset.invalid_*.txt`
+- 还没有新的有效 `gnss_offset.txt`
+
+这说明室外有效 fix 验证尚未完成。
+
+## 4. 仍保留的设计方向
+
+仓库内仍有这些 GPS 规划相关包，供后续继续开发：
+
+- `gnss_global_path_planner`
+- `global2local_tf`
+- `gnss_calibration`
+
+其中：
+
+- `gnss_global_path_planner` 已有 GeoJSON + A* 规划框架
+- `global2local_tf` 负责全局坐标到本地坐标映射相关试验
+- 当前生产 bringup 仍以 `system_explore_gps.launch.py` 为主，不把上述规划链接入主导航流程
+
+## 5. 当前主要阻塞
+
+1. GPS 天线馈线更换前，无法做有效室外 fix 验证
+2. 天气条件会直接影响户外采样窗口
+3. GPS -> Nav2 目标点转换逻辑尚未定型
+
+## 6. 推荐的下一步实车序列
+
+1. 更换馈线并确认 GNSS 硬件链恢复
+2. 启动 `make launch-explore-gps`
+3. 确认 `/fix` 与 `/gnss` 都进入有效状态
+4. 录制 rosbag 与 tegrastats
+5. 导出 `/pgo/optimized_odom` 到 TUM
+6. 做 GPS on/off A/B 对比

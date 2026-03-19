@@ -1,58 +1,25 @@
-Adapt to ROS2 foxy.
+# serial
 
+这个目录保存项目当前使用的 C++ 串口库源码，主要被 `serial_twistctl`、`gyro_odometry` 等包依赖。
 
+## 当前维护方式
 
-#### Install
+- 不按独立外部库单独执行旧的 `cmake && make install` 流程。
+- 在本项目中统一作为 monorepo 内部依赖一起编译。
+- 当前工作区是 ROS 2 Humble，不再按旧 README 里的 Foxy 独立安装方式维护。
 
-Get the code:
+## 构建方式
 
-    # open a new terminal 
-    cd serial
-    mkdir build
+从工作区根目录执行:
 
-Build:
+```bash
+colcon build --packages-select serial --symlink-install --parallel-workers 1
+source install/setup.bash
+```
 
-    cd build
-    cmake ..
-    make
+如果只是构建依赖它的上层包，通常不需要单独执行这一条。
 
-Install:
+## 说明
 
-    sudo make install
-
-**like this**:
-
-<img title="" src="file:///home/lee/serial/images/install_Serial_ubuntu.png" alt="" data-align="inline">
-
-
-
-也可以不用 make install ,直接和你想要调用本API的ROS2 节点放在同一个 src 下编译即可。有关于本串口操作包的 API 在线文档如下：
-
-
-
-[serial: Serial Library](http://wjwwood.io/serial/doc/1.1.0/index.html)
-
-
-
-本共 ROS Package 修改来自：
-
-### License
-
-The MIT License
-
-Copyright (c) 2012 William Woodall, John Harrison
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-### Authors
-
-William Woodall <wjwwood@gmail.com>
-John Harrison <ash.gti@gmail.com>
-
-### Contact
-
-William Woodall <william@osrfoundation.org>
+- 该包提供底层串口访问 API，不直接形成整车模式入口。
+- 上游来源仍是 `wjwwood/serial`，许可证和作者声明以源码中的原始内容为准。

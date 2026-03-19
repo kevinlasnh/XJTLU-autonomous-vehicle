@@ -25,7 +25,7 @@
 ## 编译
 
 ```bash
-cd ~/2025_FYP/car_ws
+cd ~/fyp_autonomous_vehicle
 colcon build --packages-select waypoint_collector --symlink-install
 source install/setup.bash
 ```
@@ -37,7 +37,9 @@ source install/setup.bash
 确保你的 Nav2 系统已正常运行，包括 `waypoint_follower` 节点：
 
 ```bash
-ros2 launch ros2_launch_file system_entire_launch_explore.py
+cd ~/fyp_autonomous_vehicle
+source install/setup.bash
+make launch-explore
 ```
 
 ### 2. 启动航点收集器
@@ -45,7 +47,7 @@ ros2 launch ros2_launch_file system_entire_launch_explore.py
 在新终端中运行：
 
 ```bash
-source ~/2025_FYP/car_ws/install/setup.bash
+source ~/fyp_autonomous_vehicle/install/setup.bash
 ros2 run waypoint_collector waypoint_node
 ```
 

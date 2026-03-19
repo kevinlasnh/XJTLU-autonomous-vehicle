@@ -16,6 +16,6 @@ labels: bug
 ## 实际行为
 
 ## 环境
-- 模式: SLAM / Explore / Travel
+- 模式: SLAM / Explore / Explore GPS / Travel
 - 运行时长:
 - 相关 topic/node:

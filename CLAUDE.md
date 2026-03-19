@@ -1,29 +1,44 @@
 # CLAUDE.md
 
-## Repository
+## Repository Purpose
 
-This is a ROS2 Humble monorepo for an autonomous vehicle on Jetson Orin NX.
+This repository contains the ROS 2 Humble runtime stack for the FYP autonomous vehicle deployed on the Jetson Orin NX.
 
-## Build
+## Runtime Roots
+
+- Workspace: `~/fyp_autonomous_vehicle`
+- Runtime data: `~/fyp_runtime_data`
+- Active docs: `~/fyp_autonomous_vehicle/docs`
+
+## Operating Modes
+
+- `make launch-slam`
+- `make launch-explore`
+- `make launch-explore-gps`
+- `make launch-travel`
+
+All `make launch-*` targets go through `scripts/launch_with_logs.sh`, which writes:
+
+- console logs to `~/fyp_runtime_data/logs/<session>/console`
+- custom node logs to `~/fyp_runtime_data/logs/<session>/data`
+- system logs to `~/fyp_runtime_data/logs/<session>/system`
+
+## Build Rules
 
 ```bash
 cd ~/fyp_autonomous_vehicle
-colcon build --symlink-install --parallel-workers 1
+colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
 
-## Structure
-
-- `src/sensor_drivers/` — LiDAR, IMU, GNSS, serial drivers
-- `src/perception/` — FAST-LIO2, PGO, pointcloud processing
-- `src/planning/` — GPS global path planning, coordinate transforms
-- `src/navigation/` — Custom Nav2 plugins
-- `src/bringup/` — Launch files, configs, maps, rviz
-- `docs/devlog/` — Developer logs
-
 ## Critical Rules
 
-1. NEVER modify YAML parameters without documenting the reason
-2. ALWAYS use `--parallel-workers 1` for colcon build
-3. ROS2 Humble only — clone `humble` branches
-4. Nav2 is in `src/third_party/` via dependencies.repos — do NOT modify it
+1. Do not change tuned YAML parameters without documenting the reason.
+2. Always source `install/setup.bash` after a build.
+3. ROS 2 Humble only.
+4. Do not modify `src/third_party/navigation2`.
+5. Do not push directly to `main`; open a PR.
+
+## GitHub CLI Note
+
+PR operations require a valid `gh auth status` on the machine performing them. If Jetson `gh` auth is invalid, the PR can be created and merged from an authenticated workstation against the pushed branch, then Jetson should sync back to `main`.

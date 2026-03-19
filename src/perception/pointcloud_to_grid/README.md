@@ -2,18 +2,18 @@
 This package converts `sensor_msgs/PointCloud2` LIDAR data to both `nav_msgs/OccupancyGrid` and `grid_map_msgs/GridMap` 2D map data based on intensity and / or height.
 ![](doc/grid_map01.gif)
 
+This repository vendors the package under `src/perception/pointcloud_to_grid` inside the `~/fyp_autonomous_vehicle` monorepo.
+
 [![Static Badge](https://img.shields.io/badge/ROS_2-Humble-34aec5)](https://docs.ros.org/en/humble/)
 
 If you would like to use ROS 1 version (melodic, noetic), please go to [`ROS1` branch](https://github.com/jkk-research/pointcloud_to_grid/tree/ros1).
 
 ## Build
 ```
-cd ~/ros2_ws/src 
-git clone https://github.com/jkk-research/pointcloud_to_grid -b ros2
-cd ~/ros2_ws/ 
+cd ~/fyp_autonomous_vehicle
 colcon build --packages-select pointcloud_to_grid --symlink-install
 ```
-Don't foget to `source ~/ros2_ws/install/setup.bash`. 
+Don't forget to `source ~/fyp_autonomous_vehicle/install/setup.bash`.
 
 
 ## Features
