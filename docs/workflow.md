@@ -91,11 +91,12 @@ make launch-travel
 
 如果改动涉及 `nav-gps`，至少补下面这些检查：
 
-1. `gnss_calibration` 是否发布有效 `/gnss`
-2. `gps_waypoint_dispatcher` 是否成功读取 fixed origin 与路网配置
-3. `/follow_waypoints` action 是否在线
-4. `goto_name` / `goto_latlon` / `stop` 是否行为正确
-5. 室内无 live fix 时，是否可用 mock / replay `/gnss` 做软件 smoke
+1. `build_scene_runtime.py` 是否成功生成 `current_scene/` 编译产物
+2. `gps_anchor_localizer` 是否进入 `NAV_READY`
+3. `gps_waypoint_dispatcher` 是否成功读取 `scene_points.yaml`
+4. `/compute_route` / `/follow_path` / `/navigate_to_pose` action 是否在线
+5. `goto_name` / `list_destinations` / `stop` 是否行为正确
+6. 室内无 live fix 时，是否可用 mock / replay `/fix` 做软件 smoke
 
 ## 3. AI 协作流
 

@@ -67,13 +67,14 @@ PGO 当前承担 5 件事：
 - `gps.origin_lat`
 - `gps.origin_lon`
 - `gps.origin_alt`
+- `gps.topic` 在 `nav-gps` 模式下可由 `gps_anchor_localizer` 持续发布 scene-calibrated `/gnss`
 
 行为约束：
 - `auto`: 保持历史兼容，用首条有效 GPS 初始化 LocalCartesian
 - `fixed`: 启动时直接使用配置中的固定 ENU 原点
 - 在 `fixed` 模式下，首条 GPS 到来后不得覆写 origin
 
-这让 PGO 的 `map` 坐标系能和 `gps_waypoint_dispatcher`、路网文件使用同一地理参考。
+这让 PGO 的 `map` 坐标系能和 `gps_anchor_localizer`、goal manager、scene route graph 使用同一地理参考。
 
 ## 6. TF 关系
 

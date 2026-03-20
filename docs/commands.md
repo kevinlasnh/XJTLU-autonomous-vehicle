@@ -83,6 +83,10 @@ ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py
 # GNSS 标定
 ros2 launch gnss_calibration gnss_calibration_launch.py
 
+# GNSS scene-ready localizer（新 GPS 路网架构）
+ros2 run gnss_calibration gps_anchor_localizer_node \
+  --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
+
 # FAST-LIO2
 ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
 
@@ -99,9 +103,9 @@ ros2 run serial_twistctl serial_twistctl_node
 # waypoint_collector
 ros2 run waypoint_collector waypoint_node
 
-# GPS dispatcher CLI
-ros2 run gps_waypoint_dispatcher goto_latlon <lat> <lon> [alt]
+# GPS goal manager CLI
 ros2 run gps_waypoint_dispatcher goto_name <destination_name>
+ros2 run gps_waypoint_dispatcher list_destinations
 ros2 run gps_waypoint_dispatcher stop
 ```
 
@@ -112,7 +116,9 @@ ros2 run gps_waypoint_dispatcher stop
 ros2 topic list
 ros2 node list
 ros2 action list
-ros2 action info /follow_waypoints
+ros2 action info /compute_route
+ros2 action info /follow_path
+ros2 action info /navigate_to_pose
 ros2 node info /pgo/pgo_node
 
 # 频率与消息
@@ -121,6 +127,10 @@ ros2 topic hz /fastlio2/body_cloud
 ros2 topic echo /pgo/optimized_odom --once
 ros2 topic echo /fix --once
 ros2 topic echo /gnss --once
+ros2 topic echo /gps_system/status --once
+ros2 topic echo /gps_system/nearest_anchor --once
+ros2 topic echo /gps_system/nearest_anchor_id --once
+ros2 topic echo /gps_goal_manager/status --once
 ros2 topic echo /gps_waypoint_dispatcher/goal_map --once
 ros2 topic echo /gps_waypoint_dispatcher/path_map --once
 
@@ -141,8 +151,9 @@ ros2 run tf2_tools tf2_echo map base_link
 
 - `map -> odom` 是否存在
 - `/pgo/optimized_odom` 是否在持续发布
-- `/gnss` 是否为有效校准后 GNSS 数据
-- `/follow_waypoints` action 是否在线
+- `/gps_system/status` 是否已经到 `NAV_READY`
+- `/gnss` 是否为 `gps_anchor_localizer` 发布的有效 scene-calibrated GNSS 数据
+- `/compute_route` / `/follow_path` / `/navigate_to_pose` action 是否在线
 - RViz fixed frame 是否为 `map`
 
 ## 6. 日志与运行时数据
@@ -267,42 +278,47 @@ python3 -c "import pyproj; print(pyproj.__version__)"
 ## 12. GPS 数据采集
 
 ```bash
-# 前置: 先在终端 1 启动 GPS 系统
-make launch-explore-gps
-
-# 终端 2: 运行交互式 GPS 点位采集脚本 (v2)
 cd ~/fyp_autonomous_vehicle
+source /opt/ros/humble/setup.bash
 source install/setup.bash
-python3 scripts/collect_gps_points.py
+python3 scripts/collect_gps_scene.py
 ```
 
 脚本说明：
-- 前置条件: `~/fyp_runtime_data/gnss/gnss_offset.txt` 必须存在且为有效有限值，否则 `/gnss` 不会发布可用定位数据
-- 坐标源: **仅使用 /gnss**，不 fallback 到 `/fix`
+- 坐标源: **仅使用 /fix**
 - 采样: 每点 10 个样本取平均
 - 质量门槛: 样本散布 < 2m，否则拒绝采集
-- 输出格式: ID-keyed dict，与 `campus_road_network.yaml` schema 对齐
+- 输出文件: `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- 单文件同时维护：
+  - fixed origin
+  - graph nodes
+  - `anchor`
+  - `dest`
+  - edges
 
 交互命令：
-- `Enter`：踩点，采集当前 `/gnss` 坐标
+- `Enter`：采图点
 - `e`：添加两点之间的边，按双向通行处理
-- `l`：列出所有点和边，显示散布值
+- `o`：从已有点里选择 fixed origin
+- `u`：修改已有点的名字 / anchor / destination
+- `l`：列出所有点和边，显示 anchor / dest / origin
 - `d`：按 ID 删除指定点
 - `q`：保存并退出
 
-输出文件：`~/fyp_runtime_data/gnss/collected_points.yaml`
-
-采集后导入：
+采集后编译运行时文件：
 
 ```bash
-cp ~/fyp_runtime_data/gnss/collected_points.yaml   src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml
+cd ~/fyp_autonomous_vehicle
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 scripts/build_scene_runtime.py
 ```
 
 采集规范：
-- 在路口、拐弯处、目的地入口处踩点
-- 长直路以路口 / 拐点为主，长边可稀疏
-- 脚本会提示是否与上一个点建边
-- 不需要标注建筑物，路网边只沿可通行道路画
+- 所有转弯、路口、目的地入口必须踩点
+- 允许系统上电启动的区域附近必须布 `anchor`
+- graph edge 按节点间直线段理解，弯道必须靠增加节点离散化
+- 脚本会提示是否与上一个点自动建边
 
 ## 13. GPS 导航调试
 
@@ -310,14 +326,23 @@ cp ~/fyp_runtime_data/gnss/collected_points.yaml   src/navigation/gps_waypoint_d
 # 启动 nav-gps
 make launch-nav-gps
 
-# 室内软件 smoke 可用 mock /gnss 驱动 dispatcher
-ros2 topic pub /gnss sensor_msgs/msg/NavSatFix   "{header: {frame_id: 'gps'}, status: {status: 0, service: 1}, latitude: 31.274927, longitude: 120.737548, altitude: 0.0}"   --rate 2
+# 查看 scene 目标列表
+ros2 run gps_waypoint_dispatcher list_destinations
 
-# 发送命名目标
-ros2 run gps_waypoint_dispatcher goto_name 前门口
+# 室内软件 smoke 可用 mock /fix 驱动 gps_anchor_localizer
+ros2 topic pub /fix sensor_msgs/msg/NavSatFix \
+  "{header: {frame_id: 'gps'}, status: {status: 0, service: 1}, latitude: 31.274927, longitude: 120.737548, altitude: 0.0, position_covariance: [4.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 25.0], position_covariance_type: 2}" \
+  --rate 5
 
-# 发送直达目标
-ros2 run gps_waypoint_dispatcher goto_latlon 31.274842 120.737268 0.0
+# 观察 ready 状态
+ros2 topic echo /gps_system/status
+ros2 topic echo /gps_goal_manager/status
+
+# 发送英文命名目标
+ros2 run gps_waypoint_dispatcher goto_name anchor_a
+
+# 检查 route / local planner action 是否在线
+ros2 action list | grep -E 'compute_route|follow_path|navigate_to_pose'
 
 # 停止当前任务
 ros2 run gps_waypoint_dispatcher stop

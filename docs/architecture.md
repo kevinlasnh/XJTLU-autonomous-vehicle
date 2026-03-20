@@ -23,7 +23,7 @@
 | SLAM | `make launch-slam` | 建图与感知链验证 |
 | Explore | `make launch-explore` | 当前主运行模式，局部避障导航 |
 | Explore GPS | `make launch-explore-gps` | Explore 基础上加入 GNSS 与 PGO GPS 因子 |
-| Nav GPS | `make launch-nav-gps` | `feature/gps-navigation-v4` 上的 GPS 目标导航模式 |
+| Nav GPS | `make launch-nav-gps` | scene bundle + anchor ready + GPS 路网导航模式 |
 | Travel | `make launch-travel` | 静态地图导航框架，当前暂停 |
 
 所有 `make launch-*` 入口都通过 `scripts/launch_with_logs.sh` 启动，因此默认会生成按 session 隔离的日志目录。
@@ -61,27 +61,38 @@ GNSS serial -> nmea_navsat_driver -> /fix
 
 `make launch-explore-gps` 的职责仍然是把校准后的 `/gnss` 注入 PGO，提升 `map -> odom` 的全局位置约束能力。
 
-### 5.2 Nav GPS 模式（feature/gps-navigation-v4）
+### 5.2 Nav GPS 模式（scene bundle + route graph）
 
 ```text
-GNSS serial -> /fix -> gnss_calibration -> /gnss
-                                     |          |
-                                     |          +-> PGO GPS Factor
-                                     |
-                                     +-> gps_waypoint_dispatcher
-                                           |  读取 fixed ENU origin
-                                           |  读取 campus_road_network.yaml
-                                           |  直达模式: /gps_goal / goto_latlon
-                                           |  路网模式: goto_name + nearest-edge projection + Dijkstra
-                                           v
-                                     FollowWaypoints action -> Nav2 -> /cmd_vel
+scene_gps_bundle.yaml -> build_scene_runtime.py
+                       -> current_scene/master_params_scene.yaml
+                       -> current_scene/scene_points.yaml
+                       -> current_scene/scene_route_graph.geojson
+
+GNSS serial -> /fix -> gps_anchor_localizer -> /gnss -----------+
+                       |                    |                   |
+                       |                    +-> /gps_system/*   +-> PGO GPS Factor
+                       |
+                       +-> lock startup anchor + session offset
+
+scene_points.yaml + route_graph.geojson ------------------------+
+                                                               |
+goto_name -> gps_waypoint_dispatcher(goal manager) ------------+
+            |  读取 scene_points.yaml
+            |  检查 NAV_READY
+            |  锁定 startup anchor
+            |  Stage A: navigate_to_pose (需要时)
+            |  Stage B: ComputeRoute(start_id, goal_id)
+            v
+     dense graph path -> FollowPath -> Nav2 -> /cmd_vel
 ```
 
 `nav-gps` 的核心是：
-- 当前位姿统一使用 `/gnss`
-- PGO 与 dispatcher 读取同一固定 ENU 原点
-- `campus_road_network.yaml` 是唯一地点 / 路网 source of truth
-- `goto_name` 走路网模式，`goto_latlon` / `/gps_goal` 只做调试直达模式
+- 当前位姿统一使用 `gps_anchor_localizer` 发布的 `/gnss`
+- PGO、localizer、goal manager 读取同一 fixed ENU origin
+- `scene_gps_bundle.yaml` 是唯一 source of truth
+- 运行时只读取 `~/fyp_runtime_data/gnss/current_scene/` 下的编译产物
+- `goto_name` 是主入口；用户只输入英文目标名
 
 ## 6. TF 链
 
@@ -98,13 +109,15 @@ map -> odom -> base_link
 ## 7. 配置架构
 
 - `src/bringup/config/master_params.yaml`
-  - 当前 FAST-LIO2、PGO、串口、GNSS、pointcloud_to_laserscan 的统一参数入口
-  - 也承载 PGO / dispatcher 的固定 ENU 原点
+  - 仓库模板参数入口
 - `src/bringup/config/nav2_default.yaml`
 - `src/bringup/config/nav2_explore.yaml`
 - `src/bringup/config/nav2_gps.yaml`
 - `src/bringup/config/nav2_travel.yaml`
-- `src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml`
+- `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- `~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml`
+- `~/fyp_runtime_data/gnss/current_scene/scene_points.yaml`
+- `~/fyp_runtime_data/gnss/current_scene/scene_route_graph.geojson`
 - `src/sensor_drivers/gnss/gnss_calibration/config/calibration_points.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo_no_gps.yaml`
@@ -118,8 +131,13 @@ map -> odom -> base_link
 ├── config/
 │   └── log_switch.yaml
 ├── gnss/
-│   ├── startid.txt
-│   └── gnss_offset.txt / gnss_offset.invalid_*.txt
+│   ├── scene_gps_bundle.yaml
+│   ├── scene_gps_bundle_*.yaml
+│   └── current_scene/
+│       ├── master_params_scene.yaml
+│       ├── scene_points.yaml
+│       ├── scene_route_graph.geojson
+│       └── scene_gps_bundle.yaml
 ├── logs/
 │   ├── <timestamp>/
 │   │   ├── console/
@@ -152,7 +170,7 @@ src/
 - `sensor_drivers/`: Livox、IMU、GNSS、串口
 - `perception/`: FAST-LIO2、PGO GPS 融合、点云转栅格相关
 - `planning/`: 历史 GPS 全局规划与坐标转换试验区
-- `navigation/`: `waypoint_collector` 与新的 `gps_waypoint_dispatcher`
+- `navigation/`: `waypoint_collector` 与 scene-graph goal manager `gps_waypoint_dispatcher`
 - `bringup/`: 系统 launch、参数、地图、RViz 配置
 - `third_party/`: 上游依赖，不作为项目自定义开发区
 
