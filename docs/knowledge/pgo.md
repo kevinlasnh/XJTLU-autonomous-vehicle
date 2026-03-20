@@ -8,8 +8,7 @@
 - colcon 包名: `pgo`
 - 启动入口: `ros2 launch pgo pgo_launch.py`
 
-这个实现不是“纯回环 PGO”了，而是：
-
+这个实现已经不是纯回环 PGO，而是：
 - FAST-LIO2 局部里程计
 - PGO 回环图优化
 - 可选 GPS factor 绝对位置约束
@@ -51,9 +50,7 @@ PGO 当前承担 5 件事：
 - `submap_resolution: 0.1`
 - `min_loop_detect_duration: 5.0`
 
-这说明当前工程配置比早期设计更激进地保留关键帧，也把回环搜索半径收得更小，更偏向实际车辆场景而不是泛化演示参数。
-
-## 5. GPS Factor 行为
+## 5. GPS Factor 与固定 ENU 原点
 
 当 `gps.enable=true` 时，PGO 会使用以下 GNSS 相关参数：
 
@@ -65,7 +62,18 @@ PGO 当前承担 5 件事：
 - `gps.quality_sat_min: 6`
 - `gps.drift_threshold: 2.0`
 
-当前 GPS 因子职责是给关键帧的位置增加绝对约束，降低长距离运行时的全局漂移；它不是完整的 GPS 全局导航方案。
+2026-03-20 的新增点是：
+- `gps.origin_mode: auto | fixed`
+- `gps.origin_lat`
+- `gps.origin_lon`
+- `gps.origin_alt`
+
+行为约束：
+- `auto`: 保持历史兼容，用首条有效 GPS 初始化 LocalCartesian
+- `fixed`: 启动时直接使用配置中的固定 ENU 原点
+- 在 `fixed` 模式下，首条 GPS 到来后不得覆写 origin
+
+这让 PGO 的 `map` 坐标系能和 `gps_waypoint_dispatcher`、路网文件使用同一地理参考。
 
 ## 6. TF 关系
 
@@ -77,7 +85,7 @@ map -> odom -> base_link
 - PGO 提供 `map -> odom`
 - 组合后得到全局位姿
 
-如果 PGO 没有进入正常关键帧和优化流程，`map -> odom` 就可能消失，RViz 在 `map` fixed frame 下会表现为点云和 costmap 看起来像“空白”。
+如果 PGO 没有进入正常关键帧和优化流程，`map -> odom` 就可能消失，RViz 在 `map` fixed frame 下会表现为点云和 costmap 看起来空白。
 
 ## 7. 2026-03-18 启动回归修复
 

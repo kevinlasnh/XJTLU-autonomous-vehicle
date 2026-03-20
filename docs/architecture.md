@@ -16,16 +16,17 @@
 - 串口连接到 STM32 下位机
 - PS2 手柄作为最高优先级人工接管
 
-## 3. 四种运行模式
+## 3. 五种运行模式
 
 | 模式 | 命令 | 当前用途 |
 |------|------|----------|
 | SLAM | `make launch-slam` | 建图与感知链验证 |
 | Explore | `make launch-explore` | 当前主运行模式，局部避障导航 |
-| Explore GPS | `make launch-explore-gps` | 在 Explore 基础上加入 GNSS 与 PGO GPS 因子 |
+| Explore GPS | `make launch-explore-gps` | Explore 基础上加入 GNSS 与 PGO GPS 因子 |
+| Nav GPS | `make launch-nav-gps` | `feature/gps-navigation-v4` 上的 GPS 目标导航模式 |
 | Travel | `make launch-travel` | 静态地图导航框架，当前暂停 |
 
-四个 `make launch-*` 入口都通过 `scripts/launch_with_logs.sh` 启动，因此默认会生成按 session 隔离的日志目录。
+所有 `make launch-*` 入口都通过 `scripts/launch_with_logs.sh` 启动，因此默认会生成按 session 隔离的日志目录。
 
 ## 4. Explore 模式数据流
 
@@ -44,7 +45,9 @@ Nav2 -> /cmd_vel -> serial_twistctl -> STM32 -> motors
 STM32 -> serial_reader -> chassis feedback / odom_CBoard
 ```
 
-## 5. Explore GPS 模式额外链路
+## 5. GPS 相关链路
+
+### 5.1 Explore GPS 模式
 
 ```text
 GNSS serial -> nmea_navsat_driver -> /fix
@@ -56,7 +59,29 @@ GNSS serial -> nmea_navsat_driver -> /fix
                                    PGO GPS Factor constraints
 ```
 
-当前生产化的 GPS 融合是把 `/gnss` 注入 PGO，提升 `map -> odom` 的全局位置约束能力。长距离 GPS 航点到 Nav2 目标点的完整自动执行链仍在开发中。
+`make launch-explore-gps` 的职责仍然是把校准后的 `/gnss` 注入 PGO，提升 `map -> odom` 的全局位置约束能力。
+
+### 5.2 Nav GPS 模式（feature/gps-navigation-v4）
+
+```text
+GNSS serial -> /fix -> gnss_calibration -> /gnss
+                                     |          |
+                                     |          +-> PGO GPS Factor
+                                     |
+                                     +-> gps_waypoint_dispatcher
+                                           |  读取 fixed ENU origin
+                                           |  读取 campus_road_network.yaml
+                                           |  直达模式: /gps_goal / goto_latlon
+                                           |  路网模式: goto_name + nearest-edge projection + Dijkstra
+                                           v
+                                     FollowWaypoints action -> Nav2 -> /cmd_vel
+```
+
+`nav-gps` 的核心是：
+- 当前位姿统一使用 `/gnss`
+- PGO 与 dispatcher 读取同一固定 ENU 原点
+- `campus_road_network.yaml` 是唯一地点 / 路网 source of truth
+- `goto_name` 走路网模式，`goto_latlon` / `/gps_goal` 只做调试直达模式
 
 ## 6. TF 链
 
@@ -73,13 +98,16 @@ map -> odom -> base_link
 ## 7. 配置架构
 
 - `src/bringup/config/master_params.yaml`
-  当前 FAST-LIO2、PGO、串口、GNSS、pointcloud_to_laserscan 的统一参数入口
+  - 当前 FAST-LIO2、PGO、串口、GNSS、pointcloud_to_laserscan 的统一参数入口
+  - 也承载 PGO / dispatcher 的固定 ENU 原点
 - `src/bringup/config/nav2_default.yaml`
 - `src/bringup/config/nav2_explore.yaml`
+- `src/bringup/config/nav2_gps.yaml`
 - `src/bringup/config/nav2_travel.yaml`
+- `src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml`
+- `src/sensor_drivers/gnss/gnss_calibration/config/calibration_points.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo_no_gps.yaml`
-  作为 legacy 平铺 YAML 兼容入口，便于旧命令和 A/B 测试
 
 ## 8. 日志与运行时数据
 
@@ -121,11 +149,10 @@ src/
 ```
 
 说明：
-
 - `sensor_drivers/`: Livox、IMU、GNSS、串口
 - `perception/`: FAST-LIO2、PGO GPS 融合、点云转栅格相关
-- `planning/`: GPS 全局规划与坐标转换
-- `navigation/`: waypoint_collector 等导航辅助节点
+- `planning/`: 历史 GPS 全局规划与坐标转换试验区
+- `navigation/`: `waypoint_collector` 与新的 `gps_waypoint_dispatcher`
 - `bringup/`: 系统 launch、参数、地图、RViz 配置
 - `third_party/`: 上游依赖，不作为项目自定义开发区
 
@@ -148,6 +175,7 @@ src/
   - `global2local_tf`
   - `gnss_global_path_planner`
   - `waypoint_collector`
+  - `gps_waypoint_dispatcher`
   - `wit_ros2_imu`
   - `gnss_calibration`
   - `gyro_odometry`
@@ -162,3 +190,5 @@ src/
 - Livox SDK2
 - GTSAM
 - GeographicLib
+- pyproj
+- `ros-humble-geographic-msgs`

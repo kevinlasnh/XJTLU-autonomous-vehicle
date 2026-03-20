@@ -36,7 +36,7 @@ bash scripts/init_runtime_data.sh
 ls ~/fyp_runtime_data
 ```
 
-## 3. 启动四种运行模式
+## 3. 启动五种运行模式
 
 ```bash
 cd ~/fyp_autonomous_vehicle
@@ -44,6 +44,7 @@ cd ~/fyp_autonomous_vehicle
 make launch-slam
 make launch-explore
 make launch-explore-gps
+make launch-nav-gps
 make launch-travel
 ```
 
@@ -53,6 +54,7 @@ make launch-travel
 bash scripts/launch_with_logs.sh slam
 bash scripts/launch_with_logs.sh explore
 bash scripts/launch_with_logs.sh explore-gps
+bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
 ```
 
@@ -62,6 +64,7 @@ bash scripts/launch_with_logs.sh travel
 ros2 launch bringup system_slam.launch.py
 ros2 launch bringup system_explore.launch.py
 ros2 launch bringup system_explore_gps.launch.py
+ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
 ```
 
@@ -78,7 +81,7 @@ ros2 run wit_ros2_imu wit_ros2_imu
 ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py
 
 # GNSS 标定
-timeout 100 ros2 launch gnss_calibration gnss_calibration_launch.py
+ros2 launch gnss_calibration gnss_calibration_launch.py
 
 # FAST-LIO2
 ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
@@ -95,14 +98,21 @@ ros2 run serial_twistctl serial_twistctl_node
 
 # waypoint_collector
 ros2 run waypoint_collector waypoint_node
+
+# GPS dispatcher CLI
+ros2 run gps_waypoint_dispatcher goto_latlon <lat> <lon> [alt]
+ros2 run gps_waypoint_dispatcher goto_name <destination_name>
+ros2 run gps_waypoint_dispatcher stop
 ```
 
 ## 5. 调试与状态检查
 
 ```bash
-# topic / node
+# topic / node / action
 ros2 topic list
 ros2 node list
+ros2 action list
+ros2 action info /follow_waypoints
 ros2 node info /pgo/pgo_node
 
 # 频率与消息
@@ -111,11 +121,14 @@ ros2 topic hz /fastlio2/body_cloud
 ros2 topic echo /pgo/optimized_odom --once
 ros2 topic echo /fix --once
 ros2 topic echo /gnss --once
+ros2 topic echo /gps_waypoint_dispatcher/goal_map --once
+ros2 topic echo /gps_waypoint_dispatcher/path_map --once
 
 # 参数
 ros2 param get /fastlio2/lio_node lidar_max_range
 ros2 param get /pgo/pgo_node gps.enable
 ros2 param get /pgo/pgo_node gps.topic
+ros2 param get /pgo/pgo_node gps.origin_mode
 
 # TF
 ros2 run tf2_ros tf2_monitor
@@ -128,7 +141,8 @@ ros2 run tf2_tools tf2_echo map base_link
 
 - `map -> odom` 是否存在
 - `/pgo/optimized_odom` 是否在持续发布
-- `/fix` 与 `/gnss` 是否为有效 GNSS 数据
+- `/gnss` 是否为有效校准后 GNSS 数据
+- `/follow_waypoints` action 是否在线
 - RViz fixed frame 是否为 `map`
 
 ## 6. 日志与运行时数据
@@ -162,18 +176,14 @@ bash scripts/data_collection/record_perf.sh
 bash scripts/data_collection/record_perf.sh ~/fyp_runtime_data/perf/my_run.log
 
 # 导出 TUM 轨迹
-python3 scripts/data_collection/bag_to_tum.py \
-  ~/fyp_runtime_data/bags/my_run/rosbag2 \
-  /pgo/optimized_odom \
-  ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
+python3 scripts/data_collection/bag_to_tum.py   ~/fyp_runtime_data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
 ```
 
 ## 8. 地图保存
 
 ```bash
 # 保存 3D 点云地图
-ros2 service call /pgo/save_maps interface/srv/SaveMaps \
-  "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
+ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
 
 # 保存 2D 栅格地图
 ros2 run nav2_map_server map_saver_cli -f ~/fyp_runtime_data/maps/2d/<dir>/map
@@ -248,10 +258,11 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 
 # 检查当前机器是否具备无密码 sudo
 sudo -n true && echo sudo_ok
+
+# GPS dispatcher 依赖
+apt list --installed | grep ros-humble-geographic-msgs
+python3 -c "import pyproj; print(pyproj.__version__)"
 ```
-
-
-
 
 ## 12. GPS 数据采集
 
@@ -265,29 +276,49 @@ source install/setup.bash
 python3 scripts/collect_gps_points.py
 ```
 
-脚本说明:
-- 坐标源: **仅使用 /gnss** (不 fallback 到 /fix, 符合 v4 坐标契约)
+脚本说明：
+- 前置条件: `~/fyp_runtime_data/gnss/gnss_offset.txt` 必须存在且为有效有限值，否则 `/gnss` 不会发布可用定位数据
+- 坐标源: **仅使用 /gnss**，不 fallback 到 `/fix`
 - 采样: 每点 10 个样本取平均
-- 质量门槛: 样本散布 < 2m, 否则拒绝采集
-- 输出格式: ID-keyed dict (与 campus_road_network.yaml schema 一致)
+- 质量门槛: 样本散布 < 2m，否则拒绝采集
+- 输出格式: ID-keyed dict，与 `campus_road_network.yaml` schema 对齐
 
-交互命令:
-- `Enter` -- 踩点 (采集当前 /gnss 坐标)
-- `e` -- 添加两点之间的边 (双向通行)
-- `l` -- 列出所有已采集的点和边 (含散布值)
-- `d` -- 按 ID 删除指定点
-- `q` -- 保存并退出
+交互命令：
+- `Enter`：踩点，采集当前 `/gnss` 坐标
+- `e`：添加两点之间的边，按双向通行处理
+- `l`：列出所有点和边，显示散布值
+- `d`：按 ID 删除指定点
+- `q`：保存并退出
 
-输出文件: `~/fyp_runtime_data/gnss/collected_points.yaml`
+输出文件：`~/fyp_runtime_data/gnss/collected_points.yaml`
 
-采集后导入:
+采集后导入：
+
 ```bash
-cp ~/fyp_runtime_data/gnss/collected_points.yaml \
-   src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml
+cp ~/fyp_runtime_data/gnss/collected_points.yaml   src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml
 ```
 
-采集规范:
+采集规范：
 - 在路口、拐弯处、目的地入口处踩点
-- 长直路: 有 edge projection 时路口/拐点为主, 长边可稀疏
-- 脚本会自动提示是否与上一个点建边
-- 不需要标注建筑物, 路网边只沿道路画, A* 天然不穿楼
+- 长直路以路口 / 拐点为主，长边可稀疏
+- 脚本会提示是否与上一个点建边
+- 不需要标注建筑物，路网边只沿可通行道路画
+
+## 13. GPS 导航调试
+
+```bash
+# 启动 nav-gps
+make launch-nav-gps
+
+# 室内软件 smoke 可用 mock /gnss 驱动 dispatcher
+ros2 topic pub /gnss sensor_msgs/msg/NavSatFix   "{header: {frame_id: 'gps'}, status: {status: 0, service: 1}, latitude: 31.274927, longitude: 120.737548, altitude: 0.0}"   --rate 2
+
+# 发送命名目标
+ros2 run gps_waypoint_dispatcher goto_name 前门口
+
+# 发送直达目标
+ros2 run gps_waypoint_dispatcher goto_latlon 31.274842 120.737268 0.0
+
+# 停止当前任务
+ros2 run gps_waypoint_dispatcher stop
+```

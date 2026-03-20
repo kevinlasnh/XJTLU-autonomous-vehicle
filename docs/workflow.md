@@ -50,6 +50,7 @@ git checkout -b feature/your-topic
 1. 先核对真实代码状态、launch 链和当前参数。
 2. 再做改动，不凭历史记忆直接写。
 3. 如果改动涉及系统行为，先确认影响的运行模式。
+4. 新增 launch / mode / 参数 profile 时，同步更新文档，不留到后面补猜。
 
 ### 2.4 构建
 
@@ -63,6 +64,7 @@ source install/setup.bash
 1. `--parallel-workers 1` 是硬性要求。
 2. 每次构建后都要重新 `source install/setup.bash`。
 3. Python 包虽可借助 `--symlink-install` 免重编，但仍要做运行验证。
+4. `build-navigation` 当前包含 `waypoint_collector`、`waypoint_nav_tool`、`gps_waypoint_dispatcher`。
 
 ### 2.5 启动与验证
 
@@ -72,17 +74,28 @@ source install/setup.bash
 make launch-slam
 make launch-explore
 make launch-explore-gps
+make launch-nav-gps
 make launch-travel
 ```
 
 验证时至少检查：
 
 - 相关节点是否都在线
-- 关键 topic 是否有数据
+- 关键 topic / action 是否有数据
 - `map -> odom -> base_link` TF 是否完整
 - session 日志是否落到 `~/fyp_runtime_data/logs/latest/`
 
 实车相关改动需要补上人工现场测试结论。
+
+### 2.6 GPS 导航专项验证
+
+如果改动涉及 `nav-gps`，至少补下面这些检查：
+
+1. `gnss_calibration` 是否发布有效 `/gnss`
+2. `gps_waypoint_dispatcher` 是否成功读取 fixed origin 与路网配置
+3. `/follow_waypoints` action 是否在线
+4. `goto_name` / `goto_latlon` / `stop` 是否行为正确
+5. 室内无 live fix 时，是否可用 mock / replay `/gnss` 做软件 smoke
 
 ## 3. AI 协作流
 
@@ -121,7 +134,7 @@ git pull --ff-only
 git fetch --prune
 ```
 
-如果 Jetson 上 `gh auth status` 失败，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 PR 和 merge，然后再让 Jetson 回拉 `main`。
+如果 Jetson 上 `gh auth status` 返回 token 无效，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 `gh pr create` / `gh pr merge`，然后再让 Jetson 回拉 `main`。
 
 ## 5. 文档触发规则
 
@@ -144,6 +157,6 @@ git fetch --prune
 1. 改动已验证。
 2. 相关文档已同步。
 3. 分支已推送。
-4. PR 已创建并合并。
-5. Jetson 已回到最新 `main`。
+4. PR 已创建并合并，或者明确记录为什么本次只停在 feature 分支。
+5. Jetson 已回到最新 `main`，或者明确记录当前停留分支和原因。
 6. 如果有新的系统事实、问题或阻塞，已写入开发日志和问题追踪。
