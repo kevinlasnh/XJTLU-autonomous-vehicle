@@ -20,6 +20,7 @@
 | 开发规范 | [conventions.md](conventions.md) |
 | 执行工作流 | [workflow.md](workflow.md) |
 | 已知问题与当前阻塞 | [known_issues.md](known_issues.md) |
+| 硬件规格参数 | [hardware_spec.md](hardware_spec.md) |
 
 ## 技术深度文档
 

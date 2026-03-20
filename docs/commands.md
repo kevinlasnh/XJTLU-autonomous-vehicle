@@ -249,3 +249,45 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 # 检查当前机器是否具备无密码 sudo
 sudo -n true && echo sudo_ok
 ```
+
+
+
+
+## 12. GPS 数据采集
+
+```bash
+# 前置: 先在终端 1 启动 GPS 系统
+make launch-explore-gps
+
+# 终端 2: 运行交互式 GPS 点位采集脚本 (v2)
+cd ~/fyp_autonomous_vehicle
+source install/setup.bash
+python3 scripts/collect_gps_points.py
+```
+
+脚本说明:
+- 坐标源: **仅使用 /gnss** (不 fallback 到 /fix, 符合 v4 坐标契约)
+- 采样: 每点 10 个样本取平均
+- 质量门槛: 样本散布 < 2m, 否则拒绝采集
+- 输出格式: ID-keyed dict (与 campus_road_network.yaml schema 一致)
+
+交互命令:
+- `Enter` -- 踩点 (采集当前 /gnss 坐标)
+- `e` -- 添加两点之间的边 (双向通行)
+- `l` -- 列出所有已采集的点和边 (含散布值)
+- `d` -- 按 ID 删除指定点
+- `q` -- 保存并退出
+
+输出文件: `~/fyp_runtime_data/gnss/collected_points.yaml`
+
+采集后导入:
+```bash
+cp ~/fyp_runtime_data/gnss/collected_points.yaml \
+   src/navigation/gps_waypoint_dispatcher/config/campus_road_network.yaml
+```
+
+采集规范:
+- 在路口、拐弯处、目的地入口处踩点
+- 长直路: 有 edge projection 时路口/拐点为主, 长边可稀疏
+- 脚本会自动提示是否与上一个点建边
+- 不需要标注建筑物, 路网边只沿道路画, A* 天然不穿楼
