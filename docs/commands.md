@@ -277,6 +277,13 @@ python3 -c "import pyproj; print(pyproj.__version__)"
 
 ## 12. GPS 数据采集
 
+最短两行启动命令：
+
+```bash
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_scene.py
+```
+
 ```bash
 cd ~/fyp_autonomous_vehicle
 source /opt/ros/humble/setup.bash
