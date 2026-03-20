@@ -353,4 +353,7 @@ ros2 action list | grep -E 'compute_route|follow_path|navigate_to_pose'
 
 # 停止当前任务
 ros2 run gps_waypoint_dispatcher stop
+
+# 一键拉起 nav-gps，等待 NAV_READY，并按编号选择 destination
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
 ```

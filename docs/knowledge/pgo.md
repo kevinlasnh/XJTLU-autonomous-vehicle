@@ -119,3 +119,51 @@ map -> odom -> base_link
 | `/pgo/optimized_odom` | `nav_msgs/Odometry` | 优化后位姿输出 |
 | `map -> odom` | TF | 全局校正偏移 |
 | `/pgo/loop_markers` | Marker | 回环可视化 |
+
+## 9. 2026-03-20 实车 `nav-gps` 阻塞结论
+
+首轮真实 scene bundle 室外测试已经确认，当前 `pgo` 还有一个更高优先级的稳定性问题。
+
+### 现象
+
+- `gps_anchor_localizer` 可以正常进入：
+  - `NO_FIX -> UNSTABLE_FIX -> GNSS_READY -> NAV_READY`
+- goal manager 可以正常进入：
+  - `GOAL_REQUESTED`
+  - `COMPUTING_ROUTE`
+  - `FOLLOWING_ROUTE`
+- 车辆会短暂动作，但很快停止
+- goal manager 最终状态：
+  - `FAILED; follow_path_status=6`
+
+### 直接证据
+
+- `controller_server` 日志：
+  - `Controller patience exceeded`
+  - `Transform data too old when converting from odom to map`
+- launch 日志：
+  - `pgo_node ... process has died ... exit code -11`
+- 现场 TF 结果：
+  - 只剩 `odom -> base_link`
+  - `map -> odom` 消失
+
+### 工程结论
+
+- 当前失败不是 route graph、destination 编号菜单或 `NAV_READY` gating 的问题
+- 真正失败点在 `pgo_node` 段错误
+- 一旦 `pgo` 退出，Nav2 控制器就无法继续把机器人位姿从 `odom` 转到 `map`
+- 结果就是 `follow_path` 被 abort
+
+### 已做但未完全收口的修复
+
+- 已修复 `syncCB()` 中一处明确的并发 bug：
+  - 匿名 `lock_guard` 改为具名锁
+- `pgo` 单包已重编
+- 但再次实车复测后，`pgo_node` 仍然继续 `exit code -11`
+
+### 下一轮排查入口
+
+- `SimplePGO::addKeyPose()`
+- `SimplePGO::smoothAndUpdate()`
+- GPS factor 加入路径
+- `map -> odom` 广播前的 offset 更新链

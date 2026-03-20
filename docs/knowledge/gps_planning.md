@@ -199,7 +199,34 @@ source install/setup.bash
   - `FOLLOWING_ROUTE`
   - `SUCCEEDED`
 
-## 8. 当前边界
+## 8. 2026-03-20 首轮真实场景验证结论
+
+用户已经采集真实 `ls-building` scene，并完成 `build_scene_runtime.py` 编译；`nav_gps_menu.py` 也已在车上进入真实使用。
+
+现场确认：
+- `nav_gps_menu.py` 可以自动拉起 `nav-gps`
+- `gps_system` 可以正常到达 `NAV_READY`
+- 菜单可以列出 destination 并按编号发送目标
+- 选择真实目标 `2 -> ls-right-bottom-corner` 后，goal manager 会到达：
+  - `GOAL_REQUESTED`
+  - `COMPUTING_ROUTE`
+  - `FOLLOWING_ROUTE`
+
+但当前实车执行仍然失败：
+- 最终状态：
+  - `FAILED; follow_path_status=6`
+- 直接根因：
+  - `pgo_node` 在执行期间 `exit code -11`
+  - `map -> odom` TF 消失
+  - Nav2 controller 随后报 `Controller patience exceeded`
+
+因此当前链路已经证明：
+- 启动定位链是通的
+- 目标输入链是通的
+- graph routing 链是通的
+- 当前 blocker 是 PGO 稳定性，不是 GPS 路网菜单或 route server 本身
+
+## 9. 当前边界
 
 1. 这套链路已经可部署，但真实 scene bundle 仍需要现场采图
 2. “任意位置上电”在工程上等价于：
@@ -208,12 +235,12 @@ source install/setup.bash
 3. 如果当前点附近没有合法 `anchor`，系统必须保持 `NO_ANCHOR` 或 `AMBIGUOUS_ANCHOR`
 4. 这不是 RTK 方案，GPS 绝对精度仍受环境影响；scene anchor 解决的是启动收口，不是全域厘米级定位
 
-## 9. 下一步实车流程
+## 10. 下一步实车流程
 
-1. 用 `collect_gps_scene.py` 采一份全新场景 bundle
-2. 运行 `build_scene_runtime.py`
-3. `make launch-nav-gps`
-4. 观察 `/gps_system/status` 是否进入 `NAV_READY`
-5. 用 `list_destinations` 确认目标列表
-6. 用 `goto_name <english_name>` 做实车导航
-7. 用 `stop` 验证中断
+1. 继续定位并修复 `pgo_node` 段错误
+2. 优先恢复稳定的 `map -> odom` 与 `/pgo/optimized_odom`
+3. 复测 `nav_gps_menu.py`
+4. 再次在真实 scene 上验证：
+   - `NAV_READY`
+   - `FOLLOWING_ROUTE`
+   - 到点成功
