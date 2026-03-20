@@ -20,9 +20,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'dispatcher_node = gps_waypoint_dispatcher.dispatcher_node:main',
+            'dispatcher_node = gps_waypoint_dispatcher.goal_manager_node:main',
+            'goal_manager_node = gps_waypoint_dispatcher.goal_manager_node:main',
             'goto_latlon = gps_waypoint_dispatcher.goto_latlon:main',
             'goto_name = gps_waypoint_dispatcher.goto_name:main',
+            'list_destinations = gps_waypoint_dispatcher.list_destinations:main',
             'stop = gps_waypoint_dispatcher.stop:main',
         ],
     },

@@ -21,7 +21,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'gnss_calibration_node = gnss_calibration.gnss_calibration_node:main'
+            'gnss_calibration_node = gnss_calibration.gnss_calibration_node:main',
+            'gps_anchor_localizer_node = gnss_calibration.gps_anchor_localizer_node:main',
         ],
     },
 )
