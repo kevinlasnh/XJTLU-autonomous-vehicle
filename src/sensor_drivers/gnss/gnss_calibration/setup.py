@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 package_name = 'gnss_calibration'
 
@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/gnss_calibration_launch.py']),
+        ('share/' + package_name + '/config', ['config/calibration_points.yaml']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

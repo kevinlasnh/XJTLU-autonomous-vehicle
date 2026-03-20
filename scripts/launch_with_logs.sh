@@ -62,6 +62,7 @@ case "$MODE" in
   explore)      LAUNCH_FILE="system_explore.launch.py" ;;
   travel)       LAUNCH_FILE="system_travel.launch.py" ;;
   explore-gps)  LAUNCH_FILE="system_explore_gps.launch.py" ;;
+  nav-gps)      LAUNCH_FILE="system_nav_gps.launch.py" ;;
   *)            echo "Unknown mode: $MODE"; exit 1 ;;
 esac
 

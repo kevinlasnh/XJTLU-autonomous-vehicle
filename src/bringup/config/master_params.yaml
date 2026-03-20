@@ -107,6 +107,25 @@
       "gps.alert_interval": 3
       # 严重预警节流间隔；调小会更频繁报警。
       "gps.emergency_interval": 1
+      # GPS ENU 原点模式；fixed 表示使用显式固定原点。
+      "gps.origin_mode": fixed
+      # 固定 GPS ENU 原点纬度；PGO 与 dispatcher 必须共用同一组值。
+      "gps.origin_lat": 31.274927
+      # 固定 GPS ENU 原点经度；PGO 与 dispatcher 必须共用同一组值。
+      "gps.origin_lon": 120.737548
+      # 固定 GPS ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+      "gps.origin_alt": 0.0
+
+/gps_waypoint_dispatcher:
+  ros__parameters:
+    # GPS dispatcher 使用的固定 ENU 原点纬度；必须与 PGO 完全一致。
+    enu_origin_lat: 31.274927
+    # GPS dispatcher 使用的固定 ENU 原点经度；必须与 PGO 完全一致。
+    enu_origin_lon: 120.737548
+    # GPS dispatcher 使用的固定 ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+    enu_origin_alt: 0.0
+    # 是否允许在路网外回退到直线直达；v4 默认关闭。
+    allow_direct_fallback: false
 
 /serial_twistctl_node:
   ros__parameters:

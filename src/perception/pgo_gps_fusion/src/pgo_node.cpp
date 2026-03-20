@@ -18,6 +18,7 @@
 #include <queue>
 #include <filesystem>
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 相关头文件
 #include <sensor_msgs/msg/nav_sat_fix.hpp>  // GPS 数据消息类型
@@ -123,6 +124,10 @@ struct NodeConfig
     double gps_drift_threshold = 2.0;              // 漂移检测阈值（米）
     int gps_alert_interval = 3;                    // 漂移预警间隔
     int gps_emergency_interval = 1;                // 严重漂移间隔
+    std::string gps_origin_mode = "auto";         // GPS ENU 原点模式: auto/fixed
+    double gps_origin_lat = 0.0;                   // fixed 模式下的原点纬度
+    double gps_origin_lon = 0.0;                   // fixed 模式下的原点经度
+    double gps_origin_alt = 0.0;                   // fixed 模式下的原点海拔
     // ✅ GPS 融合修改结束 - NodeConfig 扩展完成
 };
 
@@ -165,6 +170,12 @@ public:
         }
 
         loadParameters();
+        if (m_node_config.enable_gps && m_node_config.gps_origin_mode == "fixed") {
+            setGpsOrigin(m_node_config.gps_origin_lat,
+                         m_node_config.gps_origin_lon,
+                         m_node_config.gps_origin_alt,
+                         "fixed parameter");
+        }
         m_pgo = std::make_shared<SimplePGO>(m_pgo_config);
         
         rclcpp::QoS qos = rclcpp::QoS(50);  // 队列大小从 10 增加到 50
@@ -273,6 +284,20 @@ public:
         m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", 2.0);
         m_node_config.gps_alert_interval = this->declare_parameter<int>("gps.alert_interval", 3);
         m_node_config.gps_emergency_interval = this->declare_parameter<int>("gps.emergency_interval", 1);
+        m_node_config.gps_origin_mode = this->declare_parameter<std::string>("gps.origin_mode", "auto");
+        m_node_config.gps_origin_lat = this->declare_parameter<double>("gps.origin_lat", 0.0);
+        m_node_config.gps_origin_lon = this->declare_parameter<double>("gps.origin_lon", 0.0);
+        m_node_config.gps_origin_alt = this->declare_parameter<double>("gps.origin_alt", 0.0);
+
+        std::transform(m_node_config.gps_origin_mode.begin(), m_node_config.gps_origin_mode.end(),
+                       m_node_config.gps_origin_mode.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (m_node_config.gps_origin_mode != "auto" && m_node_config.gps_origin_mode != "fixed") {
+            RCLCPP_WARN(this->get_logger(),
+                        "Unknown gps.origin_mode '%s', fallback to auto",
+                        m_node_config.gps_origin_mode.c_str());
+            m_node_config.gps_origin_mode = "auto";
+        }
 
         if (!config_path.empty())
         {
@@ -280,8 +305,11 @@ public:
             syncParametersToRos();
         }
 
-        RCLCPP_INFO(this->get_logger(), "GPS config loaded: interval=%d, noise_xy=%.2f",
-                    m_node_config.gps_factor_interval, m_node_config.gps_noise_xy);
+        RCLCPP_INFO(this->get_logger(),
+                    "GPS config loaded: interval=%d, noise_xy=%.2f, origin_mode=%s",
+                    m_node_config.gps_factor_interval,
+                    m_node_config.gps_noise_xy,
+                    m_node_config.gps_origin_mode.c_str());
     }
 
     void loadLegacyConfig(const std::string &config_path)
@@ -343,6 +371,14 @@ public:
                 m_node_config.gps_alert_interval = config["gps"]["alert_interval"].as<int>();
             if (config["gps"]["emergency_interval"])
                 m_node_config.gps_emergency_interval = config["gps"]["emergency_interval"].as<int>();
+            if (config["gps"]["origin_mode"])
+                m_node_config.gps_origin_mode = config["gps"]["origin_mode"].as<std::string>();
+            if (config["gps"]["origin_lat"])
+                m_node_config.gps_origin_lat = config["gps"]["origin_lat"].as<double>();
+            if (config["gps"]["origin_lon"])
+                m_node_config.gps_origin_lon = config["gps"]["origin_lon"].as<double>();
+            if (config["gps"]["origin_alt"])
+                m_node_config.gps_origin_alt = config["gps"]["origin_alt"].as<double>();
         }
     }
 
@@ -371,10 +407,27 @@ public:
             rclcpp::Parameter("gps.drift_threshold", m_node_config.gps_drift_threshold),
             rclcpp::Parameter("gps.alert_interval", m_node_config.gps_alert_interval),
             rclcpp::Parameter("gps.emergency_interval", m_node_config.gps_emergency_interval),
+            rclcpp::Parameter("gps.origin_mode", m_node_config.gps_origin_mode),
+            rclcpp::Parameter("gps.origin_lat", m_node_config.gps_origin_lat),
+            rclcpp::Parameter("gps.origin_lon", m_node_config.gps_origin_lon),
+            rclcpp::Parameter("gps.origin_alt", m_node_config.gps_origin_alt),
         });
     }
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 GPS 回调函数
+    void setGpsOrigin(double lat, double lon, double alt, const std::string &source)
+    {
+        m_state.origin_lat = lat;
+        m_state.origin_lon = lon;
+        m_state.origin_alt = alt;
+        m_state.gps_origin_set = true;
+        m_geo_converter = std::make_shared<GeographicLib::LocalCartesian>(lat, lon, alt);
+
+        RCLCPP_INFO(this->get_logger(),
+                    "GPS origin set from %s: lat=%.8f, lon=%.8f, alt=%.2f",
+                    source.c_str(), lat, lon, alt);
+    }
+
     void gpsCB(const sensor_msgs::msg::NavSatFix::ConstSharedPtr &gps_msg)
     {
         std::lock_guard<std::mutex> lock(m_state.message_mutex);
@@ -409,19 +462,17 @@ public:
 
         // 设置原点（仅第一次）
         if (!m_state.gps_origin_set) {
-            m_state.origin_lat = gps_msg->latitude;
-            m_state.origin_lon = gps_msg->longitude;
-            m_state.origin_alt = gps_msg->altitude;
-            m_state.gps_origin_set = true;
-
-            // 初始化坐标转换器
-            m_geo_converter = std::make_shared<GeographicLib::LocalCartesian>(
-                m_state.origin_lat, m_state.origin_lon, m_state.origin_alt
-            );
-
-            RCLCPP_INFO(this->get_logger(),
-                        "GPS origin set: lat=%.8f, lon=%.8f, alt=%.2f",
-                        m_state.origin_lat, m_state.origin_lon, m_state.origin_alt);
+            if (m_node_config.gps_origin_mode == "fixed") {
+                setGpsOrigin(m_node_config.gps_origin_lat,
+                             m_node_config.gps_origin_lon,
+                             m_node_config.gps_origin_alt,
+                             "fixed parameter");
+            } else {
+                setGpsOrigin(gps_msg->latitude,
+                             gps_msg->longitude,
+                             gps_msg->altitude,
+                             "first valid GPS");
+            }
         }
 
         // 缓存 GPS 数据

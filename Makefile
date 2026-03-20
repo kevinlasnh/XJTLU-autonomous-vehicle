@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-nav-gps launch-travel kill clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -36,7 +36,7 @@ build-planning:
 build-navigation:
 	source /opt/ros/humble/setup.bash && \
 	colcon build --symlink-install --packages-select \
-		waypoint_collector waypoint_nav_tool
+		waypoint_collector waypoint_nav_tool gps_waypoint_dispatcher
 
 test:
 	source /opt/ros/humble/setup.bash && \
@@ -50,6 +50,9 @@ launch-explore:
 
 launch-explore-gps:
 	bash scripts/launch_with_logs.sh explore-gps
+
+launch-nav-gps:
+	bash scripts/launch_with_logs.sh nav-gps
 
 launch-travel:
 	bash scripts/launch_with_logs.sh travel
