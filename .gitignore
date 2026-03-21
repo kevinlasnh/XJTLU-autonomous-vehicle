@@ -38,10 +38,7 @@ Thumbs.db
 # Third-party repos pulled by vcs import
 src/third_party/
 
-# Local-only planning files (L2)
-task_plan.md
-findings.md
-progress.md
+# Agent config (local only)
 AGENTS.md
 
 # Claude Code
