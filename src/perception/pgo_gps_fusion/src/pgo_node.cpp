@@ -37,6 +37,9 @@
 #include <cerrno>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
 
 namespace {
 std::string getRuntimeRoot() {
@@ -200,8 +203,8 @@ public:
             RCLCPP_INFO(this->get_logger(), "GPS subscriber enabled on topic: %s", 
                         m_node_config.gps_topic.c_str());
             
-            // 初始化坐标转换器（稍后设置原点）
-            m_geo_converter = nullptr;
+            // 仅在未设置时初始化为null（fixed模式下已在上方setGpsOrigin中创建）
+            if (!m_geo_converter) { m_geo_converter = nullptr; }
         }
         // ✅ GPS 融合修改结束 - GPS 订阅器初始化完成
         
@@ -519,7 +522,6 @@ public:
                       << ", points=" << (cloud_msg->width * cloud_msg->height) << std::endl;
             m_log_file.flush();
         }
-
         size_t queue_size = m_state.cloud_buffer.size();
         if (queue_size > 30) {
             RCLCPP_WARN(this->get_logger(), 
@@ -687,7 +689,8 @@ public:
         builtin_interfaces::msg::Time cur_time;
         cur_time.sec = cp.pose.sec;
         cur_time.nanosec = cp.pose.nsec;
-        
+
+        fprintf(stderr, "[DIAG] timerCB: pts=%zu time=%.6f kp=%zu\n", cp.cloud ? cp.cloud->size() : (size_t)0, cp.pose.second, m_pgo->keyPoses().size());
         bool is_key_pose = m_pgo->addKeyPose(cp);
         if (!is_key_pose)
         {
@@ -710,13 +713,17 @@ public:
 
         // ✅ GPS 融合修改开始 - 2025/12/01 - 在关键帧添加后尝试添加 GPS 因子
         if (m_node_config.enable_gps && m_state.gps_origin_set) {
-            tryAddGPSFactor(cp.pose.second);  // 传入时间戳
+            fprintf(stderr, "[DIAG] calling tryAddGPSFactor\n");
+            tryAddGPSFactor(cp.pose.second);
+            fprintf(stderr, "[DIAG] tryAddGPSFactor done\n");
         }
         // ✅ GPS 融合修改结束 - GPS 因子触发逻辑添加完成
 
+        fprintf(stderr, "[DIAG] calling searchForLoopPairs, key_poses=%zu\n", m_pgo->keyPoses().size());
         size_t loop_pairs_before = m_pgo->historyPairs().size();
         m_pgo->searchForLoopPairs();
         size_t loop_pairs_after = m_pgo->historyPairs().size();
+        fprintf(stderr, "[DIAG] searchForLoopPairs done\n");
         
         if (loop_pairs_after > loop_pairs_before)
         {
@@ -731,12 +738,15 @@ public:
             }
         }
 
+        fprintf(stderr, "[DIAG] calling smoothAndUpdate\n");
         m_pgo->smoothAndUpdate();
+        fprintf(stderr, "[DIAG] smoothAndUpdate done\n");
 
+        fprintf(stderr, "[DIAG] calling sendBroadCastTF + publish\n");
         sendBroadCastTF(cur_time);
         publishOptimizedOdom(cp, cur_time);
-
         publishLoopMarkers(cur_time);
+        fprintf(stderr, "[DIAG] timerCB complete for key pose\n");
     }
 
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 tryAddGPSFactor 函数
@@ -891,9 +901,25 @@ private:
     // ✅ GPS 融合修改结束 - GPS 成员变量添加完成
 };
 
+
+static void crash_handler(int sig) {
+    void *bt[50];
+    int n = backtrace(bt, 50);
+    fprintf(stderr, "\n=== PGO_NODE CRASH sig=%d ===\n", sig);
+    backtrace_symbols_fd(bt, n, STDERR_FILENO);
+    fprintf(stderr, "=== END BACKTRACE ===\n");
+    fflush(stderr);
+    _exit(128 + sig);
+}
+
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
+    signal(SIGSEGV, crash_handler);
+    signal(SIGABRT, crash_handler);
+    signal(SIGFPE, crash_handler);
+    signal(SIGBUS, crash_handler);
+    fprintf(stderr, "[DIAG] PGO crash handler installed\n");
     rclcpp::spin(std::make_shared<PGONode>());
     rclcpp::shutdown();
     return 0;
