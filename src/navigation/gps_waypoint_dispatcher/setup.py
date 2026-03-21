@@ -26,6 +26,7 @@ setup(
             'goto_name = gps_waypoint_dispatcher.goto_name:main',
             'list_destinations = gps_waypoint_dispatcher.list_destinations:main',
             'stop = gps_waypoint_dispatcher.stop:main',
+            'gps_corridor_runner_node = gps_waypoint_dispatcher.gps_corridor_runner_node:main',
         ],
     },
 )

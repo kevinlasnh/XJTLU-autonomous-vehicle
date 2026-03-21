@@ -109,3 +109,8 @@
    - 现象: 历史版本只有 `GNSS -> PGO GPS factor`，没有把 GPS 目标交给 Nav2 的正式执行链。
    - 修复: 在 `feature/gps-navigation-v4` 上新增 `gps_waypoint_dispatcher`、`nav2_gps.yaml`、固定 ENU 原点、`system_nav_gps.launch.py` 与 `nav-gps` 模式。
    - 状态: 室内软件 smoke 已通过，等待室外最终验证
+
+20. **[中等] Fixed-launch corridor v1 终点仍有几米级残差**
+   - 描述: 2026-03-21 首次 outdoor baseline 已确认 corridor v1 能从固定 Launch Pose 自动出发并到达目标附近，但终点附近仍有几米级误差。
+   - 推测: 主要仍受普通单点 GNSS 会话漂移影响，而不是运行链断裂。
+   - 状态: 已有可运行 baseline，后续做增量精度优化

@@ -357,3 +357,34 @@ ros2 run gps_waypoint_dispatcher stop
 # 一键拉起 nav-gps，等待 NAV_READY，并按编号选择 destination
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
 ```
+
+## 14. Fixed-Launch GPS Corridor
+
+两点 corridor 采集：
+
+```bash
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_two_point_corridor.py
+```
+
+自动 corridor 导航：
+
+```bash
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch bringup system_gps_corridor.launch.py
+```
+
+调试观察：
+
+```bash
+ros2 topic echo /gps_corridor/status
+ros2 topic echo /gps_corridor/goal_map
+ros2 topic echo /gps_corridor/path_map
+```
+
+说明：
+- 该模式假定车辆已经摆在固定 Launch Pose，并且车头朝向摆正
+- `collect_two_point_corridor.py` 只采两个点：固定启动点与固定终点
+- collect_two_point_corridor.py 若未检测到 /fix，会自动后台拉起 nmea_navsat_driver，采完后自动收掉
+- 运行时不会再弹出 menu，也不会等待额外命令
+- corridor 第一版默认终点位于车辆启动朝向的正前方，`body_vector_m = [distance_m, 0]`
+- 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_corridor_runner_node` 会直接 abort，不动车
+

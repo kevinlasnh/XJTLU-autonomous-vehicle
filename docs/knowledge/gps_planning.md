@@ -244,3 +244,77 @@ source install/setup.bash
    - `NAV_READY`
    - `FOLLOWING_ROUTE`
    - 到点成功
+
+
+## 11. Fixed-Launch Two-Point Corridor
+
+### 11.1 适用场景
+
+这条链路只解决最小问题：
+- 固定 Launch Pose
+- 固定启动朝向
+- 一个固定终点
+- 中间自动切段
+- 一次只给 Nav2 一个小目标
+
+### 11.2 为什么不用旧 scene graph 主链
+
+因为当前任务不是“任意位置上电 + GPS 图路网导航”，而是“先验证固定 corridor 能不能稳定跑通”。
+
+因此：
+- scene graph / route_server 过重
+- menu / destination 输入不是必须
+- 最合理的做法是直接在当前 `map` 下生成一条 corridor
+
+### 11.3 运行逻辑
+
+1. 预采两点：
+   - `start_ref`
+   - `goal_ref`
+2. 采集脚本自动写出：
+   - `distance_m`
+   - `bearing_deg`
+   - `body_vector_m`
+3. corridor runner 启动后：
+   - 等待稳定 `/fix`
+   - 检查当前启动点是否在 `startup_gps_tolerance_m` 内
+   - 读取当前 `map -> base_link`
+   - 用 `body_vector_m` 生成 `goal_map`
+   - 将 corridor 按 `segment_length_m` 切成多个 subgoals
+   - 串行执行 `NavigateToPose`
+
+### 11.4 当前 v1 约束
+
+- v1 不计算全局 scene 对齐
+- v1 不计算 route graph
+- v1 不推导任意目标名
+- v1 默认 corridor 在车辆启动朝向正前方
+
+也就是：
+- `body_vector_m.x = distance_m`
+- `body_vector_m.y = 0`
+
+### 11.5 当前 smoke 结论
+
+截至 2026-03-21：
+- corridor runner 已能在 launch 中自动拉起
+- 能正确读取 corridor YAML
+- 能进入 `WAITING_FOR_STABLE_FIX`
+- 在无有效 GNSS fix 时会超时 abort，不动车
+
+这说明当前 corridor 链的关键控制流已经打通，剩余验证转为现场真实 `/fix` 与实车走廊测试。
+
+
+## 12. Fixed-Launch Corridor v1 室外 baseline 结论（2026-03-21）
+
+当前最小 corridor 链已完成首次室外实车。
+
+实测结论：
+- 车辆已能从固定 Launch Pose 自动出发
+- 已能朝目标 corridor 前进并到达目标附近
+- 当前问题不再是“能不能跑”，而是“终点精度是否足够”
+
+当前工程判断：
+- fixed-launch corridor v1 已可作为后续增量开发 baseline
+- 当前主要待解问题是普通 GNSS 会话漂移导致的末端几米级误差
+- 后续若继续提升终点精度，应优先围绕启动一致性、会话补偿和末段收敛策略做增量优化

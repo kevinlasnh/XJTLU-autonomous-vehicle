@@ -4,9 +4,9 @@ import launch
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -21,6 +21,12 @@ def generate_launch_description():
 
     bringup_share = get_package_share_directory("bringup")
     master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
+
+    use_rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="true",
+        description="Whether to launch RViz together with the Explore stack",
+    )
 
     livox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -44,7 +50,10 @@ def generate_launch_description():
                 )
             ]
         ),
-        launch_arguments={"params_file": master_params_file}.items(),
+        launch_arguments={
+            "params_file": master_params_file,
+            "use_rviz": LaunchConfiguration("use_rviz"),
+        }.items(),
     )
 
     serial_node = launch_ros.actions.Node(
@@ -81,6 +90,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            use_rviz_arg,
             livox_launch,
             pgo_launch,
             serial_node,
