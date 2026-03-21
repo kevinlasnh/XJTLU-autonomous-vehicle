@@ -38,8 +38,5 @@ Thumbs.db
 # Third-party repos pulled by vcs import
 src/third_party/
 
-# Agent config (local only)
-AGENTS.md
-
 # Claude Code
 .claude/
