@@ -1,6 +1,6 @@
 # Corridor v2 — GPS-aligned 多点导航实施计划
 
-**Status**: `用户已审批 / 交付 Codex 部署`
+**Status**: `CC 复审完成 / Bootstrap 方案 A 锁定 / 交还 Codex 部署`
 **当前分支**: `gps`
 **最后更新**: 2026-03-22
 
@@ -227,15 +227,17 @@ global_costmap:
 
 **解决**: 每次运行自动产生完整日志，用于复盘、调参和论文数据
 
-**输出目录**: `~/fyp_runtime_data/logs/<YYYY-MM-DD_HH-MM-SS>/`
+**输出目录**: 沿用现有 `scripts/launch_with_logs.sh` session 目录规范
 
 ```
-~/fyp_runtime_data/logs/2026-03-25_14-30-00/
-├── bag/                    # ros2 bag 录制（所有关键 topic）
-│   ├── metadata.yaml
-│   └── *.db3
-└── launch.log              # 整个 launch 的 stdout/stderr
+~/fyp_runtime_data/logs/<session>/
+├── console/                # ROS 2 / launch console 日志（ROS_LOG_DIR）
+├── data/                   # 节点自定义日志（FYP_LOG_SESSION_DIR）
+├── system/                 # tegrastats + session_info.yaml
+└── bag/                    # ros2 bag 录制（本次 corridor 运行数据）
 ```
+
+`~/fyp_runtime_data/logs/latest` 继续指向最近一次 session，不另起一套平行日志体系。
 
 **录制 topic 列表**:
 
@@ -256,22 +258,20 @@ global_costmap:
 - `/livox/lidar` — 原始点云 ~40MB/s
 - `/fastlio2/body_cloud` — 处理后点云 ~10MB/s
 
-**launch 文件修改**: `system_gps_corridor.launch.py` 中新增：
+**launch 文件修改**: `system_gps_corridor.launch.py` 中新增 bag record，但日志目录不在 launch 内重新造时间戳，而是挂到当前 session：
 
 ```python
-import datetime
-
-# 生成带时间戳的日志目录
-log_dir = os.path.expanduser(
-    f'~/fyp_runtime_data/logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
-)
-os.makedirs(os.path.join(log_dir, 'bag'), exist_ok=True)
+session_data_dir = os.environ.get('FYP_LOG_SESSION_DIR', '')
+session_root = os.path.dirname(session_data_dir) if session_data_dir else \
+    os.path.expanduser(f'~/fyp_runtime_data/logs/{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}')
+bag_dir = os.path.join(session_root, 'bag')
+os.makedirs(bag_dir, exist_ok=True)
 
 # ros2 bag record
 bag_record = ExecuteProcess(
     cmd=[
         'ros2', 'bag', 'record',
-        '--output', os.path.join(log_dir, 'bag'),
+        '--output', bag_dir,
         '/fix',
         '/fastlio2/lio_odom',
         '/tf', '/tf_static',
@@ -288,14 +288,18 @@ bag_record = ExecuteProcess(
 
 需要在文件头部增加 `from launch.actions import ExecuteProcess`，
 并在 `LaunchDescription` 的 actions 列表末尾加入 `bag_record`。
+如通过 wrapper 启动，`launch.log` / console log 仍由 `ROS_LOG_DIR` 接管，不额外手写一份 stdout 重定向逻辑。
 
 ### Phase 1 构建 & 部署
 
 ```bash
-# 不需要编译（只改 YAML + launch），但如果 VoxelLayer 没单独编译过:
-colcon build --packages-select nav2_costmap_2d nav2_regulated_pure_pursuit_controller nav2_rotation_shim_controller bringup --symlink-install --parallel-workers 1
+# 只需要重建工作区内被改到的启动包:
+colcon build --packages-select bringup --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
+
+说明：`nav2_costmap_2d` / `nav2_regulated_pure_pursuit_controller` / `nav2_rotation_shim_controller`
+是系统侧 Nav2 运行时依赖，不是本仓库内的 colcon 包，不作为 `--packages-select` 目标。
 
 ---
 
@@ -313,8 +317,8 @@ source install/setup.bash
 | 文件 | 修改内容 |
 |------|---------|
 | `src/perception/pgo_gps_fusion/src/pgo_node.cpp` | GPS topic 修正 + 旋转估计逻辑 + ENU→map 变换发布 |
-| `src/perception/pgo_gps_fusion/src/pgos/simple_pgo.cpp` | 放松首帧先验 + GPS 渐进引入 |
-| `src/perception/pgo_gps_fusion/src/pgos/simple_pgo.h` | 新增旋转估计相关成员变量 |
+| `src/perception/pgo_gps_fusion/src/pgos/simple_pgo.cpp` | 放松首帧先验 + GPS 渐进引入（支持 warmup sigma override） |
+| `src/perception/pgo_gps_fusion/src/pgos/simple_pgo.h` | 新增旋转估计状态 / GPS warmup 状态相关成员变量 |
 | `src/bringup/config/master_params.yaml` | `gps.topic: /fix` + 新增旋转估计参数 |
 
 ### 2.3 旋转估计算法
@@ -389,6 +393,10 @@ source install/setup.bash
 之后的 GPS factor:                    sigma_xy = 2.5m   (正常)
 ```
 
+实现约束补充：
+- `simple_pgo.cpp` 需要显式支持 warmup sigma override；当前 `addGPSFactor()` 会优先使用 `NavSatFix.position_covariance`，并把 sigma clamp 到 `<= 5.0m`，不能直接实现 `10.0m` 热身。
+- 因此热身期不能只改 `master_params.yaml`，必须同步改 `simple_pgo.h/.cpp` 的 GPS factor 构造逻辑。
+
 ### 2.5 配置变更
 
 ```yaml
@@ -407,8 +415,54 @@ source install/setup.bash
 ### 2.6 ENU→map 变换发布
 
 PGO 在 `timerCB` 中（已有广播 map→odom TF 的逻辑）增加：
-- 发布 `geometry_msgs/TransformStamped` 到 `/gps_corridor/enu_to_map`
-- 或发布 `std_msgs/Float64MultiArray` 包含 [θ, tx, ty, is_valid]
+- 发布 `std_msgs/Float64MultiArray` 到 `/gps_corridor/enu_to_map`
+- payload 固定为 `[theta, tx, ty, is_valid]`
+- 选择该消息的原因：Runner 只需要 2D 旋转/平移和有效位，避免为 topic 传输再套一层 TF 语义
+
+### 2.7 启动 Bootstrap（CC 复审结论）
+
+**问题**: 车静止启动时，PGO 无法积累空间展幅 → enu_to_map 永远不 valid → runner 不起步。
+
+**CC 裁决: 采用方案 A（固定 yaw bootstrap），淘汰 10m 预热方案。**
+
+**技术依据**（基于 FAST-LIO2 源码调研 `imu_processor.cpp:16-49`）:
+- `gravity_align: true` 时，FAST-LIO2 用 `FromTwoVectors(-acc_mean, (0,0,-1))` 做最短弧旋转
+- 该函数是确定性的：相同物理放置 → 相同 yaw0
+- yaw0 启动间变化 < 0.1°（BMI088 加速度计噪声级别）
+- 因此 ENU→map 旋转可在上电瞬间计算，无需等待车辆移动
+
+**Bootstrap 算法**:
+
+```
+1. 上电 → FAST-LIO 初始化 → 读 map→base_link TF
+2. 提取 yaw0 = atan2(R[1,0], R[0,0])
+3. 读 route YAML 的 launch_yaw_deg（车的地理朝向，ENU 约定）
+4. θ_bootstrap = yaw0 - radians(launch_yaw_deg)
+5. 构造初始 ENU→map: R_bootstrap = Rz(θ_bootstrap), t_bootstrap 从 start_ref ENU + map origin 推导
+6. 立即开始导航（不等 PGO valid）
+```
+
+**launch_yaw_deg 来源**:
+- 对于直线 corridor: 直接复用现有 YAML 的 `bearing_deg`（起终点 GPS 方位角）
+- 对于多点路线: 起点到第一个路点的方位角，或用手机指南针测量
+- 只需测量一次，写入 route YAML
+
+**Bootstrap → PGO 切换**:
+
+```
+前 20m: 使用 bootstrap 旋转（精度 ±5°，取决于 launch_yaw_deg 测量精度）
+20m+:   PGO 发布 is_valid=true → runner 平滑切换到 PGO 精确旋转
+        重算后续未访问路点的 map 坐标
+```
+
+切换时如果角度差 > 10°，log WARNING（可能放车朝向不对）。
+
+**淘汰 10m 预热的理由**:
+- 浪费 10m 距离 + 20s 时间
+- 预热期间无 ENU→map → 无法用 GPS 路点导航，只能 body_vector 盲走
+- 预热方向如有障碍物，无法用 GPS 路点规避
+- 预热后仍需 bootstrap 到 PGO 的切换逻辑（复杂度不减反增）
+- 数学上不需要：yaw0 在上电时已经确定
 
 ### Phase 2 构建
 
@@ -421,9 +475,15 @@ source install/setup.bash
 
 ## Phase 3: 多点 GPS 路线 Runner
 
-### 3.1 新文件
+### 3.1 新增/修改文件
 
-`src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+| 文件 | 修改内容 |
+|------|---------|
+| `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py` | 新的多点路线执行节点 |
+| `src/navigation/gps_waypoint_dispatcher/setup.py` | 注册 `gps_route_runner_node` console script |
+| `src/bringup/config/master_params.yaml` | 为 route runner 增加独立参数命名空间（ENU 原点等），避免复用旧 `gps_waypoint_dispatcher` 节点名造成参数未注入 |
+| `src/bringup/launch/system_gps_corridor.launch.py` | 启动新 runner，参数从 `corridor_file` 切到 `route_file`，并接入 bag record |
+| `scripts/launch_with_logs.sh` + `Makefile` | 新增 corridor 模式启动入口，保持 Step 25 继续走统一 session logging 启动点 |
 
 ### 3.2 路线 YAML Schema
 
@@ -438,6 +498,7 @@ enu_origin:
 start_ref:
   lat: 31.274xxx
   lon: 120.737xxx
+launch_yaw_deg: 123.4
 waypoints:
   - name: "wp1"
     lat: 31.274xxx
@@ -454,20 +515,33 @@ startup_gps_tolerance_m: 6.0
 segment_length_m: 8.0
 ```
 
+部署约束补充：
+- `enu_origin` 必须与运行时 `master_params.yaml` 中 PGO/runner 使用的固定原点一致。
+- runner 启动后先校验 route YAML 的 `enu_origin` 与运行时参数；不一致则直接 abort，避免 silently 用错坐标系。
+- `launch_yaw_deg` 必须填写。对直线 corridor 可直接复用 `bearing_deg`。
+- runner 启动时从 TF 读 yaw0，与 `launch_yaw_deg` 一起计算 bootstrap ENU→map 旋转。
+
 ### 3.3 Runner 控制流
 
+**CC 复审后锁定版本（方案 A: 固定 yaw bootstrap）**
+
 ```
-1. 加载路线 YAML
-2. 等待 stable /fix（10 次采样，spread < 2m）
-3. 校验启动位置（距 start_ref < 6m）
-4. 等待 Nav2 + map→base_link TF
-5. 等待 PGO 发布 ENU→map 变换（/gps_corridor/enu_to_map, is_valid=true）
-6. 对每个 waypoint:
-   a. GPS lat/lon → ENU（GeographicLib 或 pyproj，同 PGO 的 ENU 原点）
-   b. ENU → map（乘 PGO 发布的旋转+平移）
+1. 读取运行时参数中的固定 ENU 原点（独立 route runner 参数命名空间）
+2. 加载路线 YAML，并校验 enu_origin 与运行时固定原点一致
+3. 等待 stable /fix（10 次采样，spread < 2m）
+4. 校验启动位置（距 start_ref < 6m）
+5. 等待 Nav2 + map→base_link TF
+6. Bootstrap: 从 TF 读 yaw0，用 launch_yaw_deg 计算初始 ENU→map 旋转
+7. 用 bootstrap ENU→map 转换第一个路点 → 立即开始导航
+8. 后台监听 PGO /gps_corridor/enu_to_map:
+   - is_valid=true 时，切换到 PGO 精确旋转
+   - 重算后续未访问路点的 map 坐标
+9. 对每个 waypoint:
+   a. GPS lat/lon → ENU（pyproj，与 PGO 同 ENU 原点）
+   b. ENU → map（乘当前最佳旋转: bootstrap 或 PGO）
    c. 按 segment_length_m 在当前位置和下一个 waypoint 之间插航点
    d. 串行 NavigateToPose
-7. 到达最终 goal → SUCCEEDED
+10. 到达最终 goal → SUCCEEDED
 ```
 
 ### 3.4 与 corridor v1 的差异
