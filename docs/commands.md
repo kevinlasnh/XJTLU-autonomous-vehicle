@@ -270,10 +270,23 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 # 检查当前机器是否具备无密码 sudo
 sudo -n true && echo sudo_ok
 
+# 切换 Jetson WiFi，并在 Jetson 侧重启 ToDesk
+bash scripts/switch_jetson_wifi.sh --status
+bash scripts/switch_jetson_wifi.sh outdoor
+bash scripts/switch_jetson_wifi.sh indoor
+bash scripts/switch_jetson_wifi.sh Pixel
+bash scripts/switch_jetson_wifi.sh XJTLU
+
 # GPS dispatcher 依赖
 apt list --installed | grep ros-humble-geographic-msgs
 python3 -c "import pyproj; print(pyproj.__version__)"
 ```
+
+说明：
+- 不带参数时默认在 `XJTLU` 和 `Pixel` 之间 toggle
+- 在工作站执行时，脚本默认通过 Tailscale SSH 远程切网：`jetson@100.97.227.24`
+- 在 Jetson 本机执行时，脚本会自动切到本地模式；如果当前 shell 是 SSH/Tailscale，会话可能在切网过程中断开
+- 每次切网都会在 Jetson 侧重启 `todeskd`，日志写入 `/tmp/wifi-switch.log`
 
 ## 12. GPS 数据采集
 
