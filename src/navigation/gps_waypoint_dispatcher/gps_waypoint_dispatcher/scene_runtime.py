@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+from pyproj import CRS, Transformer
 import yaml
 
 
@@ -12,6 +13,10 @@ def default_runtime_root() -> Path:
 
 def default_scene_points_file() -> Path:
     return default_runtime_root() / "gnss" / "current_scene" / "scene_points.yaml"
+
+
+def default_route_file() -> Path:
+    return default_runtime_root() / "gnss" / "current_route.yaml"
 
 
 def load_scene_points(scene_points_file: str | Path) -> dict:
@@ -59,3 +64,42 @@ def load_scene_points(scene_points_file: str | Path) -> dict:
 def yaw_to_quaternion(yaw: float) -> tuple[float, float, float, float]:
     half = yaw * 0.5
     return 0.0, 0.0, math.sin(half), math.cos(half)
+
+
+def quaternion_to_yaw(x: float, y: float, z: float, w: float) -> float:
+    siny_cosp = 2.0 * (w * z + x * y)
+    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius_m = 6371000.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2.0) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2.0) ** 2
+    )
+    return radius_m * 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+
+
+def normalize_angle(angle: float) -> float:
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+class FixedENUProjector:
+    def __init__(self, origin_lat: float, origin_lon: float, origin_alt: float = 0.0) -> None:
+        self.origin_lat = float(origin_lat)
+        self.origin_lon = float(origin_lon)
+        self.origin_alt = float(origin_alt)
+        local_crs = CRS.from_proj4(
+            f"+proj=aeqd +lat_0={self.origin_lat} +lon_0={self.origin_lon} "
+            "+datum=WGS84 +units=m +no_defs"
+        )
+        self._forward = Transformer.from_crs("EPSG:4326", local_crs, always_xy=True)
+
+    def forward(self, lat: float, lon: float) -> tuple[float, float]:
+        x, y = self._forward.transform(float(lon), float(lat))
+        return float(x), float(y)

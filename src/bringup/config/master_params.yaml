@@ -89,14 +89,22 @@
 
       # 是否启用 GPS 因子；关闭后回到纯激光图优化。
       "gps.enable": true
-      # PGO 使用的 GNSS 话题；当前主线是校准后的 /gnss。
-      "gps.topic": /gnss
+      # PGO 使用的 GNSS 话题；corridor v2 直接消费原始 /fix。
+      "gps.topic": /fix
       # GPS 水平噪声；调大表示更不相信 GPS。
       "gps.noise_xy": 2.5
       # GPS 垂直噪声；调大表示更不相信海拔。
       "gps.noise_z": 5.0
       # 每隔多少关键帧加入一个 GPS 因子；调小更频繁融合。
-      "gps.factor_interval": 10
+      "gps.factor_interval": 5
+      # 至少累计多少个 ENU/map 配对后才允许解算 ENU->map。
+      "gps.alignment_min_points": 5
+      # ENU 配对的最小空间展幅；不足则继续累计，不发布有效对齐。
+      "gps.alignment_min_spread_m": 5.0
+      # 对齐刚建立后的前 N 个 GPS 因子，使用更大的水平 sigma 软引入。
+      "gps.alignment_warmup_factors": 5
+      # 热身 GPS 因子的水平 sigma；显式覆盖协方差上限。
+      "gps.alignment_warmup_sigma": 10.0
       # GPS 水平质量阈值；调小更严格，调大更宽松。
       "gps.quality_hdop_max": 3.0
       # 最小卫星数阈值；当前主要作记录占位，未进入主过滤逻辑。
@@ -126,6 +134,15 @@
     enu_origin_alt: 0.0
     # 是否允许在路网外回退到直线直达；v4 默认关闭。
     allow_direct_fallback: false
+
+/gps_route_runner:
+  ros__parameters:
+    # GPS route runner 使用的固定 ENU 原点纬度；必须与 PGO 完全一致。
+    enu_origin_lat: 31.274927
+    # GPS route runner 使用的固定 ENU 原点经度；必须与 PGO 完全一致。
+    enu_origin_lon: 120.737548
+    # GPS route runner 使用的固定 ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+    enu_origin_alt: 0.0
 
 /serial_twistctl_node:
   ros__parameters:

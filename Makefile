@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-nav-gps launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-corridor launch-explore-gps launch-nav-gps launch-travel kill clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -47,6 +47,9 @@ launch-slam:
 
 launch-explore:
 	bash scripts/launch_with_logs.sh explore
+
+launch-corridor:
+	bash scripts/launch_with_logs.sh corridor
 
 launch-explore-gps:
 	bash scripts/launch_with_logs.sh explore-gps

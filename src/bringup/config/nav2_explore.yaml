@@ -223,7 +223,7 @@ controller_server:
   ros__parameters:
     # TF 容忍时间；决定该模块接受多大的 TF 时间偏差。
     # 调大：对 TF 延迟更宽松；调小：更严格但更容易因延迟失败。
-    transform_tolerance: 0.5
+    transform_tolerance: 0.1
     # 是否使用仿真时间；决定该节点读取 /clock 还是真实系统时间。
     # 改为 true：依赖外部仿真时钟；改为 false：直接使用系统时间。
     use_sim_time: false
@@ -259,10 +259,10 @@ controller_server:
       plugin: "nav2_controller::SimpleProgressChecker"
       # 最小有效移动半径；在该时间窗内位移小于此值会被视为没前进。
       # 调大：更容易判定卡住；调小：更不容易触发卡住。
-      required_movement_radius: 0.5
+      required_movement_radius: 0.3
       # 移动超时时间；决定多久没有明显进展就判定为卡住。
       # 调大：更宽容、更晚判定卡住；调小：更严格、更早进入恢复。
-      movement_time_allowance: 3.0
+      movement_time_allowance: 10.0
     # 目标检查器参数块；负责位置和朝向的到点判定。
     # 改成其它结构或缺少子参数：到点判断会失真。
     general_goal_checker:
@@ -274,127 +274,42 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       # 平面位置到点容差；进入该半径内可视为位置达到目标。
       # 调大：更容易判定到点；调小：更严格、更接近目标才算到点。
-      xy_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.35
       # 朝向到点容差；角度误差小于该值可视为方向对正。
       # 调大：更容易判定朝向达标；调小：更严格、更要求精确对正。
-      yaw_goal_tolerance: 0.25
-    # DWB 局部规划器参数块；负责速度采样、轨迹评估和实时避障。
+      yaw_goal_tolerance: 6.28
+    # Rotation Shim + RPP 控制器参数块；负责大角度时先对齐，小角度直接纯跟踪。
     # 改成其它结构或缺少子参数：局部跟踪行为会明显变化。
     FollowPath:
       # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
       # 改成不存在或不兼容的插件：对应功能块会加载失败。
-      plugin: "dwb_core::DWBLocalPlanner"
-      # 轨迹调试开关；决定 DWB 是否输出每条候选轨迹的详细评分。
-      # 改为 true：更利于诊断但日志更多；改为 false：日志更干净。
-      debug_trajectory_details: true
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      min_vel_x: 0.0
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      min_vel_y: 0.0
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      max_vel_x: 0.5
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      max_vel_y: 0.0
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      max_vel_theta: 1.0
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      min_speed_xy: 0.0
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      max_speed_xy: 0.5
-      # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-      # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-      min_speed_theta: 0.0
-      # 前向加速度上限；限制机器人沿 x 方向提速的快慢。
-      # 调大：起步更快但更冲；调小：更平顺但响应更慢。
-      acc_lim_x: 3.0
-      # 侧向加速度上限；限制机器人沿 y 方向提速的快慢。
-      # 调大：侧移更激进；调小：侧移更平缓。
-      acc_lim_y: 0.0
-      # 角加速度上限；限制机器人转向提速的快慢。
-      # 调大：转向响应更快但更猛；调小：更柔和但更慢。
-      acc_lim_theta: 3.5
-      # 前向减速度上限；限制机器人沿 x 方向减速的快慢。
-      # 绝对值调大：刹车更狠；绝对值调小：刹车更柔和。
-      decel_lim_x: -3.0
-      # 侧向减速度上限；限制机器人沿 y 方向减速的快慢。
-      # 绝对值调大：侧移制动更狠；绝对值调小：侧移制动更缓。
-      decel_lim_y: 0.0
-      # 角减速度上限；限制机器人转向减速的快慢。
-      # 绝对值调大：收角更快；绝对值调小：收角更平缓。
-      decel_lim_theta: -3.5
-      # 前向速度采样数；决定 DWB 评估多少种前进速度。
-      # 调大：搜索更细但计算更重；调小：计算更省但轨迹更粗。
-      vx_samples: 20
-      # 侧向速度采样数；决定 DWB 评估多少种横向速度。
-      # 调大：搜索更细但计算更重；调小：计算更省但侧向选项更少。
-      vy_samples: 5
-      # 角速度采样数；决定 DWB 评估多少种转向速度。
-      # 调大：转向搜索更细但计算更重；调小：计算更省但转向离散更粗。
-      vtheta_samples: 20
-      # 前向仿真时长；决定每条候选轨迹向前预测多远。
-      # 调大：更有前瞻性但更保守；调小：更灵敏但容易只看近处。
-      sim_time: 1.7
-      # 分辨率或采样粒度；决定空间或轨迹离散得多细。
-      # 调大：更粗、更省资源；调小：更细、更精确但更耗资源。
-      linear_granularity: 0.05
-      # 分辨率或采样粒度；决定空间或轨迹离散得多细。
-      # 调大：更粗、更省资源；调小：更细、更精确但更耗资源。
-      angular_granularity: 0.025
-      # TF 容忍时间；决定该模块接受多大的 TF 时间偏差。
-      # 调大：对 TF 延迟更宽松；调小：更严格但更容易因延迟失败。
-      transform_tolerance: 0.4
-      # 平面位置到点容差；进入该半径内可视为位置达到目标。
-      # 调大：更容易判定到点；调小：更严格、更接近目标才算到点。
-      xy_goal_tolerance: 0.25
-      # 停止判定线速度阈值；低于该速度时 DWB 会认为机器人已停住。
-      # 调大：更容易认定已停；调小：更严格，必须更慢才算停。
-      trans_stopped_velocity: 0.25
-      # 是否启用短路评估；发现明显劣轨迹时提前结束评分。
-      # 改为 true：更省算力；改为 false：评分更完整但更耗时。
-      short_circuit_trajectory_evaluation: true
-      # 状态保持开关；决定模块是否保留上一时刻内部状态。
-      # 改为 true：连续性更好；改为 false：每次都独立处理。
-      stateful: true
-      # 轨迹评分器列表；决定 DWB 从哪些维度给候选轨迹打分。
-      # 增删评分器：会直接改变控制器的行为偏好。
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      BaseObstacle.scale: 0.002
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      PathAlign.scale: 32.0
-      # 路径对齐前视距离；决定用多远的前视点评估贴路径程度。
-      # 调大：更关注中远处路径方向；调小：更关注近处路径方向。
-      PathAlign.forward_point_distance: 0.1
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      GoalAlign.scale: 300.0
-      # 目标对齐前视距离；决定在多远处评估朝向目标的趋势。
-      # 调大：更看重中远处朝向；调小：更看重近处朝向。
-      GoalAlign.forward_point_distance: 0.1
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      PathDist.scale: 32.0
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      GoalDist.scale: 24.0
-      # 轨迹评分权重；决定 DWB 在该评分维度上惩罚或偏好的强度。
-      # 调大：更强调该维度；调小：更弱化该维度。
-      RotateToGoal.scale: 300.0
-      # 到点转向细化参数；决定接近目标时的减速和朝向评估策略。
-      # 调大：更保守或更看远；调小：更直接或更激进。
-      RotateToGoal.slowing_factor: 5.0
-      # 到点转向细化参数；决定接近目标时的减速和朝向评估策略。
-      # 调大：更保守或更看远；调小：更直接或更激进。
-      RotateToGoal.lookahead_time: -1.0
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      angular_dist_threshold: 0.785
+      angular_disengage_threshold: 0.39
+      forward_sampling_distance: 0.5
+      rotate_to_heading_angular_vel: 1.0
+      max_angular_accel: 1.6
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: false
+      primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      lookahead_dist: 1.0
+      min_lookahead_dist: 0.4
+      max_lookahead_dist: 1.5
+      lookahead_time: 1.5
+      use_velocity_scaled_lookahead_dist: true
+      transform_tolerance: 0.1
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: true
+      use_cost_regulated_linear_velocity_scaling: false
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: false
+      allow_reversing: false
+      max_robot_pose_search_dist: 10.0
 # 局部代价地图参数块；负责近场避障和局部环境表达。
 # 改错节点名或层级：局部代价地图会读不到参数。
 local_costmap:
@@ -406,10 +321,10 @@ local_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 40.0
+      update_frequency: 5.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 40.0
+      publish_frequency: 2.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: odom
@@ -424,19 +339,19 @@ local_costmap:
       rolling_window: true
       # 地图宽度；决定 costmap 在 X 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      width: 15
+      width: 5
       # 地图高度；决定 costmap 在 Y 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      height: 15
+      height: 5
       # 地图分辨率；决定每个栅格代表的物理尺寸。
       # 调大：地图更粗、更省内存；调小：地图更细、更精确但更耗资源。
-      resolution: 0.02
+      resolution: 0.05
       # 机器人安全半径；用于碰撞检查和膨胀边界计算。
       # 调大：更保守、更不易贴边；调小：更激进、更容易走窄路。
       robot_radius: 0.38625
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
-      plugins: ["obstacle_layer", "inflation_layer"]
+      plugins: ["voxel_layer", "inflation_layer"]
       # 膨胀层参数块；负责给障碍物外围增加安全缓冲。
       # 改错结构或参数：障碍安全边界会偏大或偏小。
       inflation_layer:
@@ -445,73 +360,37 @@ local_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        cost_scaling_factor: 2.5
+        cost_scaling_factor: 3.0
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        inflation_radius: 0.4
-      # 障碍物层参数块；负责把传感器观测直接写入代价地图。
-      # 改错结构或参数：代价地图会漏障碍或误报障碍。
-      obstacle_layer:
+        inflation_radius: 0.55
+      # 体素层参数块；负责在 3D 体素网格中标障与清障。
+      # 改错结构或参数：低矮障碍或地面噪声过滤会失真。
+      voxel_layer:
         # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
         # 改成不存在或不兼容的插件：对应功能块会加载失败。
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        # 功能开关；决定当前参数块对应的能力是否真正参与运行。
-        # 改为 true：该能力生效；改为 false：该能力被关闭。
+        plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
-        # 观测源列表；决定该层从哪些传感器配置块读取数据。
-        # 增删观测源：会直接改变写入地图的数据来源。
+        footprint_clearing_enabled: true
+        origin_z: -0.45
+        z_resolution: 0.15
+        z_voxels: 16
+        unknown_threshold: 15
+        mark_threshold: 0
+        publish_voxel_map: false
         observation_sources: pointcloud
-        # PointCloud 观测参数块；负责描述点云如何写入地图。
-        # 改错结构或参数：点云障碍投影会失真。
+        combination_method: 1
         pointcloud:
-          # 输入或输出话题名；决定该模块从哪里取数据或向哪里发数据。
-          # 改错话题：上下游节点会直接断链。
           topic: /fastlio2/body_cloud
-          # 输入消息类型；决定当前观测源按哪种 ROS 消息格式解析。
-          # 改成错误类型：数据解析会失败。
           data_type: "PointCloud2"
-          # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-          # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-          max_obstacle_height: 1.5
-          # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-          # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
           min_obstacle_height: -0.3
-          # 是否允许清障；决定观测源能否清掉旧障碍。
-          # 改为 true：地图更容易清掉旧障碍；改为 false：旧障碍更容易残留。
-          clearing: true
-          # 是否允许标障；决定观测源命中的障碍能否写入地图。
-          # 改为 true：新障碍会被写入；改为 false：该源只清障不标障。
-          marking: true
-          # 最大障碍标记距离；超过该值的观测不会被写成障碍。
-          # 调大：更远障碍也会入图；调小：只保留更近的障碍。
-          obstacle_max_range: 15.0
-          # 最小障碍标记距离；用于滤掉本体附近或近场噪声。
-          # 调大：更容易滤掉近场点；调小：更容易把近场物体写入。
+          max_obstacle_height: 1.5
           obstacle_min_range: 0.3
-          # 最大清障距离；决定射线清障能清到多远。
-          # 调大：更远区域也能被清空；调小：清障范围缩短。
-          raytrace_max_range: 15.0
-          # 最小清障距离；决定离传感器太近的区域是否参与清障。
-          # 调大：近场更不参与清障；调小：更贴近本体开始清障。
-          raytrace_min_range: 0.0
-          # 无穷远量测是否有效；决定无穷远点是否参与清障判断。
-          # 改为 true：更容易把无返回视作空闲；改为 false：忽略无穷远量测。
-          inf_is_valid: false
-          # 是否启用清障功能；用于总开关控制当前观测源清障。
-          # 改为 true：允许清掉旧障碍；改为 false：该源不再清障。
-          clearing_enabled: true
-          # 是否启用标障功能；用于总开关控制当前观测源标障。
-          # 改为 true：允许写入新障碍；改为 false：该源不再标障。
-          marking_enabled: true
-      # 静态层参数块；负责把静态地图障碍叠加到代价地图。
-      # 改错结构或参数：静态地图可能无法正确叠加。
-      static_layer:
-        # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
-        # 改成不存在或不兼容的插件：对应功能块会加载失败。
-        plugin: "nav2_costmap_2d::StaticLayer"
-        # 是否使用 transient local 订阅地图；决定晚加入节点能否拿到已发布地图。
-        # 改为 true：更能接收到历史地图；改为 false：更依赖地图重新发布。
-        map_subscribe_transient_local: true
+          obstacle_max_range: 4.0
+          raytrace_min_range: 0.3
+          raytrace_max_range: 5.0
+          clearing: true
+          marking: true
       # 是否总是发送完整代价地图；决定 costmap 发布全量还是增量更新。
       # 改为 true：下游更稳但带宽更高；改为 false：更省带宽但对订阅端要求更高。
       always_send_full_costmap: false
@@ -526,10 +405,10 @@ global_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 5.0
+      update_frequency: 1.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 5.0
+      publish_frequency: 0.5
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: map
@@ -544,7 +423,7 @@ global_costmap:
       robot_radius: 0.38625
       # 地图分辨率；决定每个栅格代表的物理尺寸。
       # 调大：地图更粗、更省内存；调小：地图更细、更精确但更耗资源。
-      resolution: 0.02
+      resolution: 0.10
       # 是否追踪未知区域；决定全局规划是否把未知空间单独表达出来。
       # 改为 true：未知区域更明确；改为 false：未知区域更容易被当作可通行。
       track_unknown_space: true
@@ -553,10 +432,10 @@ global_costmap:
       rolling_window: true
       # 地图宽度；决定 costmap 在 X 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      width: 50
+      width: 30
       # 地图高度；决定 costmap 在 Y 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      height: 50
+      height: 30
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
       plugins: ["obstacle_layer", "inflation_layer"]
@@ -568,10 +447,10 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        cost_scaling_factor: 2.5
+        cost_scaling_factor: 3.0
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        inflation_radius: 0.4
+        inflation_radius: 0.55
       # 障碍物层参数块；负责把传感器观测直接写入代价地图。
       # 改错结构或参数：代价地图会漏障碍或误报障碍。
       obstacle_layer:
@@ -581,6 +460,7 @@ global_costmap:
         # 功能开关；决定当前参数块对应的能力是否真正参与运行。
         # 改为 true：该能力生效；改为 false：该能力被关闭。
         enabled: true
+        footprint_clearing_enabled: true
         # 观测源列表；决定该层从哪些传感器配置块读取数据。
         # 增删观测源：会直接改变写入地图的数据来源。
         observation_sources: pointcloud
@@ -601,19 +481,19 @@ global_costmap:
           min_obstacle_height: -0.3
           # 是否允许清障；决定观测源能否清掉旧障碍。
           # 改为 true：地图更容易清掉旧障碍；改为 false：旧障碍更容易残留。
-          clearing: true
+          clearing: false
           # 是否允许标障；决定观测源命中的障碍能否写入地图。
           # 改为 true：新障碍会被写入；改为 false：该源只清障不标障。
           marking: true
           # 最大障碍标记距离；超过该值的观测不会被写成障碍。
           # 调大：更远障碍也会入图；调小：只保留更近的障碍。
-          obstacle_max_range: 50.0
+          obstacle_max_range: 10.0
           # 最小障碍标记距离；用于滤掉本体附近或近场噪声。
           # 调大：更容易滤掉近场点；调小：更容易把近场物体写入。
           obstacle_min_range: 0.3
           # 最大清障距离；决定射线清障能清到多远。
           # 调大：更远区域也能被清空；调小：清障范围缩短。
-          raytrace_max_range: 50.0
+          raytrace_max_range: 12.0
           # 最小清障距离；决定离传感器太近的区域是否参与清障。
           # 调大：近场更不参与清障；调小：更贴近本体开始清障。
           raytrace_min_range: 0.0

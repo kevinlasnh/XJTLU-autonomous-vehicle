@@ -519,6 +519,7 @@ segment_length_m: 8.0
 - `enu_origin` 必须与运行时 `master_params.yaml` 中 PGO/runner 使用的固定原点一致。
 - runner 启动后先校验 route YAML 的 `enu_origin` 与运行时参数；不一致则直接 abort，避免 silently 用错坐标系。
 - `launch_yaw_deg` 必须填写。对直线 corridor 可直接复用 `bearing_deg`。
+- `collect_gps_route.py` 不能在“起点到第一个路点基线很短”的情况下静默自动生成 `launch_yaw_deg`；应显式提示用户确认，必要时要求手工输入（如手机指南针测量值）。
 - runner 启动时从 TF 读 yaw0，与 `launch_yaw_deg` 一起计算 bootstrap ENU→map 旋转。
 
 ### 3.3 Runner 控制流

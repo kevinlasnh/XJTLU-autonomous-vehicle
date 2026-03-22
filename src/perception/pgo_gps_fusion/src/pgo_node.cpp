@@ -22,6 +22,7 @@
 #include <cmath>
 // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 相关头文件
 #include <sensor_msgs/msg/nav_sat_fix.hpp>  // GPS 数据消息类型
+#include <std_msgs/msg/float64_multi_array.hpp>
 #include <GeographicLib/LocalCartesian.hpp> // GPS 坐标转换库
 // ✅ GPS 融合修改结束 - 头文件添加完成
 #include "pgos/commons.h"
@@ -42,6 +43,8 @@
 #include <unistd.h>
 
 namespace {
+constexpr double kRadToDeg = 57.29577951308232;
+
 std::string getRuntimeRoot() {
     const char* runtime_root = std::getenv("FYP_RUNTIME_ROOT");
     if (runtime_root != nullptr && runtime_root[0] != '\0') {
@@ -117,11 +120,11 @@ struct NodeConfig
     std::string local_frame = "odom";
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
-    std::string gps_topic = "/gnss";              // GPS 话题名称
+    std::string gps_topic = "/fix";               // GPS 话题名称
     bool enable_gps = true;                        // GPS 功能启用开关
     double gps_noise_xy = 2.5;                     // GPS 水平噪声（米）
     double gps_noise_z = 5.0;                      // GPS 垂直噪声（米）
-    int gps_factor_interval = 10;                  // 每 N 个关键帧添加 GPS 因子
+    int gps_factor_interval = 5;                   // 每 N 个关键帧添加 GPS 因子
     double gps_quality_hdop_max = 3.0;             // 最大 HDOP 阈值
     int gps_quality_sat_min = 6;                   // 最小卫星数量
     double gps_drift_threshold = 2.0;              // 漂移检测阈值（米）
@@ -131,7 +134,18 @@ struct NodeConfig
     double gps_origin_lat = 0.0;                   // fixed 模式下的原点纬度
     double gps_origin_lon = 0.0;                   // fixed 模式下的原点经度
     double gps_origin_alt = 0.0;                   // fixed 模式下的原点海拔
+    int gps_alignment_min_points = 5;              // 旋转估计最少配对数
+    double gps_alignment_min_spread_m = 5.0;       // 旋转估计最小空间展幅
+    int gps_alignment_warmup_factors = 5;          // 热身 GPS 因子个数
+    double gps_alignment_warmup_sigma = 10.0;      // 热身 GPS 水平 sigma
     // ✅ GPS 融合修改结束 - NodeConfig 扩展完成
+};
+
+struct AlignmentPair
+{
+    size_t key_idx = 0;
+    Eigen::Vector2d enu_xy = Eigen::Vector2d::Zero();
+    Eigen::Vector2d map_xy = Eigen::Vector2d::Zero();
 };
 
 struct NodeState
@@ -146,6 +160,12 @@ struct NodeState
     double origin_lat = 0.0;                       // 原点纬度
     double origin_lon = 0.0;                       // 原点经度
     double origin_alt = 0.0;                       // 原点海拔
+    std::vector<AlignmentPair> alignment_pairs;    // ENU/map 配对缓存
+    bool alignment_valid = false;                  // ENU->map 变换是否有效
+    double alignment_theta = 0.0;                  // ENU->map 2D 旋转角
+    double alignment_tx = 0.0;                     // ENU->map 2D 平移 x
+    double alignment_ty = 0.0;                     // ENU->map 2D 平移 y
+    int gps_factors_added = 0;                     // 已加入的 GPS 因子数
     // ✅ GPS 融合修改结束 - NodeState 扩展完成
 };
 
@@ -186,6 +206,7 @@ public:
         m_odom_sub.subscribe(this, m_node_config.odom_topic, qos.get_rmw_qos_profile());
         m_loop_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/pgo/loop_markers", 10000);
         m_optimized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/pgo/optimized_odom", 100);
+        m_alignment_pub = this->create_publisher<std_msgs::msg::Float64MultiArray>("/gps_corridor/enu_to_map", 10);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
         m_sync = std::make_shared<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>>>(message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>(50), m_cloud_sub, m_odom_sub);  // 同步器队列从 10 增加到 50
         m_sync->setAgePenalty(1.0);  // 时间容忍度从 0.1 增加到 1.0
@@ -277,30 +298,28 @@ public:
         m_pgo_config.submap_resolution = this->declare_parameter<double>("submap_resolution", 0.1);
         m_pgo_config.min_loop_detect_duration = this->declare_parameter<double>("min_loop_detect_duration", 5.0);
 
-        m_node_config.enable_gps = this->declare_parameter<bool>("gps.enable", true);
-        m_node_config.gps_topic = this->declare_parameter<std::string>("gps.topic", "/gnss");
-        m_node_config.gps_noise_xy = this->declare_parameter<double>("gps.noise_xy", 2.5);
-        m_node_config.gps_noise_z = this->declare_parameter<double>("gps.noise_z", 5.0);
-        m_node_config.gps_factor_interval = this->declare_parameter<int>("gps.factor_interval", 10);
-        m_node_config.gps_quality_hdop_max = this->declare_parameter<double>("gps.quality_hdop_max", 3.0);
-        m_node_config.gps_quality_sat_min = this->declare_parameter<int>("gps.quality_sat_min", 6);
-        m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", 2.0);
-        m_node_config.gps_alert_interval = this->declare_parameter<int>("gps.alert_interval", 3);
-        m_node_config.gps_emergency_interval = this->declare_parameter<int>("gps.emergency_interval", 1);
-        m_node_config.gps_origin_mode = this->declare_parameter<std::string>("gps.origin_mode", "auto");
-        m_node_config.gps_origin_lat = this->declare_parameter<double>("gps.origin_lat", 0.0);
-        m_node_config.gps_origin_lon = this->declare_parameter<double>("gps.origin_lon", 0.0);
-        m_node_config.gps_origin_alt = this->declare_parameter<double>("gps.origin_alt", 0.0);
-
-        std::transform(m_node_config.gps_origin_mode.begin(), m_node_config.gps_origin_mode.end(),
-                       m_node_config.gps_origin_mode.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        if (m_node_config.gps_origin_mode != "auto" && m_node_config.gps_origin_mode != "fixed") {
-            RCLCPP_WARN(this->get_logger(),
-                        "Unknown gps.origin_mode '%s', fallback to auto",
-                        m_node_config.gps_origin_mode.c_str());
-            m_node_config.gps_origin_mode = "auto";
-        }
+        m_node_config.enable_gps = this->declare_parameter<bool>("gps.enable", m_node_config.enable_gps);
+        m_node_config.gps_topic = this->declare_parameter<std::string>("gps.topic", m_node_config.gps_topic);
+        m_node_config.gps_noise_xy = this->declare_parameter<double>("gps.noise_xy", m_node_config.gps_noise_xy);
+        m_node_config.gps_noise_z = this->declare_parameter<double>("gps.noise_z", m_node_config.gps_noise_z);
+        m_node_config.gps_factor_interval = this->declare_parameter<int>("gps.factor_interval", m_node_config.gps_factor_interval);
+        m_node_config.gps_alignment_min_points = this->declare_parameter<int>(
+            "gps.alignment_min_points", m_node_config.gps_alignment_min_points);
+        m_node_config.gps_alignment_min_spread_m = this->declare_parameter<double>(
+            "gps.alignment_min_spread_m", m_node_config.gps_alignment_min_spread_m);
+        m_node_config.gps_alignment_warmup_factors = this->declare_parameter<int>(
+            "gps.alignment_warmup_factors", m_node_config.gps_alignment_warmup_factors);
+        m_node_config.gps_alignment_warmup_sigma = this->declare_parameter<double>(
+            "gps.alignment_warmup_sigma", m_node_config.gps_alignment_warmup_sigma);
+        m_node_config.gps_quality_hdop_max = this->declare_parameter<double>("gps.quality_hdop_max", m_node_config.gps_quality_hdop_max);
+        m_node_config.gps_quality_sat_min = this->declare_parameter<int>("gps.quality_sat_min", m_node_config.gps_quality_sat_min);
+        m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", m_node_config.gps_drift_threshold);
+        m_node_config.gps_alert_interval = this->declare_parameter<int>("gps.alert_interval", m_node_config.gps_alert_interval);
+        m_node_config.gps_emergency_interval = this->declare_parameter<int>("gps.emergency_interval", m_node_config.gps_emergency_interval);
+        m_node_config.gps_origin_mode = this->declare_parameter<std::string>("gps.origin_mode", m_node_config.gps_origin_mode);
+        m_node_config.gps_origin_lat = this->declare_parameter<double>("gps.origin_lat", m_node_config.gps_origin_lat);
+        m_node_config.gps_origin_lon = this->declare_parameter<double>("gps.origin_lon", m_node_config.gps_origin_lon);
+        m_node_config.gps_origin_alt = this->declare_parameter<double>("gps.origin_alt", m_node_config.gps_origin_alt);
 
         if (!config_path.empty())
         {
@@ -308,11 +327,30 @@ public:
             syncParametersToRos();
         }
 
+        normalizeGpsOriginMode();
+        if (m_node_config.gps_factor_interval <= 0) {
+            RCLCPP_WARN(this->get_logger(), "gps.factor_interval=%d is invalid, forcing to 1",
+                        m_node_config.gps_factor_interval);
+            m_node_config.gps_factor_interval = 1;
+        }
+        if (m_node_config.gps_alignment_min_points < 2) {
+            RCLCPP_WARN(this->get_logger(), "gps.alignment_min_points=%d is too small, forcing to 2",
+                        m_node_config.gps_alignment_min_points);
+            m_node_config.gps_alignment_min_points = 2;
+        }
+        if (m_node_config.gps_alignment_min_spread_m < 0.0) {
+            RCLCPP_WARN(this->get_logger(), "gps.alignment_min_spread_m=%.3f is invalid, forcing to 0.0",
+                        m_node_config.gps_alignment_min_spread_m);
+            m_node_config.gps_alignment_min_spread_m = 0.0;
+        }
+
         RCLCPP_INFO(this->get_logger(),
-                    "GPS config loaded: interval=%d, noise_xy=%.2f, origin_mode=%s",
+                    "GPS config loaded: interval=%d, noise_xy=%.2f, origin_mode=%s, align_min_points=%d, align_min_spread=%.2f",
                     m_node_config.gps_factor_interval,
                     m_node_config.gps_noise_xy,
-                    m_node_config.gps_origin_mode.c_str());
+                    m_node_config.gps_origin_mode.c_str(),
+                    m_node_config.gps_alignment_min_points,
+                    m_node_config.gps_alignment_min_spread_m);
     }
 
     void loadLegacyConfig(const std::string &config_path)
@@ -382,6 +420,14 @@ public:
                 m_node_config.gps_origin_lon = config["gps"]["origin_lon"].as<double>();
             if (config["gps"]["origin_alt"])
                 m_node_config.gps_origin_alt = config["gps"]["origin_alt"].as<double>();
+            if (config["gps"]["alignment_min_points"])
+                m_node_config.gps_alignment_min_points = config["gps"]["alignment_min_points"].as<int>();
+            if (config["gps"]["alignment_min_spread_m"])
+                m_node_config.gps_alignment_min_spread_m = config["gps"]["alignment_min_spread_m"].as<double>();
+            if (config["gps"]["alignment_warmup_factors"])
+                m_node_config.gps_alignment_warmup_factors = config["gps"]["alignment_warmup_factors"].as<int>();
+            if (config["gps"]["alignment_warmup_sigma"])
+                m_node_config.gps_alignment_warmup_sigma = config["gps"]["alignment_warmup_sigma"].as<double>();
         }
     }
 
@@ -405,6 +451,10 @@ public:
             rclcpp::Parameter("gps.noise_xy", m_node_config.gps_noise_xy),
             rclcpp::Parameter("gps.noise_z", m_node_config.gps_noise_z),
             rclcpp::Parameter("gps.factor_interval", m_node_config.gps_factor_interval),
+            rclcpp::Parameter("gps.alignment_min_points", m_node_config.gps_alignment_min_points),
+            rclcpp::Parameter("gps.alignment_min_spread_m", m_node_config.gps_alignment_min_spread_m),
+            rclcpp::Parameter("gps.alignment_warmup_factors", m_node_config.gps_alignment_warmup_factors),
+            rclcpp::Parameter("gps.alignment_warmup_sigma", m_node_config.gps_alignment_warmup_sigma),
             rclcpp::Parameter("gps.quality_hdop_max", m_node_config.gps_quality_hdop_max),
             rclcpp::Parameter("gps.quality_sat_min", m_node_config.gps_quality_sat_min),
             rclcpp::Parameter("gps.drift_threshold", m_node_config.gps_drift_threshold),
@@ -415,6 +465,19 @@ public:
             rclcpp::Parameter("gps.origin_lon", m_node_config.gps_origin_lon),
             rclcpp::Parameter("gps.origin_alt", m_node_config.gps_origin_alt),
         });
+    }
+
+    void normalizeGpsOriginMode()
+    {
+        std::transform(m_node_config.gps_origin_mode.begin(), m_node_config.gps_origin_mode.end(),
+                       m_node_config.gps_origin_mode.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (m_node_config.gps_origin_mode != "auto" && m_node_config.gps_origin_mode != "fixed") {
+            RCLCPP_WARN(this->get_logger(),
+                        "Unknown gps.origin_mode '%s', fallback to auto",
+                        m_node_config.gps_origin_mode.c_str());
+            m_node_config.gps_origin_mode = "auto";
+        }
     }
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 GPS 回调函数
@@ -675,6 +738,127 @@ public:
         m_loop_marker_pub->publish(marker_array);
     }
 
+    void updateAlignmentPairsFromGraph()
+    {
+        std::vector<KeyPoseWithCloud> &poses = m_pgo->keyPoses();
+        for (auto &pair : m_state.alignment_pairs)
+        {
+            if (pair.key_idx >= poses.size())
+                continue;
+            pair.map_xy = poses[pair.key_idx].t_global.head<2>();
+        }
+    }
+
+    double computeAlignmentSpreadM() const
+    {
+        double max_spread = 0.0;
+        for (size_t i = 0; i < m_state.alignment_pairs.size(); ++i)
+        {
+            for (size_t j = i + 1; j < m_state.alignment_pairs.size(); ++j)
+            {
+                const double spread =
+                    (m_state.alignment_pairs[i].enu_xy - m_state.alignment_pairs[j].enu_xy).norm();
+                max_spread = std::max(max_spread, spread);
+            }
+        }
+        return max_spread;
+    }
+
+    bool solveAlignmentTransform(double &theta, double &tx, double &ty) const
+    {
+        if (m_state.alignment_pairs.size() < static_cast<size_t>(m_node_config.gps_alignment_min_points))
+            return false;
+
+        if (computeAlignmentSpreadM() < m_node_config.gps_alignment_min_spread_m)
+            return false;
+
+        Eigen::Vector2d enu_centroid = Eigen::Vector2d::Zero();
+        Eigen::Vector2d map_centroid = Eigen::Vector2d::Zero();
+        for (const auto &pair : m_state.alignment_pairs)
+        {
+            enu_centroid += pair.enu_xy;
+            map_centroid += pair.map_xy;
+        }
+        enu_centroid /= static_cast<double>(m_state.alignment_pairs.size());
+        map_centroid /= static_cast<double>(m_state.alignment_pairs.size());
+
+        double sum_dot = 0.0;
+        double sum_cross = 0.0;
+        for (const auto &pair : m_state.alignment_pairs)
+        {
+            const Eigen::Vector2d enu_delta = pair.enu_xy - enu_centroid;
+            const Eigen::Vector2d map_delta = pair.map_xy - map_centroid;
+            sum_dot += enu_delta.dot(map_delta);
+            sum_cross += enu_delta.x() * map_delta.y() - enu_delta.y() * map_delta.x();
+        }
+
+        if (!std::isfinite(sum_dot) || !std::isfinite(sum_cross))
+            return false;
+        if (std::abs(sum_dot) < 1e-9 && std::abs(sum_cross) < 1e-9)
+            return false;
+
+        theta = std::atan2(sum_cross, sum_dot);
+        const Eigen::Rotation2Dd rotation(theta);
+        const Eigen::Vector2d translation = map_centroid - rotation * enu_centroid;
+        tx = translation.x();
+        ty = translation.y();
+        return std::isfinite(theta) && std::isfinite(tx) && std::isfinite(ty);
+    }
+
+    void recomputeAlignmentTransform()
+    {
+        updateAlignmentPairsFromGraph();
+
+        const bool was_valid = m_state.alignment_valid;
+        const double prev_theta = m_state.alignment_theta;
+        const double prev_tx = m_state.alignment_tx;
+        const double prev_ty = m_state.alignment_ty;
+
+        double theta = 0.0;
+        double tx = 0.0;
+        double ty = 0.0;
+        const bool solved = solveAlignmentTransform(theta, tx, ty);
+        m_state.alignment_valid = solved;
+        if (!solved)
+            return;
+
+        m_state.alignment_theta = theta;
+        m_state.alignment_tx = tx;
+        m_state.alignment_ty = ty;
+
+        if (!was_valid) {
+            RCLCPP_INFO(this->get_logger(),
+                        "ENU->map alignment ready: pairs=%zu spread=%.2fm theta=%.2fdeg tx=%.2f ty=%.2f",
+                        m_state.alignment_pairs.size(),
+                        computeAlignmentSpreadM(),
+                        theta * kRadToDeg,
+                        tx,
+                        ty);
+        } else if (std::abs(theta - prev_theta) > (1.0 / kRadToDeg) ||
+                   std::hypot(tx - prev_tx, ty - prev_ty) > 0.5) {
+            RCLCPP_INFO(this->get_logger(),
+                        "ENU->map alignment updated: theta=%.2fdeg tx=%.2f ty=%.2f",
+                        theta * kRadToDeg,
+                        tx,
+                        ty);
+        }
+    }
+
+    void publishAlignmentTransform()
+    {
+        if (!m_alignment_pub)
+            return;
+
+        std_msgs::msg::Float64MultiArray msg;
+        msg.data = {
+            m_state.alignment_theta,
+            m_state.alignment_tx,
+            m_state.alignment_ty,
+            m_state.alignment_valid ? 1.0 : 0.0,
+        };
+        m_alignment_pub->publish(msg);
+    }
+
     void timerCB()
     {
         CloudWithPose cp;
@@ -696,6 +880,7 @@ public:
         {
             sendBroadCastTF(cur_time);
             publishOptimizedOdom(cp, cur_time);
+            publishAlignmentTransform();
             return;
         }
 
@@ -741,17 +926,27 @@ public:
         fprintf(stderr, "[DIAG] calling smoothAndUpdate\n");
         m_pgo->smoothAndUpdate();
         fprintf(stderr, "[DIAG] smoothAndUpdate done\n");
+        if (m_node_config.enable_gps) {
+            recomputeAlignmentTransform();
+        }
 
         fprintf(stderr, "[DIAG] calling sendBroadCastTF + publish\n");
         sendBroadCastTF(cur_time);
         publishOptimizedOdom(cp, cur_time);
         publishLoopMarkers(cur_time);
+        publishAlignmentTransform();
         fprintf(stderr, "[DIAG] timerCB complete for key pose\n");
     }
 
     // ✅ GPS 融合修改开始 - 2025/12/01 - 新增 tryAddGPSFactor 函数
     void tryAddGPSFactor(double keyframe_time)
     {
+        if (!m_geo_converter) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                                 "GPS converter not ready, skip GPS factor");
+            return;
+        }
+
         // 检查是否该添加 GPS 因子（按间隔）
         size_t current_idx = m_pgo->keyPoses().size() - 1;
         if (current_idx % m_node_config.gps_factor_interval != 0) {
@@ -785,16 +980,53 @@ public:
         double x, y, z;
         m_geo_converter->Forward(closest_gps->latitude, closest_gps->longitude, 
                                  closest_gps->altitude, x, y, z);
-        
+
+        const Eigen::Vector2d enu_xy(x, y);
+        const Eigen::Vector2d map_xy = m_pgo->keyPoses()[current_idx].t_global.head<2>();
+        auto existing_pair = std::find_if(
+            m_state.alignment_pairs.begin(), m_state.alignment_pairs.end(),
+            [current_idx](const AlignmentPair &pair) { return pair.key_idx == current_idx; });
+        if (existing_pair == m_state.alignment_pairs.end()) {
+            m_state.alignment_pairs.push_back({current_idx, enu_xy, map_xy});
+        } else {
+            existing_pair->enu_xy = enu_xy;
+            existing_pair->map_xy = map_xy;
+        }
+
+        recomputeAlignmentTransform();
+        if (!m_state.alignment_valid) {
+            RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "Waiting for ENU->map alignment: pairs=%zu/%d spread=%.2fm/%.2fm",
+                                 m_state.alignment_pairs.size(),
+                                 m_node_config.gps_alignment_min_points,
+                                 computeAlignmentSpreadM(),
+                                 m_node_config.gps_alignment_min_spread_m);
+            return;
+        }
+
+        const Eigen::Rotation2Dd rotation(m_state.alignment_theta);
+        const Eigen::Vector2d aligned_map_xy =
+            rotation * enu_xy + Eigen::Vector2d(m_state.alignment_tx, m_state.alignment_ty);
+
+        double sigma_override = -1.0;
+        if (m_state.gps_factors_added < m_node_config.gps_alignment_warmup_factors) {
+            sigma_override = m_node_config.gps_alignment_warmup_sigma;
+        }
+
         // 调用 SimplePGO 的接口添加 GPS 因子
-        m_pgo->addGPSFactor(current_idx, V3D(x, y, z), 
-                           closest_gps->position_covariance,
-                           m_node_config.gps_noise_xy, 
-                           m_node_config.gps_noise_z);
-        
-        RCLCPP_INFO(this->get_logger(), 
-                    "GPS factor added: idx=%zu, ENU=(%.2f, %.2f, %.2f), time_diff=%.3f", 
-                    current_idx, x, y, z, min_time_diff);
+        m_pgo->addGPSFactor(current_idx, V3D(aligned_map_xy.x(), aligned_map_xy.y(), z),
+                            closest_gps->position_covariance,
+                            m_node_config.gps_noise_xy,
+                            m_node_config.gps_noise_z,
+                            sigma_override);
+        m_state.gps_factors_added += 1;
+
+        RCLCPP_INFO(this->get_logger(),
+                    "GPS factor added: idx=%zu, ENU=(%.2f, %.2f, %.2f), map=(%.2f, %.2f), time_diff=%.3f, warmup_sigma=%.2f",
+                    current_idx, x, y, z,
+                    aligned_map_xy.x(), aligned_map_xy.y(),
+                    min_time_diff,
+                    sigma_override);
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -888,6 +1120,7 @@ private:
     rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_loop_marker_pub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_optimized_odom_pub;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr m_alignment_pub;
     rclcpp::Service<interface::srv::SaveMaps>::SharedPtr m_save_map_srv;
     message_filters::Subscriber<sensor_msgs::msg::PointCloud2> m_cloud_sub;
     message_filters::Subscriber<nav_msgs::msg::Odometry> m_odom_sub;

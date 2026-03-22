@@ -60,6 +60,7 @@ set -u
 case "$MODE" in
   slam)         LAUNCH_FILE="system_slam.launch.py" ;;
   explore)      LAUNCH_FILE="system_explore.launch.py" ;;
+  corridor)     LAUNCH_FILE="system_gps_corridor.launch.py" ;;
   travel)       LAUNCH_FILE="system_travel.launch.py" ;;
   explore-gps)  LAUNCH_FILE="system_explore_gps.launch.py" ;;
   nav-gps)      LAUNCH_FILE="system_nav_gps.launch.py" ;;
