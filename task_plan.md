@@ -221,7 +221,7 @@ global_costmap:
 | 局部 costmap cells | 562,500 | 10,000 (**56x↓**) |
 | 全局 costmap cells | 6,250,000 | 90,000 (**70x↓**) |
 | 路径折弯/卷团 | 严重 | 消除（RPP 无 RotateToGoal）|
-| 幻影障碍停车 | 频繁 | 大幅减少（0.15m 过滤地面 + VoxelLayer 3D）|
+| 幻影障碍停车 | 频繁 | 大幅减少（VoxelLayer 3D + 分辨率 0.05 + obstacle_min_range=0.3）|
 
 ### 1.4 全量日志记录
 
