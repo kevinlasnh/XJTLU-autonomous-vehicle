@@ -6,62 +6,43 @@
 
 ## 当前状态
 
-**Corridor v2 实施计划已完成 + 通过审计，待用户审批。**
+**Corridor v2 计划已通过用户审批，交付 Codex 部署。CC 等待 Step 32 回来写文档。**
 
 | 项目 | 状态 |
 |------|------|
 | Corridor v1 | 室外验证通过，作为 baseline 保留 |
-| 深度调研 | 完成 |
-| 自审迭代 | 完成（含代码级审计，5 项修复） |
-| 实施计划 | **完成 + 审计通过，见 task_plan.md，待用户审批** |
+| Corridor v2 计划 | **用户已审批** |
+| 下一步 | Codex 从 Step 17 开始部署性审查 |
+| CC 断点 | **Step 16 完成 → 等待 Step 32（用户喊回来写文档）** |
 | 当前分支 | `gps` |
 
 ---
 
 ## 最近完成 (2026-03-22)
 
-### 计划审计 & 修复
-
-- [x] 派子代理对 task_plan.md 进行代码级审计（读 Nav2 源码验证参数名/存在性）
-- [x] 发现并修复 5 个问题:
-  1. **FAIL**: VoxelLayer origin_z=0.0 + min_obstacle_height=0.15 完全错误（基于 LiDAR 0.447m 安装高度计算，地面在 base_link z=-0.40m）→ 修正为 origin_z=-0.45, min_obstacle_height=-0.30
-  2. **FAIL**: Global costmap 2D raytrace 会在近距离误清马路牙 → 修正 clearing: false
-  3. **WARNING**: RotationShim 缺少 angular_disengage_threshold → 添加 0.39
-  4. **WARNING**: PGO 旋转估计回环后 map_xy 过时 → 添加 pair refresh 说明
-  5. **WARNING**: 风险表残留旧值 → 更新
-
-### 之前完成的调研（3月21日下午 — 3月22日早上）
-
-- [x] 用户架构级技术问题讨论（GPS 漂移、目标计算、多点扩展、持续 GPS 修正）
-- [x] 三路并行调研（PGO 源码 + Nav2 调优 + GPS 管道）
-- [x] PGO GPS 融合结构性缺陷确认（旋转缺失 + 权重失衡 + 首帧锁死）
-- [x] 算法设计 + 代码插入点验证
-- [x] RPP/RotationShim/DenoiseLayer/VoxelLayer 编译状态确认
-- [x] LiDAR 安装高度查证（docs/hardware_spec.md: 0.447m）
-- [x] 完整三阶段实施计划
+- [x] 深度调研 5 个问题（PGO 源码 + Nav2 调优 + GPS 管道）
+- [x] 三轮自审迭代（算法验证 + 代码级审计 + 5 项 bug 修复）
+- [x] costmap 参数基于实测 LiDAR 高度 0.447m 推导
+- [x] 全量日志方案（ros2 bag record → ~/fyp_runtime_data/logs/）
+- [x] WORKFLOW.md Step 29 日志读取标准流程
+- [x] **Step 15: 用户审批通过**
+- [x] **Step 16: L2 文件记录完成**
 
 ---
 
-## 实施计划摘要
+## Codex 需要知道的
 
-| 阶段 | 内容 | 改动类型 |
-|------|------|---------|
-| Phase 1 | RPP控制器 + costmap优化（VoxelLayer + 正确高度参数）| YAML |
-| Phase 2 | PGO GPS 融合修复（ENU→map 旋转估计 + 权重平衡）| C++ |
-| Phase 3 | 多点 GPS 路线 Runner | Python |
-
-详见 `task_plan.md`（已通过审计）。
-
----
-
-## 断点位置
-
-**Step 14 完成 + 审计通过 → 等待 Step 15（用户确认）**
+1. **计划在 `task_plan.md`**，三个 Phase 按顺序实施
+2. **Phase 1 可立即部署**（只改 YAML + launch），不动 C++ 代码
+3. **Phase 2 改 PGO C++**，风险较高，建议增量修改逐步验证
+4. **Phase 3 依赖 Phase 2 完成**
+5. **所有 Nav2 插件（RPP/RotationShim/VoxelLayer）已在 Jetson 上编译确认**
+6. **docs/hardware_spec.md 有完整硬件参数**（LiDAR 高度 0.447m 等）
 
 ---
 
 ## 历史摘要
 
 2026-03-21: corridor v1 概念→实车验证完整迭代
-2026-03-21~22: 深度调研 5 个问题 + PGO 源码分析 + 算法设计
-2026-03-22: 实施计划完成 + 代码级审计 + 5 项修复
+2026-03-21~22: 深度调研 + 算法设计 + 计划编写 + 审计
+2026-03-22: 用户审批通过，交付 Codex
