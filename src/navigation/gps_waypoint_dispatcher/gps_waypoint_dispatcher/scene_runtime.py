@@ -89,6 +89,11 @@ def normalize_angle(angle: float) -> float:
     return math.atan2(math.sin(angle), math.cos(angle))
 
 
+def compass_heading_to_enu_yaw_deg(heading_deg: float) -> float:
+    # Compass heading is 0=north, clockwise positive; ENU yaw is 0=east, CCW positive.
+    return (90.0 - float(heading_deg)) % 360.0
+
+
 class FixedENUProjector:
     def __init__(self, origin_lat: float, origin_lon: float, origin_alt: float = 0.0) -> None:
         self.origin_lat = float(origin_lat)

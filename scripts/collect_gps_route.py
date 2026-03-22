@@ -247,14 +247,21 @@ def confirm_launch_yaw(start_ref: dict, first_waypoint: dict) -> float:
             "GPS bearing is too noisy for silent launch_yaw inference."
         )
         while True:
-            raw = input("Enter launch_yaw_deg manually (ENU heading, degrees): ").strip()
+            raw = input(
+                "Enter launch_yaw_deg manually (compass heading, 0=north, clockwise, degrees): "
+            ).strip()
             try:
                 return float(raw) % 360.0
             except ValueError:
                 print("Please enter a valid number.")
 
-    print(f"\nSuggested launch_yaw_deg from START -> first waypoint: {suggestion:.2f} deg")
-    print("Press Enter to accept, or type a custom value if the measured launch heading is different.")
+    print(
+        f"\nSuggested launch_yaw_deg from START -> first waypoint: {suggestion:.2f} deg "
+        "(compass heading, 0=north, clockwise)"
+    )
+    print(
+        "Press Enter to accept, or type a custom value if the measured launch heading is different."
+    )
     while True:
         raw = input("launch_yaw_deg: ").strip()
         if not raw:
@@ -267,7 +274,8 @@ def confirm_launch_yaw(start_ref: dict, first_waypoint: dict) -> float:
 
 def maybe_override_launch_yaw(current_value: float) -> float:
     raw = input(
-        f"Final launch_yaw_deg [{current_value:.2f}] (Enter to keep, or type a new value): "
+        f"Final launch_yaw_deg [{current_value:.2f}] "
+        "(compass heading, 0=north, clockwise; Enter to keep, or type a new value): "
     ).strip()
     if not raw:
         return current_value

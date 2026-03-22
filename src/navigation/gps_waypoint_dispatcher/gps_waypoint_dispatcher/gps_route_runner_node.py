@@ -22,6 +22,7 @@ from std_msgs.msg import Float64MultiArray, String
 from tf2_ros import Buffer, TransformException, TransformListener
 
 from gps_waypoint_dispatcher.scene_runtime import (
+    compass_heading_to_enu_yaw_deg,
     FixedENUProjector,
     default_route_file,
     haversine_m,
@@ -320,7 +321,9 @@ class GPSRouteRunner(Node):
         raise RuntimeError(f"timed out waiting for TF {self._route_frame}->{self._base_frame}")
 
     def _build_bootstrap_alignment(self, x0: float, y0: float, yaw0: float) -> Alignment2D:
-        launch_yaw_rad = math.radians(float(self._route["launch_yaw_deg"]))
+        launch_yaw_rad = math.radians(
+            compass_heading_to_enu_yaw_deg(float(self._route["launch_yaw_deg"]))
+        )
         theta = normalize_angle(yaw0 - launch_yaw_rad)
         start_ref = self._route["start_ref"]
         cos_theta = math.cos(theta)

@@ -374,16 +374,22 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 
 ## 14. Fixed-Launch GPS Corridor
 
-两点 corridor 采集：
+多点 GPS route 采集：
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_two_point_corridor.py
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
 ```
 
 自动 corridor 导航：
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch bringup system_gps_corridor.launch.py
+cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
+```
+
+Makefile 快捷启动：
+
+```bash
+cd ~/fyp_autonomous_vehicle && make launch-corridor
 ```
 
 调试观察：
@@ -396,9 +402,10 @@ ros2 topic echo /gps_corridor/path_map
 
 说明：
 - 该模式假定车辆已经摆在固定 Launch Pose，并且车头朝向摆正
-- `collect_two_point_corridor.py` 只采两个点：固定启动点与固定终点
-- collect_two_point_corridor.py 若未检测到 /fix，会自动后台拉起 nmea_navsat_driver，采完后自动收掉
+- `collect_gps_route.py` 会采 `start_ref + 多个关键 waypoint`，并生成 `~/fyp_runtime_data/gnss/current_route.yaml`
+- `collect_gps_route.py` 若未检测到 `/fix`，会自动后台拉起 `nmea_navsat_driver`，采完后自动收掉
+- 采集时会显式确认 `launch_yaw_deg`；如果起点到第一个 waypoint 太近，会要求手工输入
 - 运行时不会再弹出 menu，也不会等待额外命令
-- corridor 第一版默认终点位于车辆启动朝向的正前方，`body_vector_m = [distance_m, 0]`
-- 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_corridor_runner_node` 会直接 abort，不动车
+- wrapper 会把日志和 bag 写入 `~/fyp_runtime_data/logs/<session>/`
+- 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_route_runner` 会直接 abort，不动车
 
