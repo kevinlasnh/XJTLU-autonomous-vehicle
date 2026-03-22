@@ -223,11 +223,77 @@ global_costmap:
 | 路径折弯/卷团 | 严重 | 消除（RPP 无 RotateToGoal）|
 | 幻影障碍停车 | 频繁 | 大幅减少（0.15m 过滤地面 + VoxelLayer 3D）|
 
+### 1.4 全量日志记录
+
+**解决**: 每次运行自动产生完整日志，用于复盘、调参和论文数据
+
+**输出目录**: `~/fyp_runtime_data/logs/<YYYY-MM-DD_HH-MM-SS>/`
+
+```
+~/fyp_runtime_data/logs/2026-03-25_14-30-00/
+├── bag/                    # ros2 bag 录制（所有关键 topic）
+│   ├── metadata.yaml
+│   └── *.db3
+└── launch.log              # 整个 launch 的 stdout/stderr
+```
+
+**录制 topic 列表**:
+
+| Topic | 说明 | 大小估计 |
+|-------|------|---------|
+| `/fix` | GPS 原始数据 | 极小 |
+| `/fastlio2/lio_odom` | SLAM 里程计 | 小 |
+| `/tf` | 坐标变换（含 map→odom→base_link） | 小 |
+| `/tf_static` | 静态 TF | 极小 |
+| `/gps_corridor/status` | runner 状态机 | 极小 |
+| `/gps_corridor/goal_map` | 当前目标点 | 极小 |
+| `/gps_corridor/path_map` | 规划的 corridor 路径 | 极小 |
+| `/cmd_vel` | 发给底盘的速度指令 | 小 |
+| `/local_costmap/costmap` | 局部代价地图 | 中 |
+| `/plan` | Nav2 全局路径 | 小 |
+
+**不录制**（体积过大，NVMe 空间有限）:
+- `/livox/lidar` — 原始点云 ~40MB/s
+- `/fastlio2/body_cloud` — 处理后点云 ~10MB/s
+
+**launch 文件修改**: `system_gps_corridor.launch.py` 中新增：
+
+```python
+import datetime
+
+# 生成带时间戳的日志目录
+log_dir = os.path.expanduser(
+    f'~/fyp_runtime_data/logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
+)
+os.makedirs(os.path.join(log_dir, 'bag'), exist_ok=True)
+
+# ros2 bag record
+bag_record = ExecuteProcess(
+    cmd=[
+        'ros2', 'bag', 'record',
+        '--output', os.path.join(log_dir, 'bag'),
+        '/fix',
+        '/fastlio2/lio_odom',
+        '/tf', '/tf_static',
+        '/gps_corridor/status',
+        '/gps_corridor/goal_map',
+        '/gps_corridor/path_map',
+        '/cmd_vel',
+        '/local_costmap/costmap',
+        '/plan',
+    ],
+    output='log',
+)
+```
+
+需要在文件头部增加 `from launch.actions import ExecuteProcess`，
+并在 `LaunchDescription` 的 actions 列表末尾加入 `bag_record`。
+
 ### Phase 1 构建 & 部署
 
 ```bash
-# 不需要编译（只改 YAML），但如果 VoxelLayer 没单独编译过:
-colcon build --packages-select nav2_costmap_2d nav2_regulated_pure_pursuit_controller nav2_rotation_shim_controller --symlink-install --parallel-workers 1
+# 不需要编译（只改 YAML + launch），但如果 VoxelLayer 没单独编译过:
+colcon build --packages-select nav2_costmap_2d nav2_regulated_pure_pursuit_controller nav2_rotation_shim_controller bringup --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
 
