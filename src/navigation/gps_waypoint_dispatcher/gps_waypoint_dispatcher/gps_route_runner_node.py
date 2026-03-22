@@ -515,24 +515,35 @@ class GPSRouteRunner(Node):
         segment_length_m = float(self._route.get("segment_length_m", 8.0))
         waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
         current_progress_m = 0.0
+        frozen_alignment = self._latest_alignment
+        if frozen_alignment is None:
+            raise RuntimeError("lost ENU->map alignment before starting waypoint")
+        self.get_logger().info(
+            "Freezing alignment for waypoint %s at theta=%.2fdeg tx=%.2f ty=%.2f rev=%d"
+            % (
+                waypoint.name,
+                math.degrees(frozen_alignment.theta),
+                frozen_alignment.tx,
+                frozen_alignment.ty,
+                frozen_alignment.revision,
+            )
+        )
 
         while rclpy.ok():
-            alignment = self._latest_alignment
-            if alignment is None:
-                raise RuntimeError("lost ENU->map alignment while navigating")
-
             current_xy = self._current_xy()
-            current_enu = self._map_to_enu(current_xy[0], current_xy[1], alignment)
+            current_enu = self._map_to_enu(current_xy[0], current_xy[1], frozen_alignment)
             projected_progress_m, _ = self._progress_on_segment(segment, current_enu)
             current_progress_m = max(current_progress_m, projected_progress_m)
             remaining_m = max(0.0, segment.total_length_m - current_progress_m)
             if remaining_m <= waypoint_tolerance_m:
                 return True, current_xy
 
-            self._publish_remaining_path(current_xy, waypoint_index, alignment, current_progress_m)
+            self._publish_remaining_path(
+                current_xy, waypoint_index, frozen_alignment, current_progress_m
+            )
 
             next_progress_m = min(segment.total_length_m, current_progress_m + segment_length_m)
-            next_subgoal = self._segment_pose(segment, next_progress_m, alignment)
+            next_subgoal = self._segment_pose(segment, next_progress_m, frozen_alignment)
             subgoal_index = max(
                 1,
                 min(
@@ -548,7 +559,7 @@ class GPSRouteRunner(Node):
                     segment.total_subgoals,
                     next_subgoal.pose.position.x,
                     next_subgoal.pose.position.y,
-                    alignment.source,
+                    frozen_alignment.source,
                 )
             )
             self._goal_pub.publish(next_subgoal)
@@ -562,7 +573,7 @@ class GPSRouteRunner(Node):
                     next_subgoal.pose.position.y,
                     next_progress_m,
                     segment.total_length_m,
-                    alignment.source,
+                    frozen_alignment.source,
                 )
             )
 
