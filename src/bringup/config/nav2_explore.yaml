@@ -321,10 +321,10 @@ local_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 5.0
+      update_frequency: 8.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 2.0
+      publish_frequency: 4.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: odom
@@ -405,10 +405,10 @@ global_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 1.0
+      update_frequency: 2.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 0.5
+      publish_frequency: 1.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: map
@@ -432,10 +432,10 @@ global_costmap:
       rolling_window: true
       # 地图宽度；决定 costmap 在 X 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      width: 30
+      width: 40
       # 地图高度；决定 costmap 在 Y 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      height: 30
+      height: 40
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
       plugins: ["obstacle_layer", "inflation_layer"]
@@ -481,7 +481,7 @@ global_costmap:
           min_obstacle_height: -0.3
           # 是否允许清障；决定观测源能否清掉旧障碍。
           # 改为 true：地图更容易清掉旧障碍；改为 false：旧障碍更容易残留。
-          clearing: false
+          clearing: true
           # 是否允许标障；决定观测源命中的障碍能否写入地图。
           # 改为 true：新障碍会被写入；改为 false：该源只清障不标障。
           marking: true
@@ -508,7 +508,7 @@ global_costmap:
           marking_enabled: true
       # 是否总是发送完整代价地图；决定 costmap 发布全量还是增量更新。
       # 改为 true：下游更稳但带宽更高；改为 false：更省带宽但对订阅端要求更高。
-      always_send_full_costmap: false
+      always_send_full_costmap: true
 # Map Server 节点参数块；负责加载静态地图。
 # 改错节点名或层级：地图服务器会读不到参数或地图加载失败。
 map_server:

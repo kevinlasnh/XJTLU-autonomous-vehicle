@@ -74,6 +74,11 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
         self.declare_parameter("bootstrap_switch_distance_m", 20.0)
+        self.declare_parameter("pgo_switch_min_stable_updates", 8)
+        self.declare_parameter("pgo_switch_stable_window_s", 5.0)
+        self.declare_parameter("pgo_switch_max_theta_spread_deg", 2.5)
+        self.declare_parameter("pgo_switch_max_translation_spread_m", 2.0)
+        self.declare_parameter("pgo_switch_max_bootstrap_delta_deg", 3.0)
         self.declare_parameter("pgo_switch_warn_deg", 10.0)
 
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
@@ -87,6 +92,21 @@ class GPSRouteRunner(Node):
         self._enu_origin_alt = float(self.get_parameter("enu_origin_alt").value)
         self._bootstrap_switch_distance_m = float(
             self.get_parameter("bootstrap_switch_distance_m").value
+        )
+        self._pgo_switch_min_stable_updates = int(
+            self.get_parameter("pgo_switch_min_stable_updates").value
+        )
+        self._pgo_switch_stable_window_s = float(
+            self.get_parameter("pgo_switch_stable_window_s").value
+        )
+        self._pgo_switch_max_theta_spread_deg = float(
+            self.get_parameter("pgo_switch_max_theta_spread_deg").value
+        )
+        self._pgo_switch_max_translation_spread_m = float(
+            self.get_parameter("pgo_switch_max_translation_spread_m").value
+        )
+        self._pgo_switch_max_bootstrap_delta_deg = float(
+            self.get_parameter("pgo_switch_max_bootstrap_delta_deg").value
         )
         self._pgo_switch_warn_deg = float(self.get_parameter("pgo_switch_warn_deg").value)
 
@@ -114,6 +134,9 @@ class GPSRouteRunner(Node):
         self._using_pgo_alignment = False
         self._distance_since_start_m = 0.0
         self._last_pose_xy: tuple[float, float] | None = None
+        self._pgo_alignment_history: deque[tuple[float, float, float, float]] = deque()
+        self._last_pgo_hold_log_time = 0.0
+        self._last_pgo_hold_reason = ""
 
     def _publish_status(self, text: str) -> None:
         self.get_logger().info(text)
@@ -146,6 +169,9 @@ class GPSRouteRunner(Node):
             source="pgo",
             revision=self._alignment_revision,
         )
+        now_mono = time.monotonic()
+        self._pgo_alignment_history.append((now_mono, theta, tx, ty))
+        self._trim_pgo_alignment_history(now_mono)
         self.get_logger().info(
             "Received valid PGO ENU->map transform: theta=%.2fdeg tx=%.2f ty=%.2f"
             % (math.degrees(theta), tx, ty)
@@ -333,15 +359,104 @@ class GPSRouteRunner(Node):
         self._alignment_revision += 1
         return Alignment2D(theta=theta, tx=tx, ty=ty, source="bootstrap", revision=self._alignment_revision)
 
-    def _best_alignment(self) -> Alignment2D:
+    def _trim_pgo_alignment_history(self, now_mono: float | None = None) -> None:
+        if now_mono is None:
+            now_mono = time.monotonic()
+        while (
+            self._pgo_alignment_history
+            and now_mono - self._pgo_alignment_history[0][0] > self._pgo_switch_stable_window_s
+        ):
+            self._pgo_alignment_history.popleft()
+
+    def _maybe_log_pgo_hold(self, reason: str) -> None:
+        now_mono = time.monotonic()
+        if (
+            reason != self._last_pgo_hold_reason
+            or now_mono - self._last_pgo_hold_log_time >= 5.0
+        ):
+            self.get_logger().info("Holding bootstrap alignment: %s" % reason)
+            self._last_pgo_hold_reason = reason
+            self._last_pgo_hold_log_time = now_mono
+
+    def _pgo_switch_ready(self) -> tuple[bool, str]:
+        if self._pgo_alignment is None:
+            return False, "PGO alignment not ready yet"
+        if self._distance_since_start_m < self._bootstrap_switch_distance_m:
+            return (
+                False,
+                "distance %.1fm < switch threshold %.1fm"
+                % (self._distance_since_start_m, self._bootstrap_switch_distance_m),
+            )
+
+        self._trim_pgo_alignment_history()
+        history = list(self._pgo_alignment_history)
+        if len(history) < self._pgo_switch_min_stable_updates:
+            return (
+                False,
+                "have %d/%d recent PGO updates"
+                % (len(history), self._pgo_switch_min_stable_updates),
+            )
+
+        latest_theta = history[-1][1]
+        theta_offsets_deg = [
+            math.degrees(normalize_angle(theta_i - latest_theta))
+            for _, theta_i, _, _ in history
+        ]
+        theta_spread_deg = max(theta_offsets_deg) - min(theta_offsets_deg)
+        tx_values = [tx_i for _, _, tx_i, _ in history]
+        ty_values = [ty_i for _, _, _, ty_i in history]
+        translation_spread_m = math.hypot(
+            max(tx_values) - min(tx_values),
+            max(ty_values) - min(ty_values),
+        )
+        bootstrap_delta_deg = abs(
+            math.degrees(
+                normalize_angle(self._pgo_alignment.theta - self._bootstrap_alignment.theta)
+            )
+        )
+
+        if theta_spread_deg > self._pgo_switch_max_theta_spread_deg:
+            return (
+                False,
+                "theta spread %.2fdeg > %.2fdeg"
+                % (theta_spread_deg, self._pgo_switch_max_theta_spread_deg),
+            )
+        if translation_spread_m > self._pgo_switch_max_translation_spread_m:
+            return (
+                False,
+                "translation spread %.2fm > %.2fm"
+                % (translation_spread_m, self._pgo_switch_max_translation_spread_m),
+            )
+        if bootstrap_delta_deg > self._pgo_switch_max_bootstrap_delta_deg:
+            return (
+                False,
+                "bootstrap delta %.2fdeg > %.2fdeg"
+                % (bootstrap_delta_deg, self._pgo_switch_max_bootstrap_delta_deg),
+            )
+
+        return (
+            True,
+            "stable over %d updates: theta spread %.2fdeg translation spread %.2fm bootstrap delta %.2fdeg"
+            % (
+                len(history),
+                theta_spread_deg,
+                translation_spread_m,
+                bootstrap_delta_deg,
+            ),
+        )
+
+    def _best_alignment(self, allow_switch: bool = True) -> Alignment2D:
         if self._bootstrap_alignment is None:
             raise RuntimeError("bootstrap alignment not initialized")
 
-        if (
-            self._pgo_alignment is not None
-            and self._distance_since_start_m >= self._bootstrap_switch_distance_m
-        ):
-            if not self._using_pgo_alignment:
+        if self._using_pgo_alignment:
+            if self._pgo_alignment is not None:
+                return self._pgo_alignment
+            return self._bootstrap_alignment
+
+        if allow_switch:
+            ready, reason = self._pgo_switch_ready()
+            if ready and self._pgo_alignment is not None:
                 delta_deg = abs(
                     math.degrees(
                         normalize_angle(self._pgo_alignment.theta - self._bootstrap_alignment.theta)
@@ -351,9 +466,12 @@ class GPSRouteRunner(Node):
                     self.get_logger().warn(
                         "PGO/bootstrap rotation delta is %.1fdeg; launch heading may be wrong" % delta_deg
                     )
+                self.get_logger().info("Switching to PGO alignment: %s" % reason)
                 self._using_pgo_alignment = True
                 self._publish_status("SWITCHED_TO_PGO_ALIGNMENT")
-            return self._pgo_alignment
+                return self._pgo_alignment
+            if not self._using_pgo_alignment:
+                self._maybe_log_pgo_hold(reason)
 
         return self._bootstrap_alignment
 
@@ -460,7 +578,8 @@ class GPSRouteRunner(Node):
         self._update_distance_since_start(current_xy)
 
         while rclpy.ok():
-            alignment = self._best_alignment()
+            # Freeze the alignment for the entire waypoint so Nav2 does not chase a moving target.
+            alignment = self._best_alignment(allow_switch=True)
             target_xy = self._route_waypoint_to_map(waypoint, alignment)
             subgoals = self._build_subgoals(
                 current_xy,
@@ -472,19 +591,7 @@ class GPSRouteRunner(Node):
             if not subgoals:
                 return True, current_xy
 
-            switched = False
             for subgoal_index, subgoal in enumerate(subgoals, start=1):
-                latest_alignment = self._best_alignment()
-                if latest_alignment.revision != alignment.revision:
-                    self.get_logger().info(
-                        "Alignment changed while approaching %s, recomputing remaining subgoals"
-                        % waypoint.name
-                    )
-                    current_xy = self._current_xy()
-                    self._update_distance_since_start(current_xy)
-                    switched = True
-                    break
-
                 self._goal_pub.publish(subgoal)
                 self.get_logger().info(
                     "Sending %s subgoal %d/%d x=%.2f y=%.2f source=%s"
@@ -507,8 +614,7 @@ class GPSRouteRunner(Node):
                 current_xy = self._current_xy()
                 self._update_distance_since_start(current_xy)
 
-            if not switched:
-                return True, current_xy
+            return True, current_xy
 
         return False, current_xy
 

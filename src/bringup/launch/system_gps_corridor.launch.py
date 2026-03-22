@@ -92,6 +92,7 @@ def generate_launch_description():
             '/gps_corridor/path_map',
             '/cmd_vel',
             '/local_costmap/costmap',
+            '/global_costmap/costmap',
             '/plan',
         ],
         output='log',
