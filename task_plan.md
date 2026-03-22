@@ -20,6 +20,45 @@ GPS Route Runner → 读 ENU→map 变换 → GPS 路点转 map 坐标 → Nav2 
 
 **不用 gps_anchor_localizer_node**。PGO 自己估计完整的 ENU→map 变换（旋转+平移），同时做 GPS 因子融合。Runner 节点读这个变换做 GPS→map 坐标转换。简化管道，减少依赖。
 
+## 2026-03-22 Afternoon Runtime Loop Status
+
+**当前执行位置**: `Step 29 完成，问题归类为 Step 21 小问题迭代`
+
+### 已验证成立
+
+- corridor v2 已经从“无法起跑”推进到“可稳定启动并进入 `RUNNING_ROUTE`”
+- 最新实车 session `2026-03-22-15-16-00` 中，route runner 已连续推进到第一个 waypoint `right-top-corner` 的倒数第二个 subgoal
+- 最新部署版 `b7a6b2f` 没有再出现“启动即 abort / Nav2 不起 / corridor 命令无前台状态”这类启动级 blocker
+
+### 当前收敛出的真实问题
+
+1. **PGO 接管门槛仍未闭合**
+   - PGO 在运行中已经发布有效 `ENU->map`
+   - 但 route runner 仍持续保持 bootstrap
+   - 最新日志显示 hold reason 反复是 `have 3/4 recent PGO updates` / `have 2/4 recent PGO updates`
+   - 说明当前 `pgo_switch_min_stable_updates` 与 `pgo_switch_stable_window_s` 的组合，对现场约 `~1Hz` 的 PGO 更新频率来说过严，导致“PGO ready 但永远切不过去”
+
+2. **绿色 `/plan` 的确由代价地图驱动**
+   - Nav2 planner 每约 `1Hz` 重算 `/plan`
+   - `/plan` 是基于当前 goal + global costmap 生成的全局路径
+   - local controller 再基于 local costmap 跟踪 `/plan`
+   - 因此若 global/local costmap 残留障碍没有及时清掉，绿色路径就会绕障、弯折、甚至向后绕
+
+3. **当前不应继续盲目拉高刷新率**
+   - 最新日志里 controller 已经反复 `Control loop missed its desired rate of 20Hz`
+   - planner 也出现过 `Current loop rate is 2.0759 Hz`
+   - 这说明当前 Jetson 上的瓶颈不是“频率设得还不够高”，而是“地图/TF/控制链已经在掉频”
+   - 下一轮应优先修 obstacle layer 语义、清障策略和接管门槛，而不是继续一味提高 Hz
+
+### 下一轮 Step 21 微调范围
+
+- 收紧 PGO 接管判据，使其与现场实际 PGO 发布频率匹配
+- 区分 global/local costmap 的职责:
+  - global costmap 避免保留“启动前人站在车前”这类陈旧障碍
+  - local costmap 负责实时动态避障
+- 继续排查 controller `collision ahead` 与 TF extrapolation / loop miss 的关系
+- 必要时再调整 local costmap 窗口或清障语义，但不再先验要求更高刷新率
+
 ---
 
 ## 实施优先级

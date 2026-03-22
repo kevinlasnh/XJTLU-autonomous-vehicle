@@ -6,19 +6,36 @@
 
 ## 当前状态
 
-**CC 复审完成。Codex 已完成 Bootstrap 方案 A 的二次部署性审查。Step 19 通过，等待用户进入 Step 20 锁定。**
+**corridor v2 已完成首轮部署与多次实车测试。当前问题已从“无法启动”收敛到“运行期 costmap / planner / controller / PGO handoff 微调”。**
 
 | 项目 | 状态 |
 |------|------|
 | Corridor v1 | 室外验证通过，作为 baseline 保留 |
-| Corridor v2 计划 | **CC 复审完成，Bootstrap 方案 A 锁定** |
+| Corridor v2 计划 | **已锁定并完成首轮部署** |
 | 启动死锁 blocker | **已解决（固定 yaw bootstrap）** |
-| 下一步 | **等待用户确认 Step 20 锁定；确认后进入 Step 21 实施** |
+| 当前运行状态 | **可起跑，可推进到第一个 waypoint 的后段 subgoal** |
+| 下一步 | **Step 21: 继续微调 PGO 接管门槛 + costmap/planner/controller** |
 | 当前分支 | `gps` |
 
 ---
 
 ## 最近完成 (2026-03-22)
+
+### Codex 部署与实车闭环
+
+- [x] 完成 corridor v2 首轮代码部署到 `gps`
+- [x] 完成 Jetson `pull + colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+- [x] 完成 quiet corridor 前台监控，前台只显示简化状态
+- [x] 完成多轮实车测试与日志回读
+- [x] 当前已确认：系统能正常进入 `RUNNING_ROUTE`
+
+### 最新 Step 29 分析结论
+
+- [x] 最新实车 session `2026-03-22-15-16-00` 已推进到第一个 waypoint 的倒数第二个 subgoal
+- [x] PGO 本轮已 ready，但 route runner 没有实际切换到 `pgo`，当前切换门槛对现场约 `~1Hz` 的更新频率仍然过严
+- [x] Nav2 的绿色路径 `/plan` 确认由 planner 基于 global costmap 生成；local controller 再结合 local costmap 跟踪
+- [x] 最新问题性质判断：**不是架构 blocker，而是 Step 21 小问题**
+- [x] 用户结束本轮实车测试，当前进入会话收尾
 
 ### CC 复审（针对 Codex 部署性审查发现）
 
@@ -52,13 +69,15 @@
 2. **10m 预热方案已淘汰**: 数学上不需要，浪费距离和时间
 3. **route YAML 的 launch_yaw_deg 是必填字段**: 对直线 corridor 可复用 bearing_deg，但多点路线采集时必须显式确认
 4. **Codex 发现 1-5 全部认可**: 已体现在更新后的 task_plan.md 中
-5. **计划已通过 Codex 二次部署性审查，可进入 Step 20 锁定**
+5. **当前最新断点不是计划审查，而是运行期微调**
+6. **不要再默认继续拉高 costmap 刷新率**：最新日志已经显示 controller/planner 掉频
+7. **PGO 已能在运行中算出 valid ENU->map**，但 handoff gate 仍未和现场更新频率匹配
 
 ---
 
 ## 断点位置
 
-**Step 19 已通过 → 等待用户确认进入 Step 20 锁定**
+**Step 29 已完成 → Step 30 已判断为“小问题” → 下次从 Step 21 继续改**
 
 ---
 
@@ -67,3 +86,4 @@
 2026-03-21: corridor v1 概念→实车验证
 2026-03-21~22: 深度调研 + 算法设计 + 计划编写 + 审计
 2026-03-22: 用户审批 → Codex 两轮审查（发现启动死锁）→ CC 复审（锁定方案 A bootstrap）→ Codex 二次审查通过
+2026-03-22: Codex 完成 corridor v2 首轮部署 → 多轮实车测试 → 问题收敛到 costmap / planner / controller / PGO handoff 微调

@@ -189,6 +189,86 @@ GPS: 仅在 corridor runner 启动时做 sanity check（距 start_ref < 6m）
 
 ## 已归档发现
 
+---
+
+## 2026-03-22 Latest Step 29 Runtime Findings
+
+### 1. 当前系统已经能起跑，但还未跑通第一个 waypoint
+
+- 最新实车 session: `~/fyp_runtime_data/logs/2026-03-22-15-16-00/`
+- route runner 已成功进入 `RUNNING_ROUTE`
+- 先后发出了第一个 waypoint `right-top-corner` 的多个 subgoal:
+  - `1/6` at `(7.03, -0.31)`
+  - `1/5` at `(13.71, -0.55)`
+  - `1/4` at `(20.46, -0.80)`
+  - `1/3` at `(27.36, -1.03)`
+  - `1/2` at `(34.36, -1.32)`
+- 用户是在路径异常向后绕行后主动结束会话；这轮不是“启动失败”，而是“运行中 path/costmap/controller 质量不稳”
+
+### 2. PGO 本轮已经 ready，但 runner 实际上没有切过去
+
+- PGO 在日志中明确进入 `ENU->map alignment ready`
+- runner 也连续收到了有效的 `/gps_corridor/enu_to_map`
+- 但最新日志没有 `SWITCHED_TO_PGO_ALIGNMENT`
+- hold reason 反复是：
+  - `have 3/4 recent PGO updates`
+  - `have 2/4 recent PGO updates`
+
+结论：
+- 当前 `pgo_switch_min_stable_updates=4` + `pgo_switch_stable_window_s=3.0` 对现场约 `~1Hz` 的 PGO 更新频率仍然偏严
+- 这不是“PGO 算不出来”，而是“切换门槛设成了现场几乎达不到的组合”
+
+### 3. 绿色路径 `/plan` 确实是根据代价地图生成的
+
+- planner 每约 `1Hz` 重算一次 path，controller 日志持续打印 `Passing new path to controller`
+- 这属于 Nav2 默认 replan 机制，不是 route runner 每秒乱发目标
+- 绿色路径的来源是全局 planner 基于:
+  - 当前目标点
+  - global costmap
+  - 当前 robot pose
+  计算出来的 `/plan`
+- local controller 再结合 local costmap 对 `/plan` 做近场跟踪和避障
+
+因此：
+- **如果 global costmap 里保留了陈旧障碍，绿色路径会先被带弯**
+- **如果 local costmap 里残留或误报了近场障碍，controller 会出现 `collision ahead` 和 stop-go**
+
+### 4. 本轮已经看到 global/local costmap 都在参与问题，但权重不同
+
+**global/planner 侧证据**
+- planner 报过:
+  - `Failed to create a plan from potential when a legal potential was found`
+  - `GridBased: failed to create plan with tolerance 0.50`
+  - `Planning algorithm GridBased failed to generate a valid path to (13.71, -0.55)`
+- 随后 global costmap 收到 `clear entirely` 请求
+
+**local/controller 侧证据**
+- controller 持续 `Passing new path to controller`
+- 在异常段开始连续报:
+  - `RegulatedPurePursuitController detected collision ahead!`
+  - `Failed to make progress`
+- 随后 local costmap 也被 clear
+
+结论：
+- global costmap 的陈旧障碍/误判会先把 `/plan` 带偏
+- local costmap 的近场碰撞判定又把这个问题放大成 stop-go、绕行和 recovery
+- 这两层都要修，但下一轮优先级应是“先把 global/live obstacle 的陈旧障碍问题收住，再清 local 的 collision ahead 误报”
+
+### 5. 不能简单靠继续提高刷新率解决
+
+- controller 反复报 `Control loop missed its desired rate of 20Hz`
+- planner 也报过 `Current loop rate is 2.0759 Hz`
+- controller 还出现了 `transformPoseInTargetFrame` future extrapolation
+
+结论：
+- 当前系统已经存在计算/时间同步压力
+- 继续一味提高 global/local costmap 刷新率，只会增加掉频风险
+- 下一轮应优先修：
+  - obstacle layer 的 clearing / marking 语义
+  - global/local 点云职责边界
+  - PGO handoff 门槛
+  - TF 时间容忍与控制链延迟
+
 ### v7 scene graph（已废弃）
 
 - v7 主链对单 corridor 需求过重
