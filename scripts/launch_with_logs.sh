@@ -16,6 +16,12 @@ ln -sfn "$SESSION_DIR" "$HOME/fyp_runtime_data/logs/latest"
 export ROS_LOG_DIR="$SESSION_DIR/console"
 export FYP_LOG_SESSION_DIR="$SESSION_DIR/data"
 
+cleanup_runtime_nodes() {
+  pkill -INT -f '[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher' 2>/dev/null || true
+  sleep 1
+  pkill -KILL -f '[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher' 2>/dev/null || true
+}
+
 cleanup() {
   if [[ "$CLEANUP_DONE" == "1" ]]; then
     return
@@ -31,6 +37,8 @@ cleanup() {
     kill "$LAUNCH_PID" 2>/dev/null || true
     wait "$LAUNCH_PID" 2>/dev/null || true
   fi
+
+  cleanup_runtime_nodes
 
   if [[ -f "$SESSION_DIR/system/session_info.yaml" ]]; then
     echo "end_time: $(date -Iseconds)" >> "$SESSION_DIR/system/session_info.yaml"
@@ -57,6 +65,8 @@ echo "  Console: $SESSION_DIR/console/"
 echo "  Data:    $SESSION_DIR/data/"
 echo "  System:  $SESSION_DIR/system/"
 echo "=== Launching mode: $MODE ==="
+
+cleanup_runtime_nodes
 
 set +u
 source /opt/ros/humble/setup.bash
