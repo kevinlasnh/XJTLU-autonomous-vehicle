@@ -73,12 +73,12 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
-        self.declare_parameter("bootstrap_switch_distance_m", 20.0)
-        self.declare_parameter("pgo_switch_min_stable_updates", 8)
-        self.declare_parameter("pgo_switch_stable_window_s", 5.0)
+        self.declare_parameter("bootstrap_switch_distance_m", 6.0)
+        self.declare_parameter("pgo_switch_min_stable_updates", 4)
+        self.declare_parameter("pgo_switch_stable_window_s", 3.0)
         self.declare_parameter("pgo_switch_max_theta_spread_deg", 2.5)
         self.declare_parameter("pgo_switch_max_translation_spread_m", 2.0)
-        self.declare_parameter("pgo_switch_max_bootstrap_delta_deg", 3.0)
+        self.declare_parameter("pgo_switch_max_bootstrap_delta_deg", 5.0)
         self.declare_parameter("pgo_switch_warn_deg", 10.0)
 
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
@@ -574,58 +574,59 @@ class GPSRouteRunner(Node):
 
     def _run_waypoint(self, waypoint_index: int) -> tuple[bool, tuple[float, float]]:
         waypoint = self._route["waypoints"][waypoint_index]
+        segment_length_m = float(self._route.get("segment_length_m", 8.0))
+        waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
         current_xy = self._current_xy()
         self._update_distance_since_start(current_xy)
 
         while rclpy.ok():
-            # Freeze the alignment for the entire waypoint so Nav2 does not chase a moving target.
             alignment = self._best_alignment(allow_switch=True)
             target_xy = self._route_waypoint_to_map(waypoint, alignment)
-            subgoals = self._build_subgoals(
-                current_xy,
-                target_xy,
-                float(self._route.get("segment_length_m", 8.0)),
+            remaining_distance_m = math.hypot(
+                target_xy[0] - current_xy[0],
+                target_xy[1] - current_xy[1],
             )
+            if remaining_distance_m <= waypoint_tolerance_m:
+                return True, current_xy
+
             self._publish_remaining_path(current_xy, waypoint_index, alignment)
+            subgoals = self._build_subgoals(current_xy, target_xy, segment_length_m)
 
             if not subgoals:
                 return True, current_xy
 
-            for subgoal_index, subgoal in enumerate(subgoals, start=1):
+            next_subgoal = subgoals[0]
+            self._publish_status(
+                "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
+                % (
+                    waypoint.name,
+                    1,
+                    len(subgoals),
+                    next_subgoal.pose.position.x,
+                    next_subgoal.pose.position.y,
+                    alignment.source,
+                )
+            )
+            self._goal_pub.publish(next_subgoal)
+            self.get_logger().info(
+                "Sending %s subgoal 1/%d x=%.2f y=%.2f source=%s"
+                % (
+                    waypoint.name,
+                    len(subgoals),
+                    next_subgoal.pose.position.x,
+                    next_subgoal.pose.position.y,
+                    alignment.source,
+                )
+            )
+            status = self._send_goal(next_subgoal)
+            if status != GoalStatus.STATUS_SUCCEEDED:
                 self._publish_status(
-                    "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
-                    % (
-                        waypoint.name,
-                        subgoal_index,
-                        len(subgoals),
-                        subgoal.pose.position.x,
-                        subgoal.pose.position.y,
-                        alignment.source,
-                    )
+                    f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_1_STATUS_{status}"
                 )
-                self._goal_pub.publish(subgoal)
-                self.get_logger().info(
-                    "Sending %s subgoal %d/%d x=%.2f y=%.2f source=%s"
-                    % (
-                        waypoint.name,
-                        subgoal_index,
-                        len(subgoals),
-                        subgoal.pose.position.x,
-                        subgoal.pose.position.y,
-                        alignment.source,
-                    )
-                )
-                status = self._send_goal(subgoal)
-                if status != GoalStatus.STATUS_SUCCEEDED:
-                    self._publish_status(
-                        f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_{subgoal_index}_STATUS_{status}"
-                    )
-                    return False, current_xy
+                return False, current_xy
 
-                current_xy = self._current_xy()
-                self._update_distance_since_start(current_xy)
-
-            return True, current_xy
+            current_xy = self._current_xy()
+            self._update_distance_since_start(current_xy)
 
         return False, current_xy
 

@@ -229,7 +229,7 @@ controller_server:
     use_sim_time: false
     # 控制循环频率；决定局部控制器每秒更新多少次速度指令。
     # 调大：响应更快但 CPU 更高；调小：负载更低但控制更迟缓。
-    controller_frequency: 25.0
+    controller_frequency: 20.0
     # 前向速度死区阈值；低于该值的前向速度会被视为零。
     # 调大：更能压制微抖动；调小：更容易保留细小前进速度。
     min_x_velocity_threshold: 0.001
@@ -287,26 +287,26 @@ controller_server:
       angular_dist_threshold: 0.785
       angular_disengage_threshold: 0.39
       forward_sampling_distance: 0.5
-      rotate_to_heading_angular_vel: 1.2
-      max_angular_accel: 2.0
-      simulate_ahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.0
+      max_angular_accel: 1.6
+      simulate_ahead_time: 1.0
       rotate_to_goal_heading: false
       primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.5
-      lookahead_dist: 0.8
-      min_lookahead_dist: 0.35
-      max_lookahead_dist: 1.2
-      lookahead_time: 1.0
+      lookahead_dist: 1.0
+      min_lookahead_dist: 0.45
+      max_lookahead_dist: 1.5
+      lookahead_time: 1.5
       use_velocity_scaled_lookahead_dist: true
       transform_tolerance: 0.1
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
       use_collision_detection: true
-      max_allowed_time_to_collision_up_to_carrot: 1.8
+      max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
-      regulated_linear_scaling_min_radius: 1.2
-      regulated_linear_scaling_min_speed: 0.18
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
       use_rotate_to_heading: false
       allow_reversing: false
       max_robot_pose_search_dist: 10.0
@@ -321,10 +321,10 @@ local_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 12.0
+      update_frequency: 10.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 6.0
+      publish_frequency: 5.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: odom
@@ -390,10 +390,10 @@ local_costmap:
           data_type: "PointCloud2"
           min_obstacle_height: -0.3
           max_obstacle_height: 1.5
-          obstacle_min_range: 0.15
-          obstacle_max_range: 5.5
-          raytrace_min_range: 0.1
-          raytrace_max_range: 6.5
+          obstacle_min_range: 0.2
+          obstacle_max_range: 5.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 6.0
           clearing: true
           marking: true
       # 是否总是发送完整代价地图；决定 costmap 发布全量还是增量更新。
@@ -410,10 +410,10 @@ global_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 3.0
+      update_frequency: 2.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 1.5
+      publish_frequency: 1.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: map
@@ -492,16 +492,16 @@ global_costmap:
           marking: true
           # 最大障碍标记距离；超过该值的观测不会被写成障碍。
           # 调大：更远障碍也会入图；调小：只保留更近的障碍。
-          obstacle_max_range: 10.0
+          obstacle_max_range: 4.0
           # 最小障碍标记距离；用于滤掉本体附近或近场噪声。
           # 调大：更容易滤掉近场点；调小：更容易把近场物体写入。
-          obstacle_min_range: 0.3
+          obstacle_min_range: 1.0
           # 最大清障距离；决定射线清障能清到多远。
           # 调大：更远区域也能被清空；调小：清障范围缩短。
-          raytrace_max_range: 12.0
+          raytrace_max_range: 5.0
           # 最小清障距离；决定离传感器太近的区域是否参与清障。
           # 调大：近场更不参与清障；调小：更贴近本体开始清障。
-          raytrace_min_range: 0.0
+          raytrace_min_range: 0.5
           # 无穷远量测是否有效；决定无穷远点是否参与清障判断。
           # 改为 true：更容易把无返回视作空闲；改为 false：忽略无穷远量测。
           inf_is_valid: false
