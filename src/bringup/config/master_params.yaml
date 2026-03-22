@@ -154,7 +154,7 @@
     # 时间窗口内允许的最大平移波动；超过则认为 PGO 仍在漂移。
     pgo_switch_max_translation_spread_m: 2.0
     # bootstrap 与 PGO 的角度差过大时，不允许在运行中切换参考系。
-    pgo_switch_max_bootstrap_delta_deg: 5.0
+    pgo_switch_max_bootstrap_delta_deg: 10.0
     # 真正切换时的提醒阈值；用于记录 bootstrap 和 PGO 仍有轻微差异。
     pgo_switch_warn_deg: 2.0
 
