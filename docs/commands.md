@@ -206,8 +206,8 @@ pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 ## 9. 停止系统与紧急停车
 
 ```bash
-make kill
-pkill -f ros2
+# 系统结束后做一次干净清理，确保下次从空状态启动
+cd ~/fyp_autonomous_vehicle && make kill-runtime
 ```
 
 硬件层面的急停优先级：
@@ -384,6 +384,12 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
+```
+
+结束后清理残留进程：
+
+```bash
+cd ~/fyp_autonomous_vehicle && make kill-runtime
 ```
 
 Makefile 快捷启动：

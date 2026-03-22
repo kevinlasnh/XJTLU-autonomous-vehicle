@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-corridor launch-explore-gps launch-nav-gps launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-corridor launch-explore-gps launch-nav-gps launch-travel kill kill-runtime clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -61,8 +61,14 @@ launch-travel:
 	bash scripts/launch_with_logs.sh travel
 
 kill:
-	pkill -f ros2 || true
-	@echo ">>> 所有 ROS2 进程已终止"
+	@$(MAKE) kill-runtime
+
+kill-runtime:
+	pkill -INT -f 'launch_with_logs.sh|monitor_corridor_status.py|ros2 bag|rviz2|livox_ros_driver2_node|lio_node|pgo_node|serial_twistctl_node|nmea_serial_driver|planner_server|controller_server|behavior_server|bt_navigator|smoother_server|velocity_smoother|lifecycle_manager|map_server|amcl|component_container(_mt)?|gps_route_runner|robot_state_publisher' || true
+	sleep 2
+	pkill -KILL -f 'launch_with_logs.sh|monitor_corridor_status.py|ros2 bag|rviz2|livox_ros_driver2_node|lio_node|pgo_node|serial_twistctl_node|nmea_serial_driver|planner_server|controller_server|behavior_server|bt_navigator|smoother_server|velocity_smoother|lifecycle_manager|map_server|amcl|component_container(_mt)?|gps_route_runner|robot_state_publisher' || true
+	ros2 daemon stop >/dev/null 2>&1 || true
+	@echo ">>> 导航相关残留进程已清理，ROS 2 daemon 已停止"
 
 clean:
 	rm -rf build/ install/ log/
