@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-**corridor v2 已完成首轮部署与多次实车测试。当前问题已从“无法启动”收敛到“运行期 costmap / planner / controller / PGO handoff 微调”。**
+**Corridor v2 已完成首轮部署与多次实车测试，并完成本轮文档更新。当前工作流已关闭，等待下一期从 Step 1 重新开始。**
 
 | 项目 | 状态 |
 |------|------|
@@ -14,12 +14,29 @@
 | Corridor v2 计划 | **已锁定并完成首轮部署** |
 | 启动死锁 blocker | **已解决（固定 yaw bootstrap）** |
 | 当前运行状态 | **可起跑，可推进到第一个 waypoint 的后段 subgoal** |
-| 下一步 | **Step 21: 继续微调 PGO 接管门槛 + costmap/planner/controller** |
+| 文档阶段 | **已完成（Step 33-38）** |
+| 下一步 | **新一期工作流 Step 1: 继续攻 PGO 接管门槛 + costmap 微调** |
 | 当前分支 | `gps` |
 
 ---
 
 ## 最近完成 (2026-03-22)
+
+### CC 文档阶段（Step 33-38）
+
+- [x] 读 L2 文件（git diff 看 Codex 更新）
+- [x] 读 docs/index.md
+- [x] 判断文档类型：无需新增，更新现有文档
+- [x] 更新所有相关文档：
+  - `devlog/2026-03.md`: 新增 corridor v2 部署与实车测试条目
+  - `known_issues.md`: 更新 GPS RF 状态、costmap 残留新发现、新增 PGO handoff 和 controller/planner 掉频问题、更新 corridor v1→v2 状态
+  - `knowledge/nav2_tuning.md`: 新增 corridor RPP 控制器参数、更新 costmap 参数与实车发现
+  - `knowledge/gps_planning.md`: 更新当前状态、新增 corridor v2 架构与实车验证章节
+  - `knowledge/pgo.md`: 更新 GPS topic `/gnss`→`/fix`、新增 corridor v2 ENU→map 对齐机制章节
+  - `commands.md`: 新增 corridor quiet 模式说明
+  - `index.md`: 更新日期与当前系统摘要
+- [x] 调用 planning-with-files 记录进度
+- [x] 准备 git commit + push
 
 ### Codex 部署与实车闭环
 

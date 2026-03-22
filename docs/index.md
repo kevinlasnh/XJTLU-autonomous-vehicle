@@ -1,12 +1,13 @@
 # FYP 自主导航车辆文档索引
 
-> 最后更新: 2026-03-20
+> 最后更新: 2026-03-22
 
 ## 当前系统摘要
 
 - 当前主运行模式: `make launch-explore`
 - GPS 融合模式已部署: `make launch-explore-gps`
 - GPS 目标导航模式已在 `feature/gps-navigation-v4` 完成软件部署并通过室内 smoke: `make launch-nav-gps`
+- **GPS Corridor v2 已在 `gps` 分支完成首轮部署和多轮实车测试**: `make launch-corridor`
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
 - 运行时数据根目录: `~/fyp_runtime_data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`

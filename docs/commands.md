@@ -398,6 +398,7 @@ cd ~/fyp_autonomous_vehicle && make launch-corridor
 ros2 topic echo /gps_corridor/status
 ros2 topic echo /gps_corridor/goal_map
 ros2 topic echo /gps_corridor/path_map
+ros2 topic echo /gps_corridor/enu_to_map
 ```
 
 说明：
@@ -408,4 +409,14 @@ ros2 topic echo /gps_corridor/path_map
 - 运行时不会再弹出 menu，也不会等待额外命令
 - wrapper 会把日志和 bag 写入 `~/fyp_runtime_data/logs/<session>/`
 - 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_route_runner` 会直接 abort，不动车
+
+**Quiet 模式**（默认）:
+- 前台只显示简化中文状态
+- 完整 launch 输出写入 `~/fyp_runtime_data/logs/<session>/system/launch_stdout.log`
+- 启动超时默认 45s，可通过 `FYP_CORRIDOR_STARTUP_TIMEOUT_S` 环境变量调整
+
+**Raw 模式**（调试用）:
+```bash
+FYP_CORRIDOR_CONSOLE_MODE=raw bash scripts/launch_with_logs.sh corridor
+```
 

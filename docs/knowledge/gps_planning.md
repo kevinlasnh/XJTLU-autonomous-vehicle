@@ -1,19 +1,19 @@
 # GPS 全局导航与场景路网
 
-## 1. 当前状态（2026-03-20）
+## 1. 当前状态（2026-03-22）
 
-当前 GPS 导航已经从旧的 `v4` 路网 dispatcher 升级为新的 scene-graph 架构：
+当前 GPS 导航有两条并行链路：
 
-1. `make launch-explore-gps`
-   - 继续负责 `GNSS -> /gnss -> PGO GPS Factor`
-   - 主要用途是 Explore 模式下的全局约束
-2. `make launch-nav-gps`
-   - 使用 `scene_gps_bundle.yaml`
-   - 上电后由 `gps_anchor_localizer` 检查附近已知 `anchor`
-   - 进入 `NAV_READY` 后只接受英文目标名
-   - 通过 `route_server + FollowPath` 沿 GPS 图边线导航
+1. **Scene-graph 路网导航**（`feature/gps-route-ready-v2` 分支）
+   - 使用 `scene_gps_bundle.yaml` + `gps_anchor_localizer` + `route_server`
+   - 当前被 PGO 段错误阻塞（known_issues #1）
+   - 软件链已通，实车未通过
 
-这条链当前已经在 `feature/gps-route-ready-v2` 上完成软件部署和室内 smoke，真实场景还需要用户用新采图脚本采集一份 scene bundle。
+2. **Fixed-launch GPS corridor**（`gps` 分支，当前主开发线）
+   - 使用 `collect_gps_route.py` 采集多点路线
+   - `gps_route_runner_node` 执行 bootstrap + PGO 对齐切换
+   - **已完成 corridor v2 首轮部署和多轮实车测试**
+   - 当前问题已收敛到 PGO handoff 门槛 + costmap 微调
 
 ## 2. Source Of Truth 与运行时产物
 
@@ -305,16 +305,56 @@ source install/setup.bash
 这说明当前 corridor 链的关键控制流已经打通，剩余验证转为现场真实 `/fix` 与实车走廊测试。
 
 
-## 12. Fixed-Launch Corridor v1 室外 baseline 结论（2026-03-21）
+## 12. Corridor v2 架构与实车验证（2026-03-22）
 
-当前最小 corridor 链已完成首次室外实车。
+### 12.1 设计目标
 
-实测结论：
-- 车辆已能从固定 Launch Pose 自动出发
-- 已能朝目标 corridor 前进并到达目标附近
-- 当前问题不再是“能不能跑”，而是“终点精度是否足够”
+Corridor v2 解决 v1 的核心问题：
+- v1 用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m
+- v2 引入 PGO ENU→map 对齐，用 GPS 坐标直接转 map 坐标
 
-当前工程判断：
-- fixed-launch corridor v1 已可作为后续增量开发 baseline
-- 当前主要待解问题是普通 GNSS 会话漂移导致的末端几米级误差
-- 后续若继续提升终点精度，应优先围绕启动一致性、会话补偿和末段收敛策略做增量优化
+### 12.2 核心机制
+
+**Bootstrap 启动对齐**:
+- 车辆上电后从 TF 读取 `map->base_link` 的 yaw0
+- 用 route YAML 的 `launch_yaw_deg`（车的地理朝向）计算初始 ENU→map 旋转
+- 公式: `θ_bootstrap = yaw0 - radians(launch_yaw_deg)`
+- 立即开始导航，不等 PGO valid
+
+**PGO 对齐切换**:
+- PGO 在后台持续发布 `/gps_corridor/enu_to_map`（包含 θ, tx, ty, is_valid）
+- Runner 监听该 topic，当满足以下条件时切换到 PGO 对齐:
+  - 累计行驶距离 >= `bootstrap_switch_distance_m`（当前 6m）
+  - 时间窗口内收到足够稳定的 PGO 更新
+  - Bootstrap 与 PGO 角度差 <= `pgo_switch_max_bootstrap_delta_deg`（当前 5°）
+- 切换后重算后续未访问路点的 map 坐标
+
+**子目标追踪重构**:
+- v2 不再批量发送所有 subgoal
+- 每完成一个 subgoal 后，用最新对齐重新计算下一个
+- 使 PGO alignment 切换能即时反映到后续目标
+
+### 12.3 实车验证结论
+
+**已验证成立**:
+- Corridor v2 已从”无法起跑”推进到”可稳定启动并进入 RUNNING_ROUTE”
+- 最新 session `2026-03-22-15-16-00` 中，route runner 连续推进到第一个 waypoint 的倒数第二个 subgoal（6 个中第 5 个）
+- 启动级 blocker 全部解决（固定 yaw bootstrap 使系统能在静止状态下立即起跑）
+- GPS fix 在多轮室外测试中稳定工作
+
+**当前收敛问题**:
+1. **PGO 接管门槛未闭合**: PGO 已发布有效 ENU→map，但 runner 持续保持 bootstrap。Hold reason 反复是 `have 3/4 recent PGO updates`。当前 `4 updates / 3s` 对现场 ~1Hz PGO 频率仍偏严。
+2. **Costmap 陈旧障碍**: Global costmap 残留启动前障碍带偏 `/plan`，local costmap collision ahead 产生 stop-go。
+3. **Controller/Planner 掉频**: Controller miss 20Hz，Planner 降至 ~2Hz，不应继续拉高刷新率。
+
+**问题性质**: 不是架构 blocker，属于 Step 21 小问题迭代（PGO 接管门槛 + costmap 清障策略 + collision ahead 误报）。
+
+### 12.4 与 v1 对比
+
+| | Corridor v1 | Corridor v2 |
+|--|-------------|-------------|
+| 路点坐标系 | body_vector（车体前方） | GPS→ENU→map（PGO 对齐） |
+| 启动对齐 | 无 | 固定 yaw bootstrap |
+| 运行对齐 | 无 | PGO ENU→map 切换 |
+| 终点精度 | ~4m（受 yaw0 影响） | 理论更高（取决于 PGO 对齐质量） |
+| 实车状态 | baseline 保留 | 已部署，问题收敛到微调 |

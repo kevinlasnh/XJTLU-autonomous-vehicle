@@ -25,6 +25,8 @@
 
 ## 4. Explore 主模式当前关键调参结论
 
+DWB 控制器仍为 Explore 模式默认配置：
+
 - `BaseObstacle.scale: 0.02`
 - `GoalAlign.scale: 16.0`
 - `PathAlign + GoalAlign.forward_point_distance: 0.325`
@@ -32,13 +34,61 @@
 - `RotateToGoal.scale: 200.0`
 - 已禁用倒车: `min_vel_x = 0.0`
 
-## 5. 代价地图相关结论
+## 4a. Corridor 模式 RPP 控制器（2026-03-22）
 
-- 本地代价地图更新 / 发布频率: `30 Hz`
-- `resolution: 0.02`
-- `cost_scaling_factor: 2.5`
+Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
+
+- `RotationShimController.angular_dist_threshold: 0.785`（45°）
+- `RotationShimController.angular_disengage_threshold: 0.39`
+- `RotationShimController.rotate_to_heading_angular_vel: 1.0`
+- `RotationShimController.max_angular_accel: 1.6`
+- `RotationShimController.simulate_ahead_time: 1.0`
+- `RPP.desired_linear_vel: 0.5`
+- `RPP.lookahead_dist: 1.0`
+- `RPP.min_lookahead_dist: 0.45`
+- `RPP.max_lookahead_dist: 1.5`
+- `RPP.lookahead_time: 1.5`
+- `RPP.max_allowed_time_to_collision_up_to_carrot: 1.0`
+- `RPP.regulated_linear_scaling_min_radius: 0.9`
+- `RPP.regulated_linear_scaling_min_speed: 0.25`
+- `RPP.use_rotate_to_heading: false`
+- `RPP.rotate_to_goal_heading: false`
+- `RPP.allow_reversing: false`
+
+选择 RPP 的原因: DWB 的 RotateToGoal/GoalAlign critic 在 GPS corridor 场景下导致路径折弯和卷团。RPP 的 pure pursuit 几何追踪适合走廊直线。
+
+## 5. 代价地图相关结论（2026-03-22 更新）
+
+### Local Costmap
+
+- 更新频率: `10 Hz`（从 12 降低，减少 CPU）
+- 发布频率: `5 Hz`
+- `resolution: 0.02`（corridor 分支当前仍保持 0.02，计划中的 0.05 尚未部署）
+- VoxelLayer 已在计划中但当前分支仍用 ObstacleLayer
+- `obstacle_min_range: 0.2`（过滤 LiDAR 原点噪声）
+- `obstacle_max_range: 5.0`
+- `raytrace_max_range: 6.0`
+- `min_obstacle_height: -0.3`
+
+### Global Costmap
+
+- 更新频率: `2 Hz`（从 3 降低）
+- 发布频率: `1 Hz`
+- `resolution: 0.02`（计划中的 0.10 尚未部署）
+- `obstacle_max_range: 4.0`（从 10 大幅收紧）
+- `obstacle_min_range: 1.0`（从 0.3 提高，减少近场标记）
+- `raytrace_max_range: 5.0`（从 12 大幅收紧）
+- `raytrace_min_range: 0.5`
+- 使用 rolling window, width/height: 50
+
+### 实车发现（2026-03-22）
+
+- `cost_scaling_factor: 2.5`, `inflation_radius: 0.4`
 - `max obstacle height: 1.5m`
-- 全局代价地图使用 rolling window
+- Global costmap 陈旧障碍仍是主要问题来源: 启动前人站在车前、绕过后的静态障碍未清除
+- Local costmap collision ahead 判定在 controller 掉频时更容易误触发
+- Controller 已 miss 20Hz，Planner 降至 ~2Hz — 继续提高刷新率会加剧掉频
+- 下一步应优先修 obstacle layer 清障策略而非继续调频率
 
 ## 6. GPS 专用配置（`nav2_gps.yaml`）
 
@@ -66,6 +116,8 @@ GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `
 2. 如果 `map -> odom` 没建立，即使 Livox 和 FAST-LIO2 在跑，RViz 也可能表现为空白或 costmap 不显示。
 3. `nav2_default.yaml`、`nav2_explore.yaml`、`nav2_travel.yaml` 已在 2026-03-18 做过注释和格式重写，但没有改参数值。
 4. `nav2_gps.yaml` 目前在 `feature/gps-navigation-v4` 上完成软件部署，室外调优还没有结束。
+5. Corridor 模式（`gps` 分支）复用 `nav2_explore.yaml`，其中 controller 段已从 DWB 改为 Rotation Shim + RPP，costmap 参数也已按 corridor 需求调整。
+6. 当前 Jetson 上 controller 目标 20Hz 实际达不到，planner 降至 ~2Hz。不应继续一味拉高频率。
 
 ## 8. 航点系统
 

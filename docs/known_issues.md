@@ -16,10 +16,10 @@
    - 状态: 2026-03-20 已复现并锁定为当前最高优先级 blocker
    - 影响: 新 GPS 路网导航模式当前不能通过实车验收
 
-2. **[重要] 室外 GNSS RF / fix 质量仍待验证**
-   - 描述: GPS 天线馈线已更换，设备枚举正常，但有效 fix 质量和长时间室外稳定性还没有重新验证。
-   - 状态: 等待晴天实测
-   - 影响: `gnss_offset.txt` 生成、GPS 因子评测、`nav-gps` 实车验证
+2. **[已验证] 室外 GNSS RF / fix 质量**
+   - 描述: GPS 天线馈线已更换，设备枚举正常。
+   - 状态: 2026-03-22 多轮 corridor v2 室外实车中 GPS fix 稳定工作，启动定位和 PGO 对齐均正常使用 `/fix`
+   - 影响: 不再是 blocker
 
 3. **[重要] `nav-gps` 已软件落地，但室外实车验证未完成**
    - 描述: `feature/gps-navigation-v4` 已完成 `gps_waypoint_dispatcher`、`nav2_gps.yaml`、固定 ENU 原点和 `system_nav_gps.launch.py`，室内 smoke 已通过；但真正的室外运行、路网扩充和调优还没完成。
@@ -52,6 +52,11 @@
 9. **[重要] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
    - 状态: 通过最大障碍物高度 `1.5m` 有部分缓解
+   - 2026-03-22 新发现:
+     - Global costmap 保留启动前人站在车前等陈旧障碍，导致 `/plan` 绿色路径先被带弯
+     - Local costmap 近场碰撞判定放大问题，产生 `collision ahead` stop-go 和 recovery
+     - 两层都需要修: 优先收 global 陈旧障碍，再清 local collision ahead 误报
+     - Global costmap 已收紧范围 (`obstacle_max_range` 10→4, `raytrace_max_range` 12→5) 但 clearing 语义仍需进一步调整
 
 ## 中等问题
 
@@ -110,7 +115,19 @@
    - 修复: 在 `feature/gps-navigation-v4` 上新增 `gps_waypoint_dispatcher`、`nav2_gps.yaml`、固定 ENU 原点、`system_nav_gps.launch.py` 与 `nav-gps` 模式。
    - 状态: 室内软件 smoke 已通过，等待室外最终验证
 
-20. **[中等] Fixed-launch corridor v1 终点仍有几米级残差**
-   - 描述: 2026-03-21 首次 outdoor baseline 已确认 corridor v1 能从固定 Launch Pose 自动出发并到达目标附近，但终点附近仍有几米级误差。
-   - 推测: 主要仍受普通单点 GNSS 会话漂移影响，而不是运行链断裂。
-   - 状态: 已有可运行 baseline，后续做增量精度优化
+20. **[已升级] Corridor v1 终点几米级残差 → v2 已部署**
+   - 描述: v1 使用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m。
+   - 状态: 已升级到 corridor v2（PGO ENU→map 对齐 + bootstrap），v1 作为 baseline 保留
+   - v2 当前状态: 能稳定启动并推进到第一个 waypoint 的倒数第二个 subgoal，问题已收敛到 PGO handoff 和 costmap 微调
+
+21. **[重要] Corridor v2 PGO handoff 门槛与现场频率不匹配**
+   - 描述: PGO 在运行中已能发布有效 `ENU->map` 对齐，但 route runner 始终停在 bootstrap 模式不切换。Hold reason 反复为 `have 3/4 recent PGO updates` / `have 2/4 recent PGO updates`。
+   - 根因: `pgo_switch_min_stable_updates=4` + `pgo_switch_stable_window_s=3.0` 对现场约 `~1Hz` 的 PGO 更新频率偏严
+   - 状态: 参数已从 8/5→4/3 放松一轮，仍未闭合
+   - 影响: 导航全程使用 bootstrap 对齐而非更精确的 PGO 对齐
+
+22. **[中等] Controller / Planner 循环频率不达标**
+   - 描述: Controller 反复报 `Control loop missed its desired rate of 20Hz`，Planner 降至 `~2Hz`。
+   - 根因: 当前 Jetson 上 costmap 更新 + TF 查询 + 点云处理的总计算量已接近瓶颈
+   - 状态: 不应继续拉高 costmap 刷新率；应从减少 costmap cells、优化 obstacle layer 语义入手
+   - 影响: TF extrapolation warnings、collision ahead 误报概率增加
