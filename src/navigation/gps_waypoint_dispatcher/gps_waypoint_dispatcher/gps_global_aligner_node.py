@@ -75,6 +75,7 @@ class GPSGlobalAligner(Node):
         self.declare_parameter("max_theta_step_deg", 0.5)
         self.declare_parameter("max_translation_step_m", 0.30)
         self.declare_parameter("max_bootstrap_delta_deg", 25.0)
+        self.declare_parameter("max_bootstrap_translation_delta_m", 15.0)
         self.declare_parameter("max_alignment_step_warning_deg", 5.0)
         self.declare_parameter("publish_period_s", 0.2)
         self.declare_parameter("status_log_period_s", 5.0)
@@ -100,6 +101,9 @@ class GPSGlobalAligner(Node):
         self._max_translation_step_m = float(self.get_parameter("max_translation_step_m").value)
         self._max_bootstrap_delta_rad = math.radians(
             float(self.get_parameter("max_bootstrap_delta_deg").value)
+        )
+        self._max_bootstrap_translation_delta_m = float(
+            self.get_parameter("max_bootstrap_translation_delta_m").value
         )
         self._max_alignment_step_warning_rad = math.radians(
             float(self.get_parameter("max_alignment_step_warning_deg").value)
@@ -461,6 +465,17 @@ class GPSGlobalAligner(Node):
             self.get_logger().warn(
                 "Rejecting raw GPS alignment: bootstrap delta %.2fdeg > %.2fdeg"
                 % (math.degrees(bootstrap_delta), math.degrees(self._max_bootstrap_delta_rad))
+            )
+            return False
+
+        bootstrap_translation_delta = math.hypot(
+            raw_alignment.tx - self._bootstrap_alignment.tx,
+            raw_alignment.ty - self._bootstrap_alignment.ty,
+        )
+        if bootstrap_translation_delta > self._max_bootstrap_translation_delta_m:
+            self.get_logger().warn(
+                "Rejecting raw GPS alignment: bootstrap translation delta %.2fm > %.2fm"
+                % (bootstrap_translation_delta, self._max_bootstrap_translation_delta_m)
             )
             return False
 

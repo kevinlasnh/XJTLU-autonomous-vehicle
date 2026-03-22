@@ -146,9 +146,9 @@
     # 独立 global aligner 使用的固定 ENU 原点海拔。
     enu_origin_alt: 0.0
     # 在线保留 GPS/map 配对的时间窗口；更大更稳，但全局修正更慢。
-    pair_window_s: 30.0
+    pair_window_s: 15.0
     # 采纳新配对前要求的最小位移；调大更稳，调小更敏感。
-    pair_min_spacing_m: 1.0
+    pair_min_spacing_m: 1.5
     # 至少多少个最近配对后才尝试解算对齐。
     alignment_min_pairs: 5
     # 至少累计多少 ENU 展幅后才允许在线修正。
@@ -159,6 +159,8 @@
     max_translation_step_m: 0.30
     # 原始 GPS 解与 bootstrap 差异过大时直接拒绝，避免误拖动整条路线。
     max_bootstrap_delta_deg: 25.0
+    # 原始 GPS 解相对 bootstrap 的总平移漂移上限；避免 waypoint 边界整体拖偏几十米。
+    max_bootstrap_translation_delta_m: 15.0
     # 连续发布 alignment 的周期；供 runner 与 bag 观测。
     publish_period_s: 0.2
     # 对齐状态日志的节流周期。
@@ -186,6 +188,10 @@
     pgo_switch_max_bootstrap_delta_deg: 10.0
     # 真正切换时的提醒阈值；用于记录 bootstrap 和 PGO 仍有轻微差异。
     pgo_switch_warn_deg: 2.0
+    # 新 waypoint 开始时允许的最大前向投影；超过说明 alignment 已把车位错误投到段内。
+    waypoint_start_progress_guard_m: 4.0
+    # 新 waypoint 开始时允许的最大横向偏差；超过则优先复用上一个 waypoint 的 alignment。
+    waypoint_start_cross_track_guard_m: 3.0
 
 /serial_twistctl_node:
   ros__parameters:

@@ -81,6 +81,8 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
+        self.declare_parameter("waypoint_start_progress_guard_m", 4.0)
+        self.declare_parameter("waypoint_start_cross_track_guard_m", 3.0)
 
         # Legacy parameters kept declared for backward compatibility with existing YAML.
         self.declare_parameter("bootstrap_switch_distance_m", 6.0)
@@ -100,6 +102,12 @@ class GPSRouteRunner(Node):
         self._enu_origin_lat = float(self.get_parameter("enu_origin_lat").value)
         self._enu_origin_lon = float(self.get_parameter("enu_origin_lon").value)
         self._enu_origin_alt = float(self.get_parameter("enu_origin_alt").value)
+        self._waypoint_start_progress_guard_m = float(
+            self.get_parameter("waypoint_start_progress_guard_m").value
+        )
+        self._waypoint_start_cross_track_guard_m = float(
+            self.get_parameter("waypoint_start_cross_track_guard_m").value
+        )
 
         self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
         self._goal_pub = self.create_publisher(PoseStamped, "/gps_corridor/goal_map", 10)
@@ -509,15 +517,62 @@ class GPSRouteRunner(Node):
             return GoalStatus.STATUS_UNKNOWN
         return int(result.status)
 
-    def _run_waypoint(self, waypoint_index: int) -> tuple[bool, tuple[float, float]]:
+    def _choose_waypoint_alignment(
+        self,
+        waypoint_index: int,
+        segment: SegmentPlan,
+        current_xy: tuple[float, float],
+        previous_alignment: Alignment2D | None,
+    ) -> tuple[Alignment2D, float]:
+        candidate_alignment = self._latest_alignment
+        if candidate_alignment is None:
+            raise RuntimeError("lost ENU->map alignment before starting waypoint")
+
+        candidate_progress_m, candidate_cross_track_m = self._progress_on_segment(
+            segment, self._map_to_enu(current_xy[0], current_xy[1], candidate_alignment)
+        )
+        if waypoint_index == 0 or previous_alignment is None:
+            return candidate_alignment, candidate_progress_m
+
+        previous_progress_m, previous_cross_track_m = self._progress_on_segment(
+            segment, self._map_to_enu(current_xy[0], current_xy[1], previous_alignment)
+        )
+
+        candidate_suspicious = (
+            candidate_progress_m > self._waypoint_start_progress_guard_m
+            or abs(candidate_cross_track_m) > self._waypoint_start_cross_track_guard_m
+        )
+        previous_is_better = (
+            previous_progress_m + 0.5 < candidate_progress_m
+            or abs(previous_cross_track_m) + 0.5 < abs(candidate_cross_track_m)
+        )
+        if candidate_suspicious and previous_is_better:
+            self.get_logger().warn(
+                "Rejecting new alignment at waypoint %s start: candidate progress %.2fm cross %.2fm"
+                " vs previous progress %.2fm cross %.2fm; reusing previous waypoint alignment"
+                % (
+                    segment.waypoint.name,
+                    candidate_progress_m,
+                    candidate_cross_track_m,
+                    previous_progress_m,
+                    previous_cross_track_m,
+                )
+            )
+            return previous_alignment, previous_progress_m
+
+        return candidate_alignment, candidate_progress_m
+
+    def _run_waypoint(
+        self, waypoint_index: int, previous_alignment: Alignment2D | None
+    ) -> tuple[bool, tuple[float, float], Alignment2D]:
         segment = self._segment_plan(waypoint_index)
         waypoint = segment.waypoint
         segment_length_m = float(self._route.get("segment_length_m", 8.0))
         waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
-        current_progress_m = 0.0
-        frozen_alignment = self._latest_alignment
-        if frozen_alignment is None:
-            raise RuntimeError("lost ENU->map alignment before starting waypoint")
+        current_xy = self._current_xy()
+        frozen_alignment, current_progress_m = self._choose_waypoint_alignment(
+            waypoint_index, segment, current_xy, previous_alignment
+        )
         self.get_logger().info(
             "Freezing alignment for waypoint %s at theta=%.2fdeg tx=%.2f ty=%.2f rev=%d"
             % (
@@ -536,7 +591,7 @@ class GPSRouteRunner(Node):
             current_progress_m = max(current_progress_m, projected_progress_m)
             remaining_m = max(0.0, segment.total_length_m - current_progress_m)
             if remaining_m <= waypoint_tolerance_m:
-                return True, current_xy
+                return True, current_xy, frozen_alignment
 
             self._publish_remaining_path(
                 current_xy, waypoint_index, frozen_alignment, current_progress_m
@@ -582,9 +637,9 @@ class GPSRouteRunner(Node):
                 self._publish_status(
                     f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_{subgoal_index}_STATUS_{status}"
                 )
-                return False, current_xy
+                return False, current_xy, frozen_alignment
 
-        return False, self._current_xy()
+        return False, self._current_xy(), frozen_alignment
 
     def run(self) -> bool:
         self._publish_status("INITIALIZING")
@@ -607,6 +662,7 @@ class GPSRouteRunner(Node):
 
         x0, y0, _ = self._lookup_current_pose(announce_wait=True)
         current_xy = (x0, y0)
+        previous_waypoint_alignment = alignment
         for waypoint_index, waypoint in enumerate(self._route["waypoints"]):
             self._publish_status(
                 "WAYPOINT_TARGET|%d|%d|%s"
@@ -616,7 +672,9 @@ class GPSRouteRunner(Node):
                 "Navigating to waypoint %d/%d: %s"
                 % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
             )
-            ok, current_xy = self._run_waypoint(waypoint_index)
+            ok, current_xy, previous_waypoint_alignment = self._run_waypoint(
+                waypoint_index, previous_waypoint_alignment
+            )
             if not ok:
                 return False
             self._publish_status(
