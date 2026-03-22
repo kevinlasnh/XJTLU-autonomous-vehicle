@@ -270,17 +270,13 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 # 检查当前机器是否具备无密码 sudo
 sudo -n true && echo sudo_ok
 
-# 切换 Jetson WiFi，并在 Jetson 侧重启 ToDesk
-bash scripts/switch_jetson_wifi.sh --status
-bash scripts/switch_jetson_wifi.sh outdoor
-bash scripts/switch_jetson_wifi.sh indoor
-bash scripts/switch_jetson_wifi.sh Pixel
-bash scripts/switch_jetson_wifi.sh XJTLU
-
-# 从工作站一行远程执行
-ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status'
-ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor'
-ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor'
+# 切换 Jetson WiFi，并在 Jetson 侧重启 ToDesk（Linux 本机直接执行）
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh Pixel
+cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
 
 # GPS dispatcher 依赖
 apt list --installed | grep ros-humble-geographic-msgs
@@ -289,8 +285,8 @@ python3 -c "import pyproj; print(pyproj.__version__)"
 
 说明：
 - 不带参数时默认在 `XJTLU` 和 `Pixel` 之间 toggle
-- 在工作站执行时，脚本默认通过 Tailscale SSH 远程切网：`jetson@100.97.227.24`
-- 在 Jetson 本机执行时，脚本会自动切到本地模式；如果当前 shell 是 SSH/Tailscale，会话可能在切网过程中断开
+- 上面这几条就是在 Jetson / Linux 本机直接运行的完整一行命令
+- 脚本在 Jetson 本机执行时会自动切到本地模式；如果当前 shell 是 SSH/Tailscale，会话可能在切网过程中断开
 - 每次切网都会在 Jetson 侧重启 `todeskd`，日志写入 `/tmp/wifi-switch.log`
 
 ## 12. GPS 数据采集
