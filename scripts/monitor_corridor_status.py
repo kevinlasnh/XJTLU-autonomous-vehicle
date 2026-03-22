@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import signal
-import sys
 import time
+from pathlib import Path
 
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import String
+
+STATUS_RE = re.compile(r"\[gps_route_runner\]:\s+(.*)$")
 
 
 def _process_alive(pid: int) -> bool:
@@ -72,100 +72,82 @@ def _format_status(text: str) -> tuple[str, bool, int | None]:
             True,
             None,
         )
-    return f"[Corridor] {text}", False, None
+    return "", False, None
 
 
-class CorridorStatusMonitor(Node):
-    def __init__(self) -> None:
-        super().__init__("corridor_status_monitor")
-        self._last_raw = ""
-        self._last_line = ""
-        self._running_route = False
-        self._terminal_code: int | None = None
-        self._terminal_seen = False
-        self.create_subscription(String, "/gps_corridor/status", self._status_callback, 10)
+def _iter_new_statuses(log_path: Path, offset: int) -> tuple[list[str], int]:
+    if not log_path.exists():
+        return [], offset
 
-    @property
-    def running_route(self) -> bool:
-        return self._running_route
-
-    @property
-    def terminal_seen(self) -> bool:
-        return self._terminal_seen
-
-    @property
-    def terminal_code(self) -> int | None:
-        return self._terminal_code
-
-    def _status_callback(self, msg: String) -> None:
-        raw = msg.data.strip()
-        if not raw or raw == self._last_raw:
-            return
-        self._last_raw = raw
-        line, running, terminal_code = _format_status(raw)
-        if line != self._last_line:
-            print(line, flush=True)
-            self._last_line = line
-        if running:
-            self._running_route = True
-        if terminal_code is not None:
-            self._terminal_seen = True
-            self._terminal_code = terminal_code
+    statuses: list[str] = []
+    with log_path.open("r", encoding="utf-8", errors="ignore") as log_file:
+        log_file.seek(offset)
+        while True:
+            line = log_file.readline()
+            if not line:
+                break
+            match = STATUS_RE.search(line)
+            if match:
+                statuses.append(match.group(1).strip())
+        offset = log_file.tell()
+    return statuses, offset
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--startup-timeout-s", type=float, default=45.0)
     parser.add_argument("--launch-pid", type=int, default=0)
-    parser.add_argument("--launch-log", default="")
+    parser.add_argument("--launch-log", required=True)
     args = parser.parse_args()
 
-    rclpy.init()
-    monitor = CorridorStatusMonitor()
+    log_path = Path(args.launch_log).expanduser()
     start_mono = time.monotonic()
+    last_raw = ""
+    last_line = ""
+    running_route = False
+    offset = 0
+
+    print("[Corridor] 已发送启动命令，等待导航状态...", flush=True)
+
     try:
-        while rclpy.ok():
-            rclpy.spin_once(monitor, timeout_sec=0.2)
-            if monitor.terminal_seen:
-                return int(monitor.terminal_code or 0)
+        while True:
+            statuses, offset = _iter_new_statuses(log_path, offset)
+            for raw in statuses:
+                if not raw or raw == last_raw:
+                    continue
+                last_raw = raw
+                line, running, terminal_code = _format_status(raw)
+                if line and line != last_line:
+                    print(line, flush=True)
+                    last_line = line
+                if running:
+                    running_route = True
+                if terminal_code is not None:
+                    return terminal_code
+
             if args.launch_pid > 0 and not _process_alive(args.launch_pid):
-                if args.launch_log:
-                    print(
-                        f"[Corridor] launch 已退出。完整日志见: {args.launch_log}",
-                        flush=True,
-                    )
-                else:
-                    print("[Corridor] launch 已退出。", flush=True)
+                print(
+                    f"[Corridor] launch 已退出。完整日志见: {args.launch_log}",
+                    flush=True,
+                )
                 return 1
-            if (
-                not monitor.running_route
-                and time.monotonic() - start_mono > args.startup_timeout_s
-            ):
-                if args.launch_log:
-                    print(
-                        "[Corridor] 启动超时：%.0f 秒内未进入 GPS 路线，系统将退出。完整日志见: %s"
-                        % (args.startup_timeout_s, args.launch_log),
-                        flush=True,
-                    )
-                else:
-                    print(
-                        "[Corridor] 启动超时：%.0f 秒内未进入 GPS 路线，系统将退出。"
-                        % args.startup_timeout_s,
-                        flush=True,
-                    )
+
+            if not running_route and time.monotonic() - start_mono > args.startup_timeout_s:
+                print(
+                    "[Corridor] 启动超时：%.0f 秒内未进入 GPS 路线，系统将退出。完整日志见: %s"
+                    % (args.startup_timeout_s, args.launch_log),
+                    flush=True,
+                )
                 if args.launch_pid > 0:
                     _terminate_process(args.launch_pid)
                 return 1
+
+            time.sleep(0.2)
     except KeyboardInterrupt:
         print("[Corridor] 控制台监控被中断，系统将退出。", flush=True)
         if args.launch_pid > 0:
             _terminate_process(args.launch_pid)
         return 130
-    finally:
-        monitor.destroy_node()
-        rclpy.shutdown()
-
-    return 1
 
 
 if __name__ == "__main__":
