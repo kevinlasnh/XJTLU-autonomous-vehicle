@@ -105,6 +105,8 @@
       "gps.alignment_warmup_factors": 5
       # 热身 GPS 因子的水平 sigma；显式覆盖协方差上限。
       "gps.alignment_warmup_sigma": 10.0
+      # PGO 发布 ENU->map 调试对齐的话题；corridor 模式下会覆盖到专用调试话题。
+      "gps.alignment_topic": /gps_corridor/enu_to_map
       # GPS 水平质量阈值；调小更严格，调大更宽松。
       "gps.quality_hdop_max": 3.0
       # 最小卫星数阈值；当前主要作记录占位，未进入主过滤逻辑。
@@ -134,6 +136,33 @@
     enu_origin_alt: 0.0
     # 是否允许在路网外回退到直线直达；v4 默认关闭。
     allow_direct_fallback: false
+
+/gps_global_aligner:
+  ros__parameters:
+    # 独立 global aligner 使用的固定 ENU 原点纬度；必须与 route 文件一致。
+    enu_origin_lat: 31.274927
+    # 独立 global aligner 使用的固定 ENU 原点经度；必须与 route 文件一致。
+    enu_origin_lon: 120.737548
+    # 独立 global aligner 使用的固定 ENU 原点海拔。
+    enu_origin_alt: 0.0
+    # 在线保留 GPS/map 配对的时间窗口；更大更稳，但全局修正更慢。
+    pair_window_s: 30.0
+    # 采纳新配对前要求的最小位移；调大更稳，调小更敏感。
+    pair_min_spacing_m: 1.0
+    # 至少多少个最近配对后才尝试解算对齐。
+    alignment_min_pairs: 5
+    # 至少累计多少 ENU 展幅后才允许在线修正。
+    alignment_min_spread_m: 5.0
+    # 单次允许的最大角度更新步长；限制运行中参考系转动速度。
+    max_theta_step_deg: 0.5
+    # 单次允许的最大平移更新步长；限制运行中参考系平移速度。
+    max_translation_step_m: 0.30
+    # 原始 GPS 解与 bootstrap 差异过大时直接拒绝，避免误拖动整条路线。
+    max_bootstrap_delta_deg: 25.0
+    # 连续发布 alignment 的周期；供 runner 与 bag 观测。
+    publish_period_s: 0.2
+    # 对齐状态日志的节流周期。
+    status_log_period_s: 5.0
 
 /gps_route_runner:
   ros__parameters:

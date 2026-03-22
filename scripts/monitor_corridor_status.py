@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 
-STATUS_RE = re.compile(r"\[gps_route_runner\]:\s+(.*)$")
+STATUS_RE = re.compile(r"\[(gps_route_runner|gps_global_aligner)\]:\s+(.*)$")
 
 
 def _process_alive(pid: int) -> bool:
@@ -35,15 +35,32 @@ def _terminate_process(pid: int) -> None:
             time.sleep(0.1)
 
 
-def _format_status(text: str) -> tuple[str, bool, int | None]:
+def _format_status(node_name: str, text: str) -> tuple[str, bool, int | None]:
+    if node_name == "gps_global_aligner":
+        if text == "ALIGNER_INITIALIZING":
+            return "[Corridor] 初始化全局对齐...", False, None
+        if text == "ALIGNER_WAITING_FOR_STABLE_FIX":
+            return "[Corridor] 对齐器等待稳定 GPS...", False, None
+        if text == "ALIGNER_WAITING_FOR_MAP_TF":
+            return "[Corridor] 对齐器等待 map->base_link TF...", False, None
+        if text == "ALIGNER_BOOTSTRAP_READY":
+            return "[Corridor] 全局对齐 bootstrap 已建立。", False, None
+        if text.startswith("ALIGNER_ABORTED:"):
+            return f"[Corridor] 对齐器启动失败: {text.split(':', 1)[1].strip()}", False, 1
+        return "", False, None
+
     if text == "INITIALIZING":
         return "[Corridor] 初始化导航链路...", False, None
     if text == "WAITING_FOR_STABLE_FIX":
         return "[Corridor] 等待稳定 GPS...", False, None
     if text == "WAITING_FOR_NAV2":
         return "[Corridor] GPS 已稳定，等待 Nav2 就绪...", False, None
+    if text == "WAITING_FOR_ALIGNMENT":
+        return "[Corridor] 等待全局对齐可用...", False, None
     if text == "WAITING_FOR_MAP_TF":
         return "[Corridor] 等待 map->base_link TF...", False, None
+    if text == "ALIGNMENT_READY":
+        return "[Corridor] 全局对齐已就绪。", False, None
     if text == "BOOTSTRAP_READY":
         return "[Corridor] 启动对齐完成。", False, None
     if text == "RUNNING_ROUTE":
@@ -75,11 +92,11 @@ def _format_status(text: str) -> tuple[str, bool, int | None]:
     return "", False, None
 
 
-def _iter_new_statuses(log_path: Path, offset: int) -> tuple[list[str], int]:
+def _iter_new_statuses(log_path: Path, offset: int) -> tuple[list[tuple[str, str]], int]:
     if not log_path.exists():
         return [], offset
 
-    statuses: list[str] = []
+    statuses: list[tuple[str, str]] = []
     with log_path.open("r", encoding="utf-8", errors="ignore") as log_file:
         log_file.seek(offset)
         while True:
@@ -88,7 +105,7 @@ def _iter_new_statuses(log_path: Path, offset: int) -> tuple[list[str], int]:
                 break
             match = STATUS_RE.search(line)
             if match:
-                statuses.append(match.group(1).strip())
+                statuses.append((match.group(1).strip(), match.group(2).strip()))
         offset = log_file.tell()
     return statuses, offset
 
@@ -112,11 +129,12 @@ def main() -> int:
     try:
         while True:
             statuses, offset = _iter_new_statuses(log_path, offset)
-            for raw in statuses:
-                if not raw or raw == last_raw:
+            for node_name, raw in statuses:
+                dedupe_key = f"{node_name}|{raw}"
+                if not raw or dedupe_key == last_raw:
                     continue
-                last_raw = raw
-                line, running, terminal_code = _format_status(raw)
+                last_raw = dedupe_key
+                line, running, terminal_code = _format_status(node_name, raw)
                 if line and line != last_line:
                     print(line, flush=True)
                     last_line = line

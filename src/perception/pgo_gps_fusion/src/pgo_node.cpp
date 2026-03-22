@@ -138,6 +138,7 @@ struct NodeConfig
     double gps_alignment_min_spread_m = 5.0;       // 旋转估计最小空间展幅
     int gps_alignment_warmup_factors = 5;          // 热身 GPS 因子个数
     double gps_alignment_warmup_sigma = 10.0;      // 热身 GPS 水平 sigma
+    std::string gps_alignment_topic = "/gps_corridor/enu_to_map";
     // ✅ GPS 融合修改结束 - NodeConfig 扩展完成
 };
 
@@ -206,7 +207,8 @@ public:
         m_odom_sub.subscribe(this, m_node_config.odom_topic, qos.get_rmw_qos_profile());
         m_loop_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/pgo/loop_markers", 10000);
         m_optimized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/pgo/optimized_odom", 100);
-        m_alignment_pub = this->create_publisher<std_msgs::msg::Float64MultiArray>("/gps_corridor/enu_to_map", 10);
+        m_alignment_pub = this->create_publisher<std_msgs::msg::Float64MultiArray>(
+            m_node_config.gps_alignment_topic, 10);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
         m_sync = std::make_shared<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>>>(message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>(50), m_cloud_sub, m_odom_sub);  // 同步器队列从 10 增加到 50
         m_sync->setAgePenalty(1.0);  // 时间容忍度从 0.1 增加到 1.0
@@ -311,6 +313,8 @@ public:
             "gps.alignment_warmup_factors", m_node_config.gps_alignment_warmup_factors);
         m_node_config.gps_alignment_warmup_sigma = this->declare_parameter<double>(
             "gps.alignment_warmup_sigma", m_node_config.gps_alignment_warmup_sigma);
+        m_node_config.gps_alignment_topic = this->declare_parameter<std::string>(
+            "gps.alignment_topic", m_node_config.gps_alignment_topic);
         m_node_config.gps_quality_hdop_max = this->declare_parameter<double>("gps.quality_hdop_max", m_node_config.gps_quality_hdop_max);
         m_node_config.gps_quality_sat_min = this->declare_parameter<int>("gps.quality_sat_min", m_node_config.gps_quality_sat_min);
         m_node_config.gps_drift_threshold = this->declare_parameter<double>("gps.drift_threshold", m_node_config.gps_drift_threshold);
@@ -345,10 +349,11 @@ public:
         }
 
         RCLCPP_INFO(this->get_logger(),
-                    "GPS config loaded: interval=%d, noise_xy=%.2f, origin_mode=%s, align_min_points=%d, align_min_spread=%.2f",
+                    "GPS config loaded: interval=%d, noise_xy=%.2f, origin_mode=%s, align_topic=%s, align_min_points=%d, align_min_spread=%.2f",
                     m_node_config.gps_factor_interval,
                     m_node_config.gps_noise_xy,
                     m_node_config.gps_origin_mode.c_str(),
+                    m_node_config.gps_alignment_topic.c_str(),
                     m_node_config.gps_alignment_min_points,
                     m_node_config.gps_alignment_min_spread_m);
     }

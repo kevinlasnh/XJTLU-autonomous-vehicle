@@ -16,6 +16,7 @@ def _launch_setup(context, *args, **kwargs):
 
     params_file = LaunchConfiguration("params_file").perform(context).strip()
     pgo_config = LaunchConfiguration("pgo_config").perform(context).strip()
+    extra_params_file = LaunchConfiguration("extra_params_file").perform(context).strip()
     use_rviz = _as_bool(LaunchConfiguration("use_rviz").perform(context))
 
     fastlio_share = get_package_share_directory("fastlio2")
@@ -38,6 +39,8 @@ def _launch_setup(context, *args, **kwargs):
         legacy_pgo_config = os.path.join(pgo_share, "config", "pgo.yaml")
     if legacy_pgo_config:
         pgo_params.append({"config_path": legacy_pgo_config})
+    if extra_params_file:
+        pgo_params.append(extra_params_file)
 
     rviz_cfg = os.path.join(pgo_share, "rviz", "pgo.rviz")
 
@@ -93,6 +96,11 @@ def generate_launch_description():
                     "Optional legacy PGO flat YAML config path. "
                     "Only needed for backward compatibility such as pgo_no_gps.yaml."
                 ),
+            ),
+            DeclareLaunchArgument(
+                "extra_params_file",
+                default_value="",
+                description="Optional ROS2 parameter file appended only to the PGO node.",
             ),
             DeclareLaunchArgument(
                 "use_rviz",

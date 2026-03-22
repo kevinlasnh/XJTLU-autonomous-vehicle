@@ -13,6 +13,9 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     bringup_share = get_package_share_directory('bringup')
     master_params_file = os.path.join(bringup_share, 'config', 'master_params.yaml')
+    pgo_corridor_override_file = os.path.join(
+        bringup_share, 'config', 'pgo_corridor_no_gps.yaml'
+    )
 
     route_file_arg = DeclareLaunchArgument(
         'route_file',
@@ -34,7 +37,11 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(bringup_share, 'launch', 'system_explore.launch.py')
         ),
-        launch_arguments={'use_rviz': LaunchConfiguration('use_rviz')}.items(),
+        launch_arguments={
+            'use_rviz': LaunchConfiguration('use_rviz'),
+            'master_params_file': master_params_file,
+            'pgo_extra_params_file': pgo_corridor_override_file,
+        }.items(),
     )
 
     nmea_launch = IncludeLaunchDescription(
@@ -46,6 +53,27 @@ def generate_launch_description():
             ]
         ),
         launch_arguments={'params_file': master_params_file}.items(),
+    )
+
+    global_aligner = Node(
+        package='gps_waypoint_dispatcher',
+        executable='gps_global_aligner_node',
+        name='gps_global_aligner',
+        output='screen',
+        on_exit=Shutdown(reason='gps_global_aligner exited'),
+        parameters=[
+            master_params_file,
+            {
+                'route_file': LaunchConfiguration('route_file'),
+                'startup_wait_timeout_s': LaunchConfiguration('startup_wait_timeout_s'),
+                'route_frame': 'map',
+                'base_frame': 'base_link',
+                'fix_topic': '/fix',
+                'alignment_topic': '/gps_corridor/enu_to_map',
+                'status_topic': '/gps_corridor/alignment_status',
+                'debug_topic': '/gps_corridor/alignment_debug',
+            }
+        ],
     )
 
     corridor_runner = Node(
@@ -89,6 +117,10 @@ def generate_launch_description():
             '/tf',
             '/tf_static',
             '/gps_corridor/status',
+            '/gps_corridor/alignment_status',
+            '/gps_corridor/alignment_debug',
+            '/gps_corridor/enu_to_map',
+            '/gps_corridor/pgo_enu_to_map',
             '/gps_corridor/goal_map',
             '/gps_corridor/path_map',
             '/cmd_vel',
@@ -99,6 +131,7 @@ def generate_launch_description():
         output='log',
     )
 
+    delayed_aligner = TimerAction(period=2.0, actions=[global_aligner])
     delayed_runner = TimerAction(period=8.0, actions=[corridor_runner])
 
     return LaunchDescription([
@@ -108,5 +141,6 @@ def generate_launch_description():
         explore_launch,
         nmea_launch,
         bag_record,
+        delayed_aligner,
         delayed_runner,
     ])

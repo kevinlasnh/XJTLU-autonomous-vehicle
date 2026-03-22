@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import math
 import time
-from collections import deque
 from dataclasses import dataclass
 from pathlib import Path as FSPath
 
@@ -22,11 +21,9 @@ from std_msgs.msg import Float64MultiArray, String
 from tf2_ros import Buffer, TransformException, TransformListener
 
 from gps_waypoint_dispatcher.scene_runtime import (
-    compass_heading_to_enu_yaw_deg,
     FixedENUProjector,
     default_route_file,
     haversine_m,
-    normalize_angle,
     quaternion_to_yaw,
     yaw_to_quaternion,
 )
@@ -61,6 +58,17 @@ class RouteWaypoint:
     enu_y: float
 
 
+@dataclass
+class SegmentPlan:
+    waypoint: RouteWaypoint
+    start_enu: tuple[float, float]
+    end_enu: tuple[float, float]
+    total_length_m: float
+    total_subgoals: int
+    dir_x: float
+    dir_y: float
+
+
 class GPSRouteRunner(Node):
     def __init__(self) -> None:
         super().__init__("gps_route_runner")
@@ -73,6 +81,8 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
+
+        # Legacy parameters kept declared for backward compatibility with existing YAML.
         self.declare_parameter("bootstrap_switch_distance_m", 6.0)
         self.declare_parameter("pgo_switch_min_stable_updates", 4)
         self.declare_parameter("pgo_switch_stable_window_s", 3.0)
@@ -90,25 +100,6 @@ class GPSRouteRunner(Node):
         self._enu_origin_lat = float(self.get_parameter("enu_origin_lat").value)
         self._enu_origin_lon = float(self.get_parameter("enu_origin_lon").value)
         self._enu_origin_alt = float(self.get_parameter("enu_origin_alt").value)
-        self._bootstrap_switch_distance_m = float(
-            self.get_parameter("bootstrap_switch_distance_m").value
-        )
-        self._pgo_switch_min_stable_updates = int(
-            self.get_parameter("pgo_switch_min_stable_updates").value
-        )
-        self._pgo_switch_stable_window_s = float(
-            self.get_parameter("pgo_switch_stable_window_s").value
-        )
-        self._pgo_switch_max_theta_spread_deg = float(
-            self.get_parameter("pgo_switch_max_theta_spread_deg").value
-        )
-        self._pgo_switch_max_translation_spread_m = float(
-            self.get_parameter("pgo_switch_max_translation_spread_m").value
-        )
-        self._pgo_switch_max_bootstrap_delta_deg = float(
-            self.get_parameter("pgo_switch_max_bootstrap_delta_deg").value
-        )
-        self._pgo_switch_warn_deg = float(self.get_parameter("pgo_switch_warn_deg").value)
 
         self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
         self._goal_pub = self.create_publisher(PoseStamped, "/gps_corridor/goal_map", 10)
@@ -120,6 +111,8 @@ class GPSRouteRunner(Node):
 
         self._latest_fix: NavSatFix | None = None
         self._last_fix_key: tuple | None = None
+        self._latest_alignment: Alignment2D | None = None
+        self._alignment_revision = 0
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self._nav_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
@@ -128,15 +121,6 @@ class GPSRouteRunner(Node):
             self._enu_origin_lat, self._enu_origin_lon, self._enu_origin_alt
         )
         self._route = self._load_route(self._route_file)
-        self._bootstrap_alignment: Alignment2D | None = None
-        self._pgo_alignment: Alignment2D | None = None
-        self._alignment_revision = 0
-        self._using_pgo_alignment = False
-        self._distance_since_start_m = 0.0
-        self._last_pose_xy: tuple[float, float] | None = None
-        self._pgo_alignment_history: deque[tuple[float, float, float, float]] = deque()
-        self._last_pgo_hold_log_time = 0.0
-        self._last_pgo_hold_reason = ""
 
     def _publish_status(self, text: str) -> None:
         self.get_logger().info(text)
@@ -146,13 +130,10 @@ class GPSRouteRunner(Node):
         self._latest_fix = msg
 
     def _alignment_callback(self, msg: Float64MultiArray) -> None:
-        if len(msg.data) < 4:
+        if len(msg.data) < 4 or msg.data[3] < 0.5:
             return
-        if msg.data[3] < 0.5:
-            return
-
         theta, tx, ty = float(msg.data[0]), float(msg.data[1]), float(msg.data[2])
-        current = self._pgo_alignment
+        current = self._latest_alignment
         if (
             current is not None
             and abs(current.theta - theta) < 1e-6
@@ -160,20 +141,16 @@ class GPSRouteRunner(Node):
             and abs(current.ty - ty) < 1e-4
         ):
             return
-
         self._alignment_revision += 1
-        self._pgo_alignment = Alignment2D(
+        self._latest_alignment = Alignment2D(
             theta=theta,
             tx=tx,
             ty=ty,
-            source="pgo",
+            source="aligner",
             revision=self._alignment_revision,
         )
-        now_mono = time.monotonic()
-        self._pgo_alignment_history.append((now_mono, theta, tx, ty))
-        self._trim_pgo_alignment_history(now_mono)
         self.get_logger().info(
-            "Received valid PGO ENU->map transform: theta=%.2fdeg tx=%.2f ty=%.2f"
+            "Received valid ENU->map transform: theta=%.2fdeg tx=%.2f ty=%.2f"
             % (math.degrees(theta), tx, ty)
         )
 
@@ -255,7 +232,7 @@ class GPSRouteRunner(Node):
         )
         timeout_s = max(route_timeout_s, self._startup_wait_timeout_s)
         deadline = time.time() + timeout_s
-        samples: deque[tuple[float, float, float]] = deque(maxlen=sample_count)
+        samples: list[tuple[float, float, float]] = []
         self._publish_status("WAITING_FOR_STABLE_FIX")
 
         while rclpy.ok() and time.time() < deadline:
@@ -270,26 +247,27 @@ class GPSRouteRunner(Node):
             samples.append((msg.latitude, msg.longitude, float(msg.altitude)))
             if len(samples) < sample_count:
                 continue
+            if len(samples) > sample_count:
+                samples = samples[-sample_count:]
 
             max_spread = 0.0
-            sample_list = list(samples)
-            for i in range(len(sample_list)):
-                for j in range(i + 1, len(sample_list)):
+            for i in range(len(samples)):
+                for j in range(i + 1, len(samples)):
                     spread = haversine_m(
-                        sample_list[i][0],
-                        sample_list[i][1],
-                        sample_list[j][0],
-                        sample_list[j][1],
+                        samples[i][0],
+                        samples[i][1],
+                        samples[j][0],
+                        samples[j][1],
                     )
                     max_spread = max(max_spread, spread)
             if max_spread > spread_limit:
                 continue
 
             return {
-                "lat": sum(sample[0] for sample in sample_list) / len(sample_list),
-                "lon": sum(sample[1] for sample in sample_list) / len(sample_list),
-                "alt": sum(sample[2] for sample in sample_list) / len(sample_list),
-                "samples": len(sample_list),
+                "lat": sum(sample[0] for sample in samples) / len(samples),
+                "lon": sum(sample[1] for sample in samples) / len(samples),
+                "alt": sum(sample[2] for sample in samples) / len(samples),
+                "samples": len(samples),
                 "spread_m": round(max_spread, 2),
             }
 
@@ -327,9 +305,19 @@ class GPSRouteRunner(Node):
                 return
         raise RuntimeError("navigate_to_pose action server not available")
 
-    def _lookup_current_pose(self) -> tuple[float, float, float]:
+    def _wait_for_alignment(self) -> Alignment2D:
+        self._publish_status("WAITING_FOR_ALIGNMENT")
         deadline = time.time() + self._startup_wait_timeout_s
-        self._publish_status("WAITING_FOR_MAP_TF")
+        while rclpy.ok() and time.time() < deadline:
+            if self._latest_alignment is not None:
+                return self._latest_alignment
+            rclpy.spin_once(self, timeout_sec=0.2)
+        raise RuntimeError("timed out waiting for valid ENU->map alignment")
+
+    def _lookup_current_pose(self, announce_wait: bool = False) -> tuple[float, float, float]:
+        deadline = time.time() + self._startup_wait_timeout_s
+        if announce_wait:
+            self._publish_status("WAITING_FOR_MAP_TF")
         while rclpy.ok() and time.time() < deadline:
             try:
                 transform = self._tf_buffer.lookup_transform(
@@ -346,134 +334,9 @@ class GPSRouteRunner(Node):
                 rclpy.spin_once(self, timeout_sec=0.2)
         raise RuntimeError(f"timed out waiting for TF {self._route_frame}->{self._base_frame}")
 
-    def _build_bootstrap_alignment(self, x0: float, y0: float, yaw0: float) -> Alignment2D:
-        launch_yaw_rad = math.radians(
-            compass_heading_to_enu_yaw_deg(float(self._route["launch_yaw_deg"]))
-        )
-        theta = normalize_angle(yaw0 - launch_yaw_rad)
-        start_ref = self._route["start_ref"]
-        cos_theta = math.cos(theta)
-        sin_theta = math.sin(theta)
-        tx = x0 - (cos_theta * start_ref["enu_x"] - sin_theta * start_ref["enu_y"])
-        ty = y0 - (sin_theta * start_ref["enu_x"] + cos_theta * start_ref["enu_y"])
-        self._alignment_revision += 1
-        return Alignment2D(theta=theta, tx=tx, ty=ty, source="bootstrap", revision=self._alignment_revision)
-
-    def _trim_pgo_alignment_history(self, now_mono: float | None = None) -> None:
-        if now_mono is None:
-            now_mono = time.monotonic()
-        while (
-            self._pgo_alignment_history
-            and now_mono - self._pgo_alignment_history[0][0] > self._pgo_switch_stable_window_s
-        ):
-            self._pgo_alignment_history.popleft()
-
-    def _maybe_log_pgo_hold(self, reason: str) -> None:
-        now_mono = time.monotonic()
-        if (
-            reason != self._last_pgo_hold_reason
-            or now_mono - self._last_pgo_hold_log_time >= 5.0
-        ):
-            self.get_logger().info("Holding bootstrap alignment: %s" % reason)
-            self._last_pgo_hold_reason = reason
-            self._last_pgo_hold_log_time = now_mono
-
-    def _pgo_switch_ready(self) -> tuple[bool, str]:
-        if self._pgo_alignment is None:
-            return False, "PGO alignment not ready yet"
-        if self._distance_since_start_m < self._bootstrap_switch_distance_m:
-            return (
-                False,
-                "distance %.1fm < switch threshold %.1fm"
-                % (self._distance_since_start_m, self._bootstrap_switch_distance_m),
-            )
-
-        self._trim_pgo_alignment_history()
-        history = list(self._pgo_alignment_history)
-        if len(history) < self._pgo_switch_min_stable_updates:
-            return (
-                False,
-                "have %d/%d recent PGO updates"
-                % (len(history), self._pgo_switch_min_stable_updates),
-            )
-
-        latest_theta = history[-1][1]
-        theta_offsets_deg = [
-            math.degrees(normalize_angle(theta_i - latest_theta))
-            for _, theta_i, _, _ in history
-        ]
-        theta_spread_deg = max(theta_offsets_deg) - min(theta_offsets_deg)
-        tx_values = [tx_i for _, _, tx_i, _ in history]
-        ty_values = [ty_i for _, _, _, ty_i in history]
-        translation_spread_m = math.hypot(
-            max(tx_values) - min(tx_values),
-            max(ty_values) - min(ty_values),
-        )
-        bootstrap_delta_deg = abs(
-            math.degrees(
-                normalize_angle(self._pgo_alignment.theta - self._bootstrap_alignment.theta)
-            )
-        )
-
-        if theta_spread_deg > self._pgo_switch_max_theta_spread_deg:
-            return (
-                False,
-                "theta spread %.2fdeg > %.2fdeg"
-                % (theta_spread_deg, self._pgo_switch_max_theta_spread_deg),
-            )
-        if translation_spread_m > self._pgo_switch_max_translation_spread_m:
-            return (
-                False,
-                "translation spread %.2fm > %.2fm"
-                % (translation_spread_m, self._pgo_switch_max_translation_spread_m),
-            )
-        if bootstrap_delta_deg > self._pgo_switch_max_bootstrap_delta_deg:
-            return (
-                False,
-                "bootstrap delta %.2fdeg > %.2fdeg"
-                % (bootstrap_delta_deg, self._pgo_switch_max_bootstrap_delta_deg),
-            )
-
-        return (
-            True,
-            "stable over %d updates: theta spread %.2fdeg translation spread %.2fm bootstrap delta %.2fdeg"
-            % (
-                len(history),
-                theta_spread_deg,
-                translation_spread_m,
-                bootstrap_delta_deg,
-            ),
-        )
-
-    def _best_alignment(self, allow_switch: bool = True) -> Alignment2D:
-        if self._bootstrap_alignment is None:
-            raise RuntimeError("bootstrap alignment not initialized")
-
-        if self._using_pgo_alignment:
-            if self._pgo_alignment is not None:
-                return self._pgo_alignment
-            return self._bootstrap_alignment
-
-        if allow_switch:
-            ready, reason = self._pgo_switch_ready()
-            if ready and self._pgo_alignment is not None:
-                delta_deg = abs(
-                    math.degrees(
-                        normalize_angle(self._pgo_alignment.theta - self._bootstrap_alignment.theta)
-                    )
-                )
-                if delta_deg > self._pgo_switch_warn_deg:
-                    self.get_logger().warn(
-                        "PGO/bootstrap rotation delta is %.1fdeg; launch heading may be wrong" % delta_deg
-                    )
-                self.get_logger().info("Switching to PGO alignment: %s" % reason)
-                self._using_pgo_alignment = True
-                self._publish_status("SWITCHED_TO_PGO_ALIGNMENT")
-                return self._pgo_alignment
-            if not self._using_pgo_alignment:
-                self._maybe_log_pgo_hold(reason)
-
-        return self._bootstrap_alignment
+    def _current_xy(self) -> tuple[float, float]:
+        x, y, _ = self._lookup_current_pose(announce_wait=False)
+        return x, y
 
     def _enu_to_map(self, enu_x: float, enu_y: float, alignment: Alignment2D) -> tuple[float, float]:
         cos_theta = math.cos(alignment.theta)
@@ -482,31 +345,109 @@ class GPSRouteRunner(Node):
         map_y = sin_theta * enu_x + cos_theta * enu_y + alignment.ty
         return map_x, map_y
 
-    def _route_waypoint_to_map(self, waypoint: RouteWaypoint, alignment: Alignment2D) -> tuple[float, float]:
-        return self._enu_to_map(waypoint.enu_x, waypoint.enu_y, alignment)
+    def _map_to_enu(self, map_x: float, map_y: float, alignment: Alignment2D) -> tuple[float, float]:
+        dx = map_x - alignment.tx
+        dy = map_y - alignment.ty
+        cos_theta = math.cos(alignment.theta)
+        sin_theta = math.sin(alignment.theta)
+        enu_x = cos_theta * dx + sin_theta * dy
+        enu_y = -sin_theta * dx + cos_theta * dy
+        return enu_x, enu_y
 
-    def _build_subgoals(
+    def _segment_plan(self, waypoint_index: int) -> SegmentPlan:
+        waypoint = self._route["waypoints"][waypoint_index]
+        if waypoint_index == 0:
+            start_enu = (
+                float(self._route["start_ref"]["enu_x"]),
+                float(self._route["start_ref"]["enu_y"]),
+            )
+        else:
+            prev_waypoint = self._route["waypoints"][waypoint_index - 1]
+            start_enu = (prev_waypoint.enu_x, prev_waypoint.enu_y)
+        end_enu = (waypoint.enu_x, waypoint.enu_y)
+        dx = end_enu[0] - start_enu[0]
+        dy = end_enu[1] - start_enu[1]
+        total_length_m = math.hypot(dx, dy)
+        if total_length_m < 1e-3:
+            return SegmentPlan(
+                waypoint=waypoint,
+                start_enu=start_enu,
+                end_enu=end_enu,
+                total_length_m=0.0,
+                total_subgoals=1,
+                dir_x=1.0,
+                dir_y=0.0,
+            )
+        segment_length_m = float(self._route.get("segment_length_m", 8.0))
+        total_subgoals = max(1, int(math.ceil(total_length_m / max(0.5, segment_length_m))))
+        return SegmentPlan(
+            waypoint=waypoint,
+            start_enu=start_enu,
+            end_enu=end_enu,
+            total_length_m=total_length_m,
+            total_subgoals=total_subgoals,
+            dir_x=dx / total_length_m,
+            dir_y=dy / total_length_m,
+        )
+
+    def _progress_on_segment(
+        self, segment: SegmentPlan, current_enu: tuple[float, float]
+    ) -> tuple[float, float]:
+        rel_x = current_enu[0] - segment.start_enu[0]
+        rel_y = current_enu[1] - segment.start_enu[1]
+        along = rel_x * segment.dir_x + rel_y * segment.dir_y
+        clamped_along = max(0.0, min(segment.total_length_m, along))
+        cross = rel_x * (-segment.dir_y) + rel_y * segment.dir_x
+        return clamped_along, cross
+
+    def _point_on_segment(self, segment: SegmentPlan, progress_m: float) -> tuple[float, float]:
+        clamped_progress = max(0.0, min(segment.total_length_m, progress_m))
+        return (
+            segment.start_enu[0] + segment.dir_x * clamped_progress,
+            segment.start_enu[1] + segment.dir_y * clamped_progress,
+        )
+
+    def _segment_pose(
+        self, segment: SegmentPlan, progress_m: float, alignment: Alignment2D
+    ) -> PoseStamped:
+        enu_x, enu_y = self._point_on_segment(segment, progress_m)
+        map_x, map_y = self._enu_to_map(enu_x, enu_y, alignment)
+        heading = math.atan2(segment.dir_y, segment.dir_x) + alignment.theta
+        qx, qy, qz, qw = yaw_to_quaternion(heading)
+        pose = PoseStamped()
+        pose.header.frame_id = self._route_frame
+        pose.pose.position.x = map_x
+        pose.pose.position.y = map_y
+        pose.pose.position.z = 0.0
+        pose.pose.orientation.x = qx
+        pose.pose.orientation.y = qy
+        pose.pose.orientation.z = qz
+        pose.pose.orientation.w = qw
+        return pose
+
+    def _append_map_segment(
         self,
-        start_xy: tuple[float, float],
-        target_xy: tuple[float, float],
+        path: NavPath,
+        start_map: tuple[float, float],
+        end_map: tuple[float, float],
         segment_length_m: float,
-    ) -> list[PoseStamped]:
-        x0, y0 = start_xy
-        x1, y1 = target_xy
+    ) -> None:
+        x0, y0 = start_map
+        x1, y1 = end_map
         dx = x1 - x0
         dy = y1 - y0
         distance_m = math.hypot(dx, dy)
         if distance_m < 1e-3:
-            return []
-
+            return
         steps = max(1, int(math.ceil(distance_m / max(0.5, segment_length_m))))
         heading = math.atan2(dy, dx)
         qx, qy, qz, qw = yaw_to_quaternion(heading)
-        goals: list[PoseStamped] = []
+        stamp = path.header.stamp
         for step in range(1, steps + 1):
             ratio = step / steps
             pose = PoseStamped()
             pose.header.frame_id = self._route_frame
+            pose.header.stamp = stamp
             pose.pose.position.x = x0 + dx * ratio
             pose.pose.position.y = y0 + dy * ratio
             pose.pose.position.z = 0.0
@@ -514,30 +455,39 @@ class GPSRouteRunner(Node):
             pose.pose.orientation.y = qy
             pose.pose.orientation.z = qz
             pose.pose.orientation.w = qw
-            goals.append(pose)
-        return goals
+            path.poses.append(pose)
 
-    def _append_segment(self, path: NavPath, start_xy: tuple[float, float], target_xy: tuple[float, float], segment_length_m: float) -> None:
-        subgoals = self._build_subgoals(start_xy, target_xy, segment_length_m)
-        if not subgoals:
-            return
-        stamp = path.header.stamp
-        for goal in subgoals:
-            goal.header.stamp = stamp
-            path.poses.append(goal)
-
-    def _publish_remaining_path(self, current_xy: tuple[float, float], waypoint_index: int, alignment: Alignment2D) -> None:
+    def _publish_remaining_path(
+        self,
+        current_xy: tuple[float, float],
+        waypoint_index: int,
+        alignment: Alignment2D,
+        current_progress_m: float,
+    ) -> None:
         path = NavPath()
         path.header.frame_id = self._route_frame
         path.header.stamp = self.get_clock().now().to_msg()
         segment_length_m = float(self._route.get("segment_length_m", 8.0))
 
-        current_start = current_xy
-        for index in range(waypoint_index, len(self._route["waypoints"])):
-            waypoint = self._route["waypoints"][index]
-            target_xy = self._route_waypoint_to_map(waypoint, alignment)
-            self._append_segment(path, current_start, target_xy, segment_length_m)
-            current_start = target_xy
+        segment = self._segment_plan(waypoint_index)
+        current_enu = self._point_on_segment(segment, current_progress_m)
+        current_start_map = self._enu_to_map(current_enu[0], current_enu[1], alignment)
+        segment_end_map = self._enu_to_map(segment.end_enu[0], segment.end_enu[1], alignment)
+        self._append_map_segment(path, current_start_map, segment_end_map, segment_length_m)
+
+        for index in range(waypoint_index + 1, len(self._route["waypoints"])):
+            future_segment = self._segment_plan(index)
+            future_start_map = self._enu_to_map(
+                future_segment.start_enu[0],
+                future_segment.start_enu[1],
+                alignment,
+            )
+            future_end_map = self._enu_to_map(
+                future_segment.end_enu[0],
+                future_segment.end_enu[1],
+                alignment,
+            )
+            self._append_map_segment(path, future_start_map, future_end_map, segment_length_m)
 
         self._path_pub.publish(path)
         if path.poses:
@@ -559,49 +509,43 @@ class GPSRouteRunner(Node):
             return GoalStatus.STATUS_UNKNOWN
         return int(result.status)
 
-    def _current_xy(self) -> tuple[float, float]:
-        x, y, _ = self._lookup_current_pose()
-        return x, y
-
-    def _update_distance_since_start(self, xy: tuple[float, float]) -> None:
-        if self._last_pose_xy is None:
-            self._last_pose_xy = xy
-            return
-        self._distance_since_start_m += math.hypot(
-            xy[0] - self._last_pose_xy[0], xy[1] - self._last_pose_xy[1]
-        )
-        self._last_pose_xy = xy
-
     def _run_waypoint(self, waypoint_index: int) -> tuple[bool, tuple[float, float]]:
-        waypoint = self._route["waypoints"][waypoint_index]
+        segment = self._segment_plan(waypoint_index)
+        waypoint = segment.waypoint
         segment_length_m = float(self._route.get("segment_length_m", 8.0))
         waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
-        current_xy = self._current_xy()
-        self._update_distance_since_start(current_xy)
+        current_progress_m = 0.0
 
         while rclpy.ok():
-            alignment = self._best_alignment(allow_switch=True)
-            target_xy = self._route_waypoint_to_map(waypoint, alignment)
-            remaining_distance_m = math.hypot(
-                target_xy[0] - current_xy[0],
-                target_xy[1] - current_xy[1],
+            alignment = self._latest_alignment
+            if alignment is None:
+                raise RuntimeError("lost ENU->map alignment while navigating")
+
+            current_xy = self._current_xy()
+            current_enu = self._map_to_enu(current_xy[0], current_xy[1], alignment)
+            projected_progress_m, _ = self._progress_on_segment(segment, current_enu)
+            current_progress_m = max(current_progress_m, projected_progress_m)
+            remaining_m = max(0.0, segment.total_length_m - current_progress_m)
+            if remaining_m <= waypoint_tolerance_m:
+                return True, current_xy
+
+            self._publish_remaining_path(current_xy, waypoint_index, alignment, current_progress_m)
+
+            next_progress_m = min(segment.total_length_m, current_progress_m + segment_length_m)
+            next_subgoal = self._segment_pose(segment, next_progress_m, alignment)
+            subgoal_index = max(
+                1,
+                min(
+                    segment.total_subgoals,
+                    int(math.ceil(next_progress_m / max(0.5, segment_length_m))),
+                ),
             )
-            if remaining_distance_m <= waypoint_tolerance_m:
-                return True, current_xy
-
-            self._publish_remaining_path(current_xy, waypoint_index, alignment)
-            subgoals = self._build_subgoals(current_xy, target_xy, segment_length_m)
-
-            if not subgoals:
-                return True, current_xy
-
-            next_subgoal = subgoals[0]
             self._publish_status(
                 "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
                 % (
                     waypoint.name,
-                    1,
-                    len(subgoals),
+                    subgoal_index,
+                    segment.total_subgoals,
                     next_subgoal.pose.position.x,
                     next_subgoal.pose.position.y,
                     alignment.source,
@@ -609,26 +553,27 @@ class GPSRouteRunner(Node):
             )
             self._goal_pub.publish(next_subgoal)
             self.get_logger().info(
-                "Sending %s subgoal 1/%d x=%.2f y=%.2f source=%s"
+                "Sending %s subgoal %d/%d x=%.2f y=%.2f progress=%.2f/%.2f source=%s"
                 % (
                     waypoint.name,
-                    len(subgoals),
+                    subgoal_index,
+                    segment.total_subgoals,
                     next_subgoal.pose.position.x,
                     next_subgoal.pose.position.y,
+                    next_progress_m,
+                    segment.total_length_m,
                     alignment.source,
                 )
             )
+
             status = self._send_goal(next_subgoal)
             if status != GoalStatus.STATUS_SUCCEEDED:
                 self._publish_status(
-                    f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_1_STATUS_{status}"
+                    f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_{subgoal_index}_STATUS_{status}"
                 )
                 return False, current_xy
 
-            current_xy = self._current_xy()
-            self._update_distance_since_start(current_xy)
-
-        return False, current_xy
+        return False, self._current_xy()
 
     def run(self) -> bool:
         self._publish_status("INITIALIZING")
@@ -641,21 +586,15 @@ class GPSRouteRunner(Node):
         startup_fix = self._wait_for_stable_fix()
         self._validate_startup(startup_fix)
         self._wait_for_nav2()
-        x0, y0, yaw0 = self._lookup_current_pose()
-        self._bootstrap_alignment = self._build_bootstrap_alignment(x0, y0, yaw0)
-        self._last_pose_xy = (x0, y0)
-
+        alignment = self._wait_for_alignment()
         self.get_logger().info(
-            "Bootstrap ENU->map ready: yaw0=%.2fdeg launch_yaw=%.2fdeg theta=%.2fdeg"
-            % (
-                math.degrees(yaw0),
-                float(self._route["launch_yaw_deg"]),
-                math.degrees(self._bootstrap_alignment.theta),
-            )
+            "Using stable ENU->map alignment: theta=%.2fdeg tx=%.2f ty=%.2f"
+            % (math.degrees(alignment.theta), alignment.tx, alignment.ty)
         )
-        self._publish_status("BOOTSTRAP_READY")
+        self._publish_status("ALIGNMENT_READY")
         self._publish_status("RUNNING_ROUTE")
 
+        x0, y0, _ = self._lookup_current_pose(announce_wait=True)
         current_xy = (x0, y0)
         for waypoint_index, waypoint in enumerate(self._route["waypoints"]):
             self._publish_status(
