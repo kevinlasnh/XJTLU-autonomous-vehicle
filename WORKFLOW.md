@@ -157,9 +157,49 @@
 | Step | 执行者 | 动作 |
 |------|--------|------|
 | 26 | User | 实车测试：手动启动整车，运行测试 |
-| 27 | User | 得出两个结果：a) 物理运行状态人工评审 b) 系统全量日志 |
+| 27 | User | 得出两个结果：a) 物理运行状态人工评审 b) 系统全量日志（自动产生） |
 | 28 | User | 告诉 Codex：物理评审结果 + 改进意见 |
-| 29 | Codex | 综合分析：接收物理评审 + SSH 读最新全量日志 → 输出问题和改进方向 |
+| 29 | Codex | 读日志 + 综合分析（见下方标准流程） |
+
+### Step 29: 全量日志读取标准流程
+
+Codex（或 CC）在 Step 29 或任何需要分析运行数据的场景中，执行以下固定流程：
+
+```bash
+# 1. 找到最新日志目录
+LATEST_LOG=$(ssh jetson@100.97.227.24 "ls -td ~/fyp_runtime_data/logs/*/ 2>/dev/null | head -1")
+
+# 2. 查看 bag 概要（topic 列表、消息数、持续时间）
+ssh jetson@100.97.227.24 "ros2 bag info ${LATEST_LOG}bag/"
+
+# 3. 提取关键 topic 数据用于分析
+# GPS 轨迹
+ssh jetson@100.97.227.24 "ros2 bag play ${LATEST_LOG}bag/ --topics /fix --read-ahead-queue-size 100 -r 100 2>/dev/null &
+  sleep 2 && ros2 topic echo /fix --csv --once > /tmp/gps_data.csv && kill %1" 2>/dev/null
+
+# 或者直接用 sqlite3 从 .db3 提取（更可靠）:
+ssh jetson@100.97.227.24 "python3 -c \"
+import sqlite3, os, glob
+db = glob.glob('${LATEST_LOG}bag/*.db3')[0]
+conn = sqlite3.connect(db)
+# 查看所有 topic 和消息数
+for row in conn.execute('SELECT t.name, COUNT(m.id) FROM messages m JOIN topics t ON m.topic_id=t.id GROUP BY t.name'):
+    print(f'{row[0]}: {row[1]} msgs')
+conn.close()
+\""
+```
+
+**必须检查的数据点**（每次实车测试后）:
+
+| 数据点 | 来源 topic | 关注什么 |
+|--------|-----------|---------|
+| 运行总时长 | bag metadata | 是否正常完成 |
+| GPS fix 质量 | `/fix` | fix type、卫星数、有无中断 |
+| corridor status 序列 | `/gps_corridor/status` | 是否按预期走完所有状态 |
+| 目标点位置 | `/gps_corridor/goal_map` | 与预期目标的偏差 |
+| 速度指令 | `/cmd_vel` | 有无异常停顿（vel=0 持续 >3s） |
+| TF 连续性 | `/tf` | map→odom→base_link 是否有跳变 |
+| 路径规划 | `/plan` | 路径是否合理、有无反复重规划 |
 
 ### Step 30: 关键判断
 
