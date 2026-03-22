@@ -223,7 +223,10 @@ class GPSRouteRunner(Node):
     def _wait_for_stable_fix(self) -> dict:
         sample_count = int(self._route.get("startup_fix_sample_count", 10))
         spread_limit = float(self._route.get("startup_fix_spread_max_m", 2.0))
-        timeout_s = min(float(self._route.get("startup_fix_timeout_s", 30.0)), self._startup_wait_timeout_s)
+        route_timeout_s = float(
+            self._route.get("startup_fix_timeout_s", self._startup_wait_timeout_s)
+        )
+        timeout_s = max(route_timeout_s, self._startup_wait_timeout_s)
         deadline = time.time() + timeout_s
         samples: deque[tuple[float, float, float]] = deque(maxlen=sample_count)
         self._publish_status("WAITING_FOR_STABLE_FIX")

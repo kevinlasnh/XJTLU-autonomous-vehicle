@@ -28,7 +28,8 @@ def generate_launch_description():
     explore_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(bringup_share, 'launch', 'system_explore.launch.py')
-        )
+        ),
+        launch_arguments={'use_rviz': 'false'}.items(),
     )
 
     nmea_launch = IncludeLaunchDescription(
@@ -68,7 +69,7 @@ def generate_launch_description():
             f'~/fyp_runtime_data/logs/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
         )
     bag_dir = os.path.join(session_root, 'bag')
-    os.makedirs(bag_dir, exist_ok=True)
+    os.makedirs(session_root, exist_ok=True)
 
     bag_record = ExecuteProcess(
         cmd=[

@@ -27,6 +27,7 @@ STABILITY_THRESHOLD_M = 2.0
 SAMPLE_TIMEOUT_S = 30.0
 SEGMENT_LENGTH_M = 8.0
 STARTUP_GPS_TOLERANCE_M = 6.0
+STARTUP_WAIT_TIMEOUT_S = 90.0
 FIX_TOPIC_DETECT_TIMEOUT_S = 3.0
 DRIVER_STARTUP_TIMEOUT_S = 10.0
 SHORT_BASELINE_WARN_M = 5.0
@@ -342,7 +343,7 @@ def main(args=None) -> None:
         ],
         "startup_fix_sample_count": SAMPLE_COUNT,
         "startup_fix_spread_max_m": STABILITY_THRESHOLD_M,
-        "startup_fix_timeout_s": SAMPLE_TIMEOUT_S,
+        "startup_fix_timeout_s": STARTUP_WAIT_TIMEOUT_S,
         "startup_gps_tolerance_m": STARTUP_GPS_TOLERANCE_M,
         "segment_length_m": SEGMENT_LENGTH_M,
     }
