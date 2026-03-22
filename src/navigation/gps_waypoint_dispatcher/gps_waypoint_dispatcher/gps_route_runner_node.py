@@ -303,7 +303,7 @@ class GPSRouteRunner(Node):
             start_ref["lat"],
             start_ref["lon"],
         )
-        tolerance_m = float(self._route.get("startup_gps_tolerance_m", 6.0))
+        tolerance_m = float(self._route.get("startup_gps_tolerance_m", 15.0))
         self.get_logger().info(
             "Startup fix mean lat=%.7f lon=%.7f spread=%.2fm distance_to_start_ref=%.2fm"
             % (
@@ -592,6 +592,17 @@ class GPSRouteRunner(Node):
                 return True, current_xy
 
             for subgoal_index, subgoal in enumerate(subgoals, start=1):
+                self._publish_status(
+                    "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
+                    % (
+                        waypoint.name,
+                        subgoal_index,
+                        len(subgoals),
+                        subgoal.pose.position.x,
+                        subgoal.pose.position.y,
+                        alignment.source,
+                    )
+                )
                 self._goal_pub.publish(subgoal)
                 self.get_logger().info(
                     "Sending %s subgoal %d/%d x=%.2f y=%.2f source=%s"
@@ -646,6 +657,10 @@ class GPSRouteRunner(Node):
 
         current_xy = (x0, y0)
         for waypoint_index, waypoint in enumerate(self._route["waypoints"]):
+            self._publish_status(
+                "WAYPOINT_TARGET|%d|%d|%s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
+            )
             self.get_logger().info(
                 "Navigating to waypoint %d/%d: %s"
                 % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
@@ -653,6 +668,10 @@ class GPSRouteRunner(Node):
             ok, current_xy = self._run_waypoint(waypoint_index)
             if not ok:
                 return False
+            self._publish_status(
+                "WAYPOINT_REACHED|%d|%d|%s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
+            )
 
         self._publish_status("SUCCEEDED")
         return True
