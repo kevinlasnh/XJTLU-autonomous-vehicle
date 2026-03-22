@@ -3,7 +3,7 @@ from datetime import datetime
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, Shutdown, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -53,6 +53,7 @@ def generate_launch_description():
         executable='gps_route_runner_node',
         name='gps_route_runner',
         output='screen',
+        on_exit=Shutdown(reason='gps_route_runner exited'),
         parameters=[
             master_params_file,
             {

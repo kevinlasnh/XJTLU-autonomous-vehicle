@@ -5,6 +5,7 @@ MODE="${1:-explore}"
 SESSION=$(date +%Y-%m-%d-%H-%M-%S)
 SESSION_DIR="$HOME/fyp_runtime_data/logs/$SESSION"
 TEGRA_PID=""
+LAUNCH_PID=""
 CLEANUP_DONE=0
 
 mkdir -p "$SESSION_DIR/console"
@@ -24,6 +25,11 @@ cleanup() {
   if [[ -n "${TEGRA_PID:-}" ]]; then
     kill "$TEGRA_PID" 2>/dev/null || true
     wait "$TEGRA_PID" 2>/dev/null || true
+  fi
+
+  if [[ -n "${LAUNCH_PID:-}" ]]; then
+    kill "$LAUNCH_PID" 2>/dev/null || true
+    wait "$LAUNCH_PID" 2>/dev/null || true
   fi
 
   if [[ -f "$SESSION_DIR/system/session_info.yaml" ]]; then
@@ -76,6 +82,33 @@ if [[ "$MODE" == "corridor" ]]; then
   else
     LAUNCH_ARGS+=("use_rviz:=false")
   fi
+fi
+
+if [[ "$MODE" == "corridor" && "${FYP_CORRIDOR_CONSOLE_MODE:-quiet}" != "raw" ]]; then
+  STARTUP_TIMEOUT_S="${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-45}"
+  LAUNCH_STDOUT_LOG="$SESSION_DIR/system/launch_stdout.log"
+  echo "=== Corridor Console: quiet ==="
+  echo "  Status: foreground concise monitor"
+  echo "  Full launch output: $LAUNCH_STDOUT_LOG"
+  echo "  Startup timeout: ${STARTUP_TIMEOUT_S}s"
+
+  ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}" >"$LAUNCH_STDOUT_LOG" 2>&1 &
+  LAUNCH_PID=$!
+
+  set +e
+  python3 ~/fyp_autonomous_vehicle/scripts/monitor_corridor_status.py \
+    --startup-timeout-s "$STARTUP_TIMEOUT_S" \
+    --launch-log "$LAUNCH_STDOUT_LOG" \
+    --launch-pid "$LAUNCH_PID"
+  MONITOR_RC=$?
+  set -e
+
+  if [[ -n "${LAUNCH_PID:-}" ]]; then
+    kill "$LAUNCH_PID" 2>/dev/null || true
+    wait "$LAUNCH_PID" 2>/dev/null || true
+    LAUNCH_PID=""
+  fi
+  exit "$MONITOR_RC"
 fi
 
 ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}"
