@@ -277,6 +277,11 @@ bash scripts/switch_jetson_wifi.sh indoor
 bash scripts/switch_jetson_wifi.sh Pixel
 bash scripts/switch_jetson_wifi.sh XJTLU
 
+# 从工作站一行远程执行
+ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status'
+ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor'
+ssh jetson@100.97.227.24 'cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor'
+
 # GPS dispatcher 依赖
 apt list --installed | grep ros-humble-geographic-msgs
 python3 -c "import pyproj; print(pyproj.__version__)"
