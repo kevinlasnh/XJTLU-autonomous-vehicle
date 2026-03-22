@@ -1,90 +1,82 @@
 # FYP Autonomous Vehicle - Findings
 
-**最后更新**: 2026-03-21
+**最后更新**: 2026-03-22
 
 ---
 
-## 2026-03-21 深度调研结论
+## 2026-03-22 调研最终结论
 
-### 导航定位链路真相
+### 1. 导航定位链路
 
-当前 Nav2 全程用 SLAM（FAST-LIO2 via PGO）定位，**GPS 在导航期间完全不参与**：
+Nav2 全程用 SLAM（FAST-LIO2 via PGO）定位，GPS 在导航期间不参与：
 
 ```
 Livox MID360 → FAST-LIO2 → PGO → map→base_link TF → Nav2
-GPS: 仅在 corridor runner 启动时采样做距离校验（< 6m），之后再不使用
+GPS: 仅在 corridor runner 启动时做 sanity check（距 start_ref < 6m）
 ```
 
-用户担心的"GPS 导航中漂移"问题在当前架构下不存在。
+### 2. PGO GPS 融合深度分析
 
-### PGO GPS 融合实现深度分析
+**源码**: `src/perception/pgo_gps_fusion/src/pgo_node.cpp` (926行) + `pgos/simple_pgo.cpp`
 
-**源码位置**：`src/perception/pgo_gps_fusion/src/pgo_node.cpp` + `pgos/simple_pgo.cpp`
-
-**GPS→ENU 转换**：GeographicLib::LocalCartesian（精确 WGS84 椭球），固定原点 (31.274927, 120.737548, 0.0)
-
-**GPS Factor 类型**：gtsam::GPSFactor — 只约束平移 (x,y,z)，**不约束旋转**
-
-**核心问题 — GPS 融合名义存在但功能无效**：
-
-| 问题 | 详情 |
+| 组件 | 实现 |
 |------|------|
-| Topic 错配 | 配置 `/gnss`，NMEA 驱动发 `/fix`，数据收不到 |
-| ENU→map 无旋转 | ENU (x=东,y=北) 被直接当 map 坐标注入，但 map 的轴方向由 IMU 上电决定（随机 yaw）。代码中无任何旋转估计逻辑 |
-| 权重失衡 | 里程计噪声 1e-4~1e-6 vs GPS 噪声 2.5m，GPS 权重低 4-6 个数量级 |
-| 首帧先验锁死 | variance=1e-12，GPS 无法移动起始位置 |
-| 死代码 | `gps_quality_sat_min`, `gps_drift_threshold`, `gps_alert_interval`, `gps_emergency_interval` 声明但未使用 |
+| GPS→ENU | GeographicLib::LocalCartesian（WGS84 椭球），固定原点 (31.274927, 120.737548) |
+| GPS Factor | gtsam::GPSFactor — 只约束平移，不约束旋转 |
+| 里程计因子 | BetweenFactor，噪声方差 1e-4~1e-6 |
+| 首帧先验 | 方差 1e-12（基本锁死） |
 
-**结论**：即使修复 topic，由于缺少旋转对齐 + 权重失衡，GPS 对 map frame 无有意义影响。需要代码级修改。
+**三个结构性缺陷**:
+1. Topic `/gnss` vs 实际 `/fix` — 数据收不到
+2. ENU→map 无旋转估计 — GPS ENU (x=东,y=北) 被直接当 map 坐标，但 map yaw 随机
+3. 权重失衡 — GPS 权重比里程计低 62,500 倍，融合无效
 
-### 已有 GPS Offset 实现
+**关键代码位置**:
+- GPS factor 添加: `tryAddGPSFactor()` 第 753-807 行
+- 旋转估计最佳插入点: 第 787 行（ENU 转换完成后）、第 790 行（addGPSFactor 前）
+- SLAM 位姿: `m_pgo->keyPoses()[idx].t_global`（map 帧）
+- offset 更新: `smoothAndUpdate()` 第 185-187 行（用 ISAM2 优化后位姿）
+- 首帧先验: `addKeyPose()` 第 49 行
 
-`gps_anchor_localizer_node`（`src/sensor_drivers/gnss/gnss_calibration/`）已实现：
-- 订阅 raw `/fix` → pyproj ENU 转换（同 ENU 原点）→ 锚点匹配 → offset 修正 → 发布 `/gnss`
-- PGO 订阅 `/gnss`（而非 raw `/fix`），所以这是设计好的管道
-- **但 corridor launch 没有启动这个节点**，导致 `/gnss` 无人发布
+**跳变风险评估**: GPS factor 延迟引入（旋转估计完成后才加入）不会导致地图跳变，因为首帧先验锁死 + GPS 权重极低。但这也意味着 GPS 几乎无效，需要同步放松先验。
 
-### 终点精度不足根因确认
+### 3. 已有 GPS Offset 实现
 
-**是 yaw0 不确定性，不是 GPS 漂移**。
+`gps_anchor_localizer_node`（`src/sensor_drivers/gnss/gnss_calibration/`）:
+- /fix → pyproj ENU → 锚点匹配 → offset → /gnss
+- PGO 订阅 /gnss（设计管道完整，但 corridor launch 未启动此节点）
+- **新方案不使用此节点** — PGO 自行估计完整 ENU→map 变换，更简洁
 
-body_vector 被 yaw0 旋转后投射到 map frame。BMI088 IMU 无磁力计，FAST-LIO 初始 yaw 任意。yaw 偏 5° 在 50m corridor 上 = 4.4m 末端偏差，与观察到的"几米级"一致。
+### 4. 终点精度根因
 
-### Nav2 路径质量问题根因
+**yaw0 不确定性**（非 GPS 漂移）。body_vector 被 yaw0 旋转后偏向。5° yaw 误差在 50m = 4.4m 偏差。
 
-**折弯/卷团**：DWB RotateToGoal scale=300 + GoalAlign scale=300，在每个 subgoal 边界强制旋转对齐。所有 subgoal 朝向相同，但 SLAM 微漂移导致每次都需要小旋转 → 折弯+螺旋。
+### 5. Nav2 路径质量
 
-**幻影障碍停车**：
-- costmap 分辨率 0.02m（2cm），SLAM 点云微对齐误差产生单格噪声障碍
-- `min_obstacle_height: -0.3`，LiDAR 安装高度约 30cm（t_il.z=0.044m + 底盘高度），地面点被标为障碍
-- Livox MID360 已知在原点 (0,0,0) 生成噪声点（GitHub Issue #88）
-- progress checker 3s 判定卡住，触发 recovery behavior
+- **折弯/卷团**: DWB RotateToGoal/GoalAlign scale=300 → 解决方案: RPP 控制器
+- **幻影障碍**: costmap 0.02m + min_obstacle_height=-0.3 → 解决方案: 0.05m + 0.15m + VoxelLayer
+- **全局过重**: 625万格 → 解决方案: 0.10m/30×30 = 9万格
 
-**全局 costmap 过重**：50×50m / 0.02m = 625 万格，Jetson 上严重负载
+### 6. Nav2 插件可用性（Jetson 已编译确认）
 
-### 控制器选型
+- `libnav2_regulated_pure_pursuit_controller.so` ✓
+- `libnav2_rotation_shim_controller.so` ✓
+- `libvoxel_grid.so` ✓
+- `nav2_costmap_2d::DenoiseLayer`（costmap2d 库内）✓
 
-| 控制器 | 走廊适合度 | 计算量 | 推荐 |
-|--------|-----------|--------|------|
-| Regulated Pure Pursuit | 最优 | 最低 | 首选 |
-| MPPI | 优 | 较高 | 备选 |
-| DWB | 中（critic 权重博弈问题） | 中 | 不推荐 |
+### 7. 旋转估计算法验证
+
+2D 最小二乘旋转估计（cross-covariance → atan2）:
+- 架构兼容: PGO 的 `t_global` 可获取 map 帧位姿，与 ENU 配对 ✓
+- offset 计算自然受益: 优化后 global 位姿反映 GPS 拉力 ✓
+- 跳变安全: 当前权重下延迟引入无跳变风险 ✓
 
 ---
 
-## Corridor v1 首次室外实车结论（保留）
+## 已归档发现
 
-- 车辆已能从固定 Launch Pose 自动出发，沿 corridor 到达目标附近
-- 主要矛盾已从"能不能跑"转为"终点精度够不够"
-- 末端几米级偏差，根因是 yaw0 不确定性（非 GPS 漂移）
-- corridor v1 适合作为稳定 baseline，后续增量改进
+### v7 scene graph（已废弃）
 
----
-
-## 已归档发现（v7 scene graph）
-
-v7 方案调研结论已随方案废弃，核心结论：
-
-- v7 主链（scene graph + route_server + Kabsch yaw）对单 corridor 需求过重
-- v7 部署到 Jetson 后软件可启动，但被 GPS NO_FIX 阻塞实车验证
-- GPS 蘑菇头硬件连接正常（ANTENNA OK），定位失败是室内环境/信号问题
+- v7 主链对单 corridor 需求过重
+- v7 部署到 Jetson 后被 GPS NO_FIX 阻塞
+- GPS 蘑菇头硬件连接正常，室内无信号
