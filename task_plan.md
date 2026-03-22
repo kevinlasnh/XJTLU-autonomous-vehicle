@@ -69,6 +69,7 @@ controller_server:
     FollowPath:
       plugin: "nav2_rotation_shim_controller::RotationShimController"
       angular_dist_threshold: 0.785       # 45°: 仅大角度变化时旋转
+      angular_disengage_threshold: 0.39  # 审计修复: 脱离旋转阈值 = 阈值的一半，防止抖振
       forward_sampling_distance: 0.5
       rotate_to_heading_angular_vel: 1.0
       max_angular_accel: 1.6
@@ -106,6 +107,11 @@ controller_server:
 
 **解决**: P3（幻影障碍停车）+ P4（过重）
 
+**关键坐标参考**（基于 docs/hardware_spec.md 实测数据）:
+- LiDAR 离地: 0.447m
+- t_il.z: 0.044m → base_link (IMU) 离地: 0.403m
+- body_cloud 中地面 z ≈ -0.40m, 10cm 马路牙 z ≈ -0.30m, 50cm 矮墙 z ≈ +0.10m
+
 ```yaml
 local_costmap:
   local_costmap:
@@ -127,9 +133,9 @@ local_costmap:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
         footprint_clearing_enabled: true
-        origin_z: 0.0
-        z_resolution: 0.1
-        z_voxels: 16
+        origin_z: -0.45                  # 地面(-0.40)以下，确保低矮障碍在网格内
+        z_resolution: 0.15              # 15cm/层，马路牙占1层，减少计算量
+        z_voxels: 16                    # 16×0.15=2.4m → z=-0.45~+1.95m
         unknown_threshold: 15
         mark_threshold: 0
         publish_voxel_map: false
@@ -138,10 +144,10 @@ local_costmap:
         pointcloud:
           topic: /fastlio2/body_cloud
           data_type: "PointCloud2"
-          min_obstacle_height: 0.15       # -0.3→0.15: 过滤��面点（核心修复）
+          min_obstacle_height: -0.30     # 地面(-0.40)滤掉, 10cm马路牙(-0.30)保留
           max_obstacle_height: 1.5
-          obstacle_min_range: 0.3         # 新增: 过滤 LiDAR 原点噪声
-          obstacle_max_range: 4.0         # 15→4: 局部只关心近距离
+          obstacle_min_range: 0.3        # 新增: 过滤 LiDAR 原点噪声
+          obstacle_max_range: 4.0        # 15→4: 局部只关心近距离
           raytrace_min_range: 0.3
           raytrace_max_range: 5.0
           clearing: true
@@ -154,9 +160,19 @@ local_costmap:
       always_send_full_costmap: false
 ```
 
+**幻影障碍防线**（min_obstacle_height 回到 -0.30 后靠以下三层解决）:
+1. 分辨率 0.02→0.05: 单个噪声点影响更小
+2. obstacle_min_range=0.3: 过滤 Livox MID360 原点自检测噪声
+3. VoxelLayer 3D raytrace: 地面点在最底层体素，不会被误投为障碍柱
+4. 兜底: 如仍有残留，追加 DenoiseLayer 移除孤立单格障碍
+
 ### 1.3 Global Costmap 优化
 
 **解决**: P4（过重）
+
+**审计修复**: global costmap 用 2D ObstacleLayer。当车靠近马路牙（<2.8m）时，LiDAR
+光束从马路牙上方飞过，2D raytrace 会错误清掉已标记的马路牙。修复方案：关闭 clearing，
+只标不清，靠 inflation 衰减和 costmap rolling 自然淘汰旧障碍。
 
 ```yaml
 global_costmap:
@@ -183,12 +199,12 @@ global_costmap:
         pointcloud:
           topic: /fastlio2/body_cloud
           data_type: "PointCloud2"
-          min_obstacle_height: 0.15
+          min_obstacle_height: -0.30      # 与 local 一致, 保留马路牙
           max_obstacle_height: 1.5
           obstacle_min_range: 0.3
           obstacle_max_range: 10.0
           raytrace_max_range: 12.0
-          clearing: true
+          clearing: false                 # 审计修复: 关闭清障，防止近距离误清马路牙
           marking: true
 
       inflation_layer:
@@ -273,6 +289,8 @@ source install/setup.bash
 5. 持续更新:
    - 每次新配对加入后重新计算 θ
    - 随着数据积累，估计精度提升
+   - 审计修复: smoothAndUpdate() 之后，刷新所有配对的 map_xy
+     （防止回环校正后旧 map_xy 值过时导致旋转估计偏差）
 
 6. 发布变换:
    - 在 ROS2 topic /gps_corridor/enu_to_map 上发布 θ 和 t
@@ -419,8 +437,8 @@ source install/setup.bash
 | RPP 控制器行为不符预期 | 低 | 中 | 保留 DWB 配置为 nav2_explore_dwb.yaml 备用 |
 | PGO 旋转估计在 GPS 噪声下不收敛 | 中 | 高 | 要求最小展幅 5m + 至少 5 点；渐进引入 GPS |
 | PGO C++ 修改引入 segfault | 低 | 高 | 增量修改，每步编译测试；保留旧 pgo_original 包 |
-| min_obstacle_height=0.15 漏掉低矮障碍 | 低 | 中 | 室外测试验证；必要时降至 0.10 |
-| LiDAR 安装高度与 0.15 不匹配 | 中 | 低 | 首次测试前目视确认/量测 LiDAR 离地高度 |
+| min_obstacle_height=-0.30 地面噪声残留 | 低 | 中 | VoxelLayer 3D + 分辨率 0.05 + obstacle_min_range=0.3；兜底追加 DenoiseLayer |
+| LiDAR 安装高度影响低矮障碍检测 | 中 | 低 | VoxelLayer 保留已见障碍；仅转弯盲区有风险 |
 
 ---
 
@@ -434,10 +452,10 @@ source install/setup.bash
 
 ## 待用户确认项
 
-1. **LiDAR 离地高度**：需要实测或目视确认（影响 min_obstacle_height 精确值）
-2. **Phase 2 改 C++ 的接受度**：PGO 是核心感知节点，改动需要谨慎
-3. **是否先跑 Phase 1 验证**：Phase 1 只改 YAML，可立即部署测试
-4. **多点路线的实际需求**：Phase 3 的路线形状/长度/拐弯数量
+1. **Phase 2 改 C++ 的接受度**：PGO 是核心感知节点，改动需要谨慎
+2. **是否先跑 Phase 1 验证**：Phase 1 只改 YAML，可立即部署测试
+3. **多点路线的实际需求**：Phase 3 的路线形状/长度/拐弯数量
+4. **min_obstacle_height=-0.30 的地面噪声容忍度**：如果不平路面仍有幻影障碍，可调至 -0.25（牺牲 5cm 马路牙检测能力）
 
 ---
 
