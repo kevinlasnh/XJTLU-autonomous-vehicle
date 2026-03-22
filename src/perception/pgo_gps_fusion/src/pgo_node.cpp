@@ -872,7 +872,10 @@ public:
         
         // Publish TF/odom with the current ROS time so Nav2 can look up fresh transforms
         // against live controller / costmap requests instead of stale sensor timestamps.
-        builtin_interfaces::msg::Time cur_time = this->now().to_msg();
+        const int64_t now_ns = this->get_clock()->now().nanoseconds();
+        builtin_interfaces::msg::Time cur_time;
+        cur_time.sec = static_cast<int32_t>(now_ns / 1000000000LL);
+        cur_time.nanosec = static_cast<uint32_t>(now_ns % 1000000000LL);
 
         fprintf(stderr, "[DIAG] timerCB: pts=%zu time=%.6f kp=%zu\n", cp.cloud ? cp.cloud->size() : (size_t)0, cp.pose.second, m_pgo->keyPoses().size());
         bool is_key_pose = m_pgo->addKeyPose(cp);
