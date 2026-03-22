@@ -248,7 +248,7 @@ public:
         //   5. 可能增加 TF 延迟，但配合 transform_tolerance 设置仍可保证 Nav2 正常工作
         //   6. 队列积压风险增加，需要监控 cloud_buffer 大小（已有监控代码）
         //   7. 回环检测和图优化执行频率降低，但由于这些操作耗时较长，降频有助于系统稳定性
-        m_timer = this->create_wall_timer(50ms, std::bind(&PGONode::timerCB, this));
+        m_timer = this->create_wall_timer(20ms, std::bind(&PGONode::timerCB, this));
         m_save_map_srv = this->create_service<interface::srv::SaveMaps>("/pgo/save_maps", std::bind(&PGONode::saveMapsCB, this, std::placeholders::_1, std::placeholders::_2));
     }
 
@@ -870,9 +870,9 @@ public:
             m_state.cloud_buffer.pop();  // 只弹出一个元素
         }
         
-        builtin_interfaces::msg::Time cur_time;
-        cur_time.sec = cp.pose.sec;
-        cur_time.nanosec = cp.pose.nsec;
+        // Publish TF/odom with the current ROS time so Nav2 can look up fresh transforms
+        // against live controller / costmap requests instead of stale sensor timestamps.
+        builtin_interfaces::msg::Time cur_time = this->now().to_msg();
 
         fprintf(stderr, "[DIAG] timerCB: pts=%zu time=%.6f kp=%zu\n", cp.cloud ? cp.cloud->size() : (size_t)0, cp.pose.second, m_pgo->keyPoses().size());
         bool is_key_pose = m_pgo->addKeyPose(cp);

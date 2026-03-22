@@ -24,12 +24,17 @@ def generate_launch_description():
         default_value='90.0',
         description='Maximum wait time for stable /fix, TF, and Nav2 readiness',
     )
+    use_rviz_arg = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='false',
+        description='Whether to launch RViz together with the corridor stack',
+    )
 
     explore_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(bringup_share, 'launch', 'system_explore.launch.py')
         ),
-        launch_arguments={'use_rviz': 'false'}.items(),
+        launch_arguments={'use_rviz': LaunchConfiguration('use_rviz')}.items(),
     )
 
     nmea_launch = IncludeLaunchDescription(
@@ -97,6 +102,7 @@ def generate_launch_description():
     return LaunchDescription([
         route_file_arg,
         startup_wait_timeout_arg,
+        use_rviz_arg,
         explore_launch,
         nmea_launch,
         bag_record,

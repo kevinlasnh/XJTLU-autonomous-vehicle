@@ -67,4 +67,15 @@ case "$MODE" in
   *)            echo "Unknown mode: $MODE"; exit 1 ;;
 esac
 
-ros2 launch bringup "$LAUNCH_FILE"
+LAUNCH_ARGS=()
+if [[ "$MODE" == "corridor" ]]; then
+  if [[ -n "${FYP_USE_RVIZ:-}" ]]; then
+    LAUNCH_ARGS+=("use_rviz:=${FYP_USE_RVIZ}")
+  elif [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    LAUNCH_ARGS+=("use_rviz:=true")
+  else
+    LAUNCH_ARGS+=("use_rviz:=false")
+  fi
+fi
+
+ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}"
