@@ -146,7 +146,7 @@
     # 至少累计这段里程后才允许考虑从 bootstrap 切到 PGO 对齐。
     bootstrap_switch_distance_m: 6.0
     # 至少保留多少个最近 PGO 更新，才允许判断对齐是否稳定。
-    pgo_switch_min_stable_updates: 4
+    pgo_switch_min_stable_updates: 3
     # PGO 对齐稳定性判定的时间窗口；窗口内波动过大则继续使用 bootstrap。
     pgo_switch_stable_window_s: 3.0
     # 时间窗口内允许的最大角度波动；超过则认为 PGO 仍在漂移。

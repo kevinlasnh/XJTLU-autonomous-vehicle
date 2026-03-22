@@ -8,6 +8,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Time
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -21,6 +22,17 @@ def generate_launch_description():
 
     bringup_share = get_package_share_directory("bringup")
     master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
+    nav2_params_file = os.path.join(bringup_share, "config", "nav2_explore.yaml")
+    corridor_bt_xml = os.path.join(
+        bringup_share,
+        "behavior_trees",
+        "navigate_to_pose_w_replanning_3hz_and_recovery.xml",
+    )
+    rewritten_nav2_params = RewrittenYaml(
+        source_file=nav2_params_file,
+        param_rewrites={"default_nav_to_pose_bt_xml": corridor_bt_xml},
+        convert_types=True,
+    )
 
     use_rviz_arg = DeclareLaunchArgument(
         "use_rviz",
@@ -82,7 +94,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "use_sim_time": "false",
-            "params_file": os.path.join(bringup_share, "config", "nav2_explore.yaml"),
+            "params_file": rewritten_nav2_params,
         }.items(),
     )
 

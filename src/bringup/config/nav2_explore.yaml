@@ -215,6 +215,9 @@ bt_navigator_navigate_to_pose_rclcpp_node:
     # 是否使用仿真时间；决定该节点读取 /clock 还是真实系统时间。
     # 改为 true：依赖外部仿真时钟；改为 false：直接使用系统时间。
     use_sim_time: false
+    # 默认 NavigateToPose 行为树 XML；由 launch 在运行时注入 corridor 专用 BT。
+    # 不注入时回退默认空字符串，由 Nav2 使用上游默认树。
+    default_nav_to_pose_bt_xml: ""
 # Controller Server 节点参数块；负责局部轨迹跟踪与速度控制。
 # 改错节点名或层级：局部控制器会回退默认值或启动失败。
 controller_server:
@@ -321,10 +324,10 @@ local_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 10.0
+      update_frequency: 12.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 5.0
+      publish_frequency: 6.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: odom
@@ -351,7 +354,7 @@ local_costmap:
       robot_radius: 0.38625
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
-      plugins: ["voxel_layer", "denoise_layer", "inflation_layer"]
+      plugins: ["stvl_layer", "denoise_layer", "inflation_layer"]
       denoise_layer:
         plugin: "nav2_costmap_2d::DenoiseLayer"
         enabled: true
@@ -369,33 +372,50 @@ local_costmap:
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
         inflation_radius: 0.55
-      # 体素层参数块；负责在 3D 体素网格中标障与清障。
-      # 改错结构或参数：低矮障碍或地面噪声过滤会失真。
-      voxel_layer:
-        # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
-        # 改成不存在或不兼容的插件：对应功能块会加载失败。
-        plugin: "nav2_costmap_2d::VoxelLayer"
+      # STVL 参数块；负责把 3D 点云写入体素层，并通过时间衰减清除陈旧障碍。
+      stvl_layer:
+        plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: true
-        footprint_clearing_enabled: true
-        origin_z: -0.45
-        z_resolution: 0.15
-        z_voxels: 16
-        unknown_threshold: 15
+        voxel_decay: 2.0
+        decay_model: 0
+        voxel_size: 0.05
+        track_unknown_space: false
         mark_threshold: 0
-        publish_voxel_map: false
-        observation_sources: pointcloud
+        update_footprint_enabled: true
         combination_method: 1
-        pointcloud:
-          topic: /fastlio2/body_cloud
+        origin_z: -0.45
+        publish_voxel_map: false
+        transform_tolerance: 0.1
+        mapping_mode: false
+        map_save_duration: 60.0
+        observation_sources: pointcloud_mark pointcloud_clear
+        pointcloud_mark:
           data_type: "PointCloud2"
+          topic: /fastlio2/body_cloud
+          marking: true
+          clearing: false
+          obstacle_range: 5.0
           min_obstacle_height: -0.3
           max_obstacle_height: 1.5
-          obstacle_min_range: 0.2
-          obstacle_max_range: 5.0
-          raytrace_min_range: 0.2
-          raytrace_max_range: 6.0
+          expected_update_rate: 0.0
+          observation_persistence: 0.0
+          inf_is_valid: false
+          filter: "voxel"
+          voxel_min_points: 0
+          clear_after_reading: true
+        pointcloud_clear:
+          enabled: true
+          data_type: "PointCloud2"
+          topic: /fastlio2/body_cloud
+          marking: false
           clearing: true
-          marking: true
+          max_z: 6.0
+          min_z: 0.2
+          vertical_fov_angle: 1.03
+          vertical_fov_padding: 0.05
+          horizontal_fov_angle: 6.29
+          decay_acceleration: 5.0
+          model_type: 1
       # 是否总是发送完整代价地图；决定 costmap 发布全量还是增量更新。
       # 改为 true：下游更稳但带宽更高；改为 false：更省带宽但对订阅端要求更高。
       always_send_full_costmap: false
@@ -410,10 +430,10 @@ global_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 2.0
+      update_frequency: 3.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 1.0
+      publish_frequency: 1.5
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: map
@@ -443,7 +463,7 @@ global_costmap:
       height: 40
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
-      plugins: ["obstacle_layer", "inflation_layer"]
+      plugins: ["stvl_layer", "inflation_layer"]
       # 膨胀层参数块；负责给障碍物外围增加安全缓冲。
       # 改错结构或参数：障碍安全边界会偏大或偏小。
       inflation_layer:
@@ -456,64 +476,53 @@ global_costmap:
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
         inflation_radius: 0.55
-      # 障碍物层参数块；负责把传感器观测直接写入代价地图。
-      # 改错结构或参数：代价地图会漏障碍或误报障碍。
-      obstacle_layer:
-        # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
-        # 改成不存在或不兼容的插件：对应功能块会加载失败。
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        # 功能开关；决定当前参数块对应的能力是否真正参与运行。
-        # 改为 true：该能力生效；改为 false：该能力被关闭。
+      # STVL 参数块；负责让全局图中的近场动态障碍自动衰减，避免人走开后仍残留。
+      stvl_layer:
+        plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: true
-        footprint_clearing_enabled: true
-        # 观测源列表；决定该层从哪些传感器配置块读取数据。
-        # 增删观测源：会直接改变写入地图的数据来源。
-        observation_sources: pointcloud
-        # PointCloud 观测参数块；负责描述点云如何写入地图。
-        # 改错结构或参数：点云障碍投影会失真。
-        pointcloud:
-          # 输入或输出话题名；决定该模块从哪里取数据或向哪里发数据。
-          # 改错话题：上下游节点会直接断链。
-          topic: /fastlio2/body_cloud
-          # 输入消息类型；决定当前观测源按哪种 ROS 消息格式解析。
-          # 改成错误类型：数据解析会失败。
+        voxel_decay: 2.0
+        decay_model: 0
+        voxel_size: 0.05
+        track_unknown_space: true
+        mark_threshold: 0
+        update_footprint_enabled: true
+        combination_method: 1
+        origin_z: -0.45
+        publish_voxel_map: false
+        transform_tolerance: 0.2
+        mapping_mode: false
+        map_save_duration: 60.0
+        observation_sources: pointcloud_mark pointcloud_clear
+        pointcloud_mark:
           data_type: "PointCloud2"
-          # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-          # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-          max_obstacle_height: 1.5
-          # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
-          # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-          min_obstacle_height: -0.3
-          # 是否允许清障；决定观测源能否清掉旧障碍。
-          # 改为 true：地图更容易清掉旧障碍；改为 false：旧障碍更容易残留。
-          clearing: true
-          # 是否允许标障；决定观测源命中的障碍能否写入地图。
-          # 改为 true：新障碍会被写入；改为 false：该源只清障不标障。
+          topic: /fastlio2/body_cloud
           marking: true
-          # 最大障碍标记距离；超过该值的观测不会被写成障碍。
-          # 调大：更远障碍也会入图；调小：只保留更近的障碍。
-          obstacle_max_range: 4.0
-          # 最小障碍标记距离；用于滤掉本体附近或近场噪声。
-          # 调大：更容易滤掉近场点；调小：更容易把近场物体写入。
-          obstacle_min_range: 1.0
-          # 最大清障距离；决定射线清障能清到多远。
-          # 调大：更远区域也能被清空；调小：清障范围缩短。
-          raytrace_max_range: 5.0
-          # 最小清障距离；决定离传感器太近的区域是否参与清障。
-          # 调大：近场更不参与清障；调小：更贴近本体开始清障。
-          raytrace_min_range: 0.5
-          # 无穷远量测是否有效；决定无穷远点是否参与清障判断。
-          # 改为 true：更容易把无返回视作空闲；改为 false：忽略无穷远量测。
+          clearing: false
+          obstacle_range: 4.0
+          min_obstacle_height: -0.3
+          max_obstacle_height: 1.5
+          expected_update_rate: 0.0
+          observation_persistence: 0.0
           inf_is_valid: false
-          # 是否启用清障功能；用于总开关控制当前观测源清障。
-          # 改为 true：允许清掉旧障碍；改为 false：该源不再清障。
-          clearing_enabled: true
-          # 是否启用标障功能；用于总开关控制当前观测源标障。
-          # 改为 true：允许写入新障碍；改为 false：该源不再标障。
-          marking_enabled: true
+          filter: "voxel"
+          voxel_min_points: 0
+          clear_after_reading: true
+        pointcloud_clear:
+          enabled: true
+          data_type: "PointCloud2"
+          topic: /fastlio2/body_cloud
+          marking: false
+          clearing: true
+          max_z: 5.0
+          min_z: 0.5
+          vertical_fov_angle: 1.03
+          vertical_fov_padding: 0.05
+          horizontal_fov_angle: 6.29
+          decay_acceleration: 5.0
+          model_type: 1
       # 是否总是发送完整代价地图；决定 costmap 发布全量还是增量更新。
       # 改为 true：下游更稳但带宽更高；改为 false：更省带宽但对订阅端要求更高。
-      always_send_full_costmap: true
+      always_send_full_costmap: false
 # Map Server 节点参数块；负责加载静态地图。
 # 改错节点名或层级：地图服务器会读不到参数或地图加载失败。
 map_server:
@@ -558,7 +567,7 @@ planner_server:
     transform_tolerance: 0.5
     # 期望规划频率；用于监控全局规划线程是否跟上预期节奏。
     # 调大：更强调高频规划；调小：监控更宽松。
-    expected_planner_frequency: 20.0
+    expected_planner_frequency: 3.0
     # 是否使用仿真时间；决定该节点读取 /clock 还是真实系统时间。
     # 改为 true：依赖外部仿真时钟；改为 false：直接使用系统时间。
     use_sim_time: false
