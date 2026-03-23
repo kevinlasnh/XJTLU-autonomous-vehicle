@@ -1,18 +1,19 @@
 # FYP Autonomous Vehicle - Progress Log
 
-**最后更新**: 2026-03-22
+**最后更新**: 2026-03-23
 
 ---
 
 ## 当前状态
 
-**Corridor v2 运行期微调方案已拟定，等待 Codex 执行部署。**
+**Corridor v2 运行期微调 v1 已部署；CC 复审发现关键参数方向错误，修正 v2 方案已拟定，等待 Codex 部署性审查。**
 
 | 项目 | 状态 |
 |------|------|
 | Corridor v2 独立 aligner 架构 | **已部署** |
 | Waypoint 1 到达 | **已验证** |
-| 运行期微调方案 | **已拟定，等待部署** |
+| 运行期微调 v1 | **已部署，发现问题** |
+| 运行期微调 v2（修正） | **方案已拟定，等待 Codex 部署性审查** |
 | 当前分支 | `gps` |
 
 ---
@@ -59,6 +60,87 @@
 3. 修改保护逻辑：优先使用更接近 0 的 alignment
 
 **构建**: `colcon build --packages-select gps_waypoint_dispatcher bringup`
+
+### Codex 部署性审查（运行期微调方案，Step 17-19）
+
+- [x] 读取 `task_plan.md`、`findings.md`、`progress.md`
+- [x] 核对当前 `nav2_explore.yaml` 实际参数值
+- [x] 核对 `gps_route_runner_node.py` 保护逻辑与参数读取路径
+- [x] 核对 `system_gps_corridor.launch.py` 的参数注入链
+- [x] 发现部署缺口：Phase 2 若只改 Python 默认值，运行时会被 `master_params.yaml` 中 `/gps_route_runner` 的旧值覆盖
+- [x] 在不改变架构前提下微调计划：
+  - Phase 2 同步修改 `src/bringup/config/master_params.yaml`
+  - 保留修改 `gps_route_runner_node.py` 默认值作为一致性清理
+- [x] 复核 planner 项：`planner_server.transform_tolerance` 当前实际是 `0.5`，计划中的 `0.8` 方向成立
+- [x] 结论：**运行期微调方案经微调后可部署，Step 19 通过**
+
+### Codex 部署与系统测试（运行期微调方案，Step 21-25）
+
+- [x] 修改 `nav2_explore.yaml`
+  - `controller_server.transform_tolerance: 0.35 -> 0.5`
+  - `controller_frequency: 20.0 -> 15.0`
+  - `FollowPath.transform_tolerance: 0.35 -> 0.5`
+  - `max_allowed_time_to_collision_up_to_carrot: 0.6 -> 1.2`
+  - `local stvl_layer.voxel_decay: 1.2 -> 0.8`
+  - `local stvl_layer.transform_tolerance: 0.35 -> 0.5`
+  - `planner_server.transform_tolerance: 0.5 -> 0.8`
+- [x] 修改 `master_params.yaml`
+  - `/gps_route_runner.waypoint_start_progress_guard_m: 4.0 -> 10.0`
+  - `/gps_route_runner.waypoint_start_cross_track_guard_m: 3.0 -> 5.0`
+- [x] 修改 `gps_route_runner_node.py`
+  - 默认 guard 值同步到 `10.0 / 5.0`
+  - `previous_is_better` 逻辑改为优先保留更接近段起点的 alignment
+- [x] 本地静态检查通过
+  - `py_compile` 通过
+  - `nav2_explore.yaml` / `master_params.yaml` YAML 解析通过
+- [x] 提交并推送
+  - commit `1898655` `Tune corridor runtime thresholds to reduce stop-go and waypoint drift`
+- [x] Jetson `git pull --ff-only origin gps`
+- [x] Jetson `colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+- [x] Jetson 启动 smoke test：`scripts/launch_with_logs.sh corridor`
+- [x] 结论：
+  - Nav2 生命周期成功激活，controller/planner/bt_navigator 正常起
+  - 新参数已被实际读入，日志中明确显示 `Controller frequency set to 15.0000Hz`
+  - corridor 未进入 `RUNNING_ROUTE` 的原因是 GPS 一直无 fix，不是本轮参数改动导致的启动错误
+
+### 当前阻塞（2026-03-23 部署后）
+
+- 最新 smoke test session: `/home/jetson/fyp_runtime_data/logs/2026-03-23-11-22-31/`
+- `gps_global_aligner` 与 `gps_route_runner` 都停在 `WAITING_FOR_STABLE_FIX`
+- `nmea_navsat_driver` 持续输出：
+  - `GNGGA ... fix=0`
+  - `GNRMC ... V`
+  - `GPGSV/BDGSV ... 00`
+- 说明当前环境下 GPS 天线在线，但没有卫星 fix
+- 下一步需要在有 GPS 条件的现场继续 Step 25/26
+
+### CC 复审：运行期微调 v1 → 修正 v2（2026-03-23 下午）
+
+- [x] 读取 Codex 实际部署的代码 diff
+- [x] 派 3 个子代理并行验证方案对症性：
+  - 子代理 1：验证 `max_allowed_time_to_collision` 参数语义
+  - 子代理 2：代码级验证 waypoint 保护逻辑
+  - 子代理 3：验证降频和 TF tolerance 综合效果
+- [x] **关键发现 1**：`max_allowed_time_to_collision: 0.6 → 1.2` 方向反了
+  - 增大 = 检测窗口更远 = 更灵敏 = 更多停车
+  - 来源：Nav2 RPP 源码 `collision_checker.cpp` 的 while 循环逻辑
+- [x] **关键发现 2**：collision ahead 236 次的主因是 `min_obstacle_height: 0.05`
+  - 地面不平/点云噪声被标记为障碍
+  - 碰���检测参数只是放大器，不是根因
+- [x] **关键发现 3**：`waypoint_start_progress_guard_m: 10.0` 太宽松
+  - GPS 2.5m 精度 2-sigma = 5m，正常 progress 不超过 4m
+  - 10.0 只拦极端跳变，4-10m 中等偏移放过
+- [x] 派 2 个子代理深挖修正方案：
+  - 子代理 4：collision ahead 根因 + 正确修��参数
+  - 子代理 5：waypoint 保护阈值合理性分析
+- [x] 整合修正方案 v2，写入 task_plan.md
+- [x] v2 修正内容：
+  - `min_obstacle_height`: 0.05 → 0.15（Local + Global）
+  - `pointcloud_clear.min_z`: 0.05 → 0.10（Local + Global）
+  - `max_allowed_time_to_collision`: 1.2 → 0.8
+  - `denoise_layer.minimal_group_size`: 3 → 4
+  - `waypoint_start_progress_guard_m`: 10.0 → 5.0
+  - Global STVL `transform_tolerance`: 0.35 → 0.5
 
 ---
 

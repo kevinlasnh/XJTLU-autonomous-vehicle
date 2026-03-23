@@ -1,6 +1,6 @@
 # Corridor v2 — 运行期微调方案
 
-**Status**: `Waypoint 1 已到达 / 运行期微调方案拟定`
+**Status**: `Waypoint 1 已到达 / 运行期微调 v1 已部署 / 修正 v2 待 Codex 审查`
 **当前分支**: `gps`
 **最后更新**: 2026-03-23
 
@@ -8,20 +8,178 @@
 
 ## 当前状态
 
-**已完成**：
+**已完成**��
 - 独立 global aligner 架构已部署（commit `e51a46a`~`2bb6fbf`）
 - Waypoint 1 已稳定到达（session `2026-03-22-21-05-17`）
+- 运行期微调 v1 已部署（commit `1898655`），Jetson build 通过
 
-**当前问题**：
-1. Waypoint 边界 alignment 漂移：第二段起始 progress 跳到 16.51m
-2. Nav2 平顺性：collision ahead 236 次，stop-go 顿挫
-3. TF extrapolation 51 次，controller 掉频
+**v1 部署后 CC 复审发现的问题**：
+1. `max_allowed_time_to_collision: 1.2` 方向反了（增大=更灵敏=更多停车，不是更少）
+2. `min_obstacle_height: 0.05` 是 collision ahead 236 次的真正主因（地面噪声被标记为障碍）
+3. `waypoint_start_progress_guard_m: 10.0` 太宽松（只拦极端跳变，4-10m 中等偏移放过）
+4. Global costmap STVL `transform_tolerance` 仍是 0.35s（遗漏）
 
 ---
 
-## 运行期微调方案
+## 修正方案 v2（基于 v1 基线增量修改）
 
-### Phase 1：Nav2 参数调优（必须部署）
+### v1 中正确的修改（保留）
+
+| 参数 | 值 | 判定 |
+|------|-----|------|
+| `controller_frequency` | 15.0 | 正确 |
+| `controller_server.transform_tolerance` | 0.5 | 正确 |
+| `FollowPath.transform_tolerance` | 0.5 | 正确 |
+| `local STVL transform_tolerance` | 0.5 | 正确 |
+| `planner_server.transform_tolerance` | 0.8 | 正确 |
+| `voxel_decay` | 0.8 | 可接受（偏低但 corridor 直线可用）|
+
+### Phase 1：修正 collision ahead 根因（必须部署）
+
+#### 1.1 提高 Local Costmap min_obstacle_height
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+```yaml
+# 第 398 行（local costmap -> stvl_layer -> pointcloud_mark）
+min_obstacle_height: 0.15    # 从 0.05 改为 0.15
+
+# 第 413 行（local costmap -> stvl_layer -> pointcloud_clear）
+min_z: 0.10                  # 从 0.05 改为 0.10
+```
+
+**理由**:
+- 0.15m 相对 base_link = 离地约 55cm
+- 过滤所有地面不平 + 点云抖动 + 10cm 马路牙
+- 保留行人/柱子/墙壁等真实障碍（离地 > 55cm）
+- 10cm 马路牙不应由 costmap 触发停车，应由路径规划绕开
+
+#### 1.2 同步提高 Global Costmap min_obstacle_height
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+```yaml
+# 第 502 行（global costmap -> stvl_layer -> pointcloud_mark）
+min_obstacle_height: 0.15    # 从 0.05 改为 0.15
+
+# 第 517 行（global costmap -> stvl_layer -> pointcloud_clear）
+min_z: 0.10                  # 从 0.05 改为 0.10
+```
+
+**理由**: Local 和 Global 使用同一点云源 `/fastlio2/body_cloud`，高度过滤必须一致
+
+#### 1.3 降低 Collision Detection 灵敏度
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+```yaml
+# 第 308 行
+max_allowed_time_to_collision_up_to_carrot: 0.8   # 从 1.2 改为 0.8
+```
+
+**理由**:
+- v1 从 0.6 改到 1.2 方向反了（增大 = 检测更远 = 更多停车）
+- 0.8s * 0.45m/s = 前瞻 0.36m + inflation 0.45m = 有效检测范围 ~0.81m
+- 低于 Nav2 默认 1.0s，对低速机器人安全
+- 不建议关闭 collision detection（RPP regulated scaling 只减速不刹车，不能替代）
+
+#### 1.4 增强 Denoise Layer
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+```yaml
+# 第 361 行（local costmap -> denoise_layer）
+minimal_group_size: 4         # 从 3 改为 4
+```
+
+**理由**: 地面抖动产生的虚假障碍通常 3-5 栅格，提高到 4 可过滤大部分散点
+
+### Phase 2：修正 Waypoint 保护阈值（必须部署）
+
+#### 2.1 收紧保护阈值
+
+**文件**:
+- `src/bringup/config/master_params.yaml`
+- `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+
+```yaml
+# master_params.yaml
+waypoint_start_progress_guard_m: 5.0      # 从 10.0 改为 5.0
+# waypoint_start_cross_track_guard_m 保持 5.0 不变
+```
+
+```python
+# gps_route_runner_node.py 第 84 行
+self.declare_parameter("waypoint_start_progress_guard_m", 5.0)  # 从 10.0 改为 5.0
+```
+
+**理由**:
+- GPS 2.5m 精度的 2-sigma 范围 = 5m
+- 正常 GPS 散布 + theta 残差（2-3 度），candidate_progress 不超过 4m
+- 10.0 太宽松：只拦极端跳变，4-10m 的中等偏移全部放过
+- 5.0 能拦截中等偏移，同时不会对正常散布误触发
+- 双条件门控（suspicious + previous_is_better）提供额外安全边际
+
+### Phase 3：补遗漏（必须部署）
+
+#### 3.1 Global Costmap STVL Transform Tolerance
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+```yaml
+# 第 492 行（global costmap -> stvl_layer）
+transform_tolerance: 0.5     # 从 0.35 改为 0.5
+```
+
+**理由**: 与 local costmap STVL 保持一致，避免 CPU 波动时 global costmap 单独报 TF 错误
+
+---
+
+## 修正 v2 汇总
+
+| 参数 | v1 当前值 | v2 修正值 | 文件 |
+|------|----------|----------|------|
+| local `pointcloud_mark.min_obstacle_height` | 0.05 | **0.15** | nav2_explore.yaml |
+| local `pointcloud_clear.min_z` | 0.05 | **0.10** | nav2_explore.yaml |
+| global `pointcloud_mark.min_obstacle_height` | 0.05 | **0.15** | nav2_explore.yaml |
+| global `pointcloud_clear.min_z` | 0.05 | **0.10** | nav2_explore.yaml |
+| `max_allowed_time_to_collision` | 1.2 | **0.8** | nav2_explore.yaml |
+| local `denoise_layer.minimal_group_size` | 3 | **4** | nav2_explore.yaml |
+| `waypoint_start_progress_guard_m` | 10.0 | **5.0** | master_params.yaml + runner |
+| global STVL `transform_tolerance` | 0.35 | **0.5** | nav2_explore.yaml |
+
+## 构建与部署
+
+```bash
+colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1
+source install/setup.bash
+```
+
+## 预期效果
+
+- Collision ahead：236 次 → 个位数（min_obstacle_height 从源头消除虚假障碍）
+- TF extrapolation：51 次 → <10 次（v1 已解决，v2 补 global STVL tolerance）
+- Waypoint 2 起始 progress：16.51m → <5m（保护阈值收紧到 5.0m）
+- Stop-go 顿挫：大幅改善
+- Controller 频率：稳定达到 15Hz（v1 已解决）
+
+## 风险评估
+
+| 修改项 | 风险等级 | 说明 |
+|--------|---------|------|
+| min_obstacle_height 0.15 | 低 | 离地 55cm 以下不标记；马路牙由规划绕开 |
+| collision time 0.8s | 低 | 低于默认 1.0s，前瞻 0.36m + inflation 0.45m 仍安全 |
+| denoise group_size 4 | 低 | 真实障碍连通域远大于 4 栅格 |
+| guard_m 5.0 | 低 | GPS 2-sigma 范围 + 双条件门控 |
+| global STVL tolerance 0.5 | 低 | 与 local 一致 |
+
+## 回退策略
+
+所有修改都是参数级微调。如果效果不佳：
+- min_obstacle_height 可改回 0.05 或中间值 0.10
+- collision time 可改回 Nav2 默认 1.0
+- guard_m 可改回 4.0
+- denoise group_size 可改回 3
 
 #### 1.1 Collision Ahead 触发阈值放宽
 
@@ -122,7 +280,9 @@ GPS Route Runner → 读 ENU→map 变换 → GPS 路点转 map 坐标 → Nav2 
 
 #### 2.1 Waypoint 边界 Alignment 切换限幅
 
-**文件**: `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+**文件**:
+- `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+- `src/bringup/config/master_params.yaml`
 
 **修改位置**: `_choose_waypoint_alignment()` 方法（第 520-563 行）
 
@@ -133,6 +293,13 @@ GPS Route Runner → 读 ENU→map 变换 → GPS 路点转 map 坐标 → Nav2 
 # 第 84-85 行
 self.declare_parameter("waypoint_start_progress_guard_m", 10.0)  # 从 4.0 提高到 10.0
 self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)  # 从 3.0 提高到 5.0
+```
+
+```yaml
+/gps_route_runner:
+  ros__parameters:
+    waypoint_start_progress_guard_m: 10.0      # 从 4.0 提高到 10.0
+    waypoint_start_cross_track_guard_m: 5.0    # 从 3.0 提高到 5.0
 ```
 
 2. 修改保护逻辑（第 545-548 行）：
@@ -152,6 +319,7 @@ previous_is_better = (
 
 **理由**:
 - 当前 4.0m 阈值不够，16.51m 跳变未被拦截
+- corridor launch 当前会通过 `master_params.yaml` 给 `gps_route_runner` 注入参数；若只改 Python 默认值，运行时仍会被 YAML 中的 `4.0 / 3.0` 覆盖
 - 新逻辑：只要 previous 更接近 0 就用 previous
 - 避免 waypoint 边界处的投影跳变
 
@@ -191,6 +359,34 @@ source install/setup.bash
 | Waypoint 保护逻辑 | 低 | 改回原逻辑 |
 
 所有修改都是参数级或简单逻辑调整，不涉及架构变更。
+
+---
+
+## 2026-03-23 Codex 部署性审查补充
+
+### 发现 1：Phase 2 只改 Python 默认值不能直接生效
+
+- `system_gps_corridor.launch.py` 当前以 `parameters=[master_params_file, {...}]` 启动 `gps_route_runner`
+- `master_params.yaml` 里 `/gps_route_runner` 仍显式写着：
+  - `waypoint_start_progress_guard_m: 4.0`
+  - `waypoint_start_cross_track_guard_m: 3.0`
+- 因此若只改 `gps_route_runner_node.py` 的 `declare_parameter()` 默认值，运行时仍会被 YAML 覆盖，现场行为不会变化
+
+**部署修正**:
+- Phase 2 必须同步修改 `src/bringup/config/master_params.yaml`
+- Python 默认值可一并改，作为代码默认值与运行参数保持一致；但真正决定 corridor 运行时行为的是 `master_params.yaml`
+
+### 发现 2：Planner `transform_tolerance` 的目标项是成立的
+
+- 当前实际生效的 `planner_server.ros__parameters.transform_tolerance` 仍是 `0.5`
+- 因此计划中的 `0.5 -> 0.8` 方向正确
+- 搜索结果中 `1.0` 那项来自 `amcl`，不是 planner，不构成部署冲突
+
+### 部署性结论
+
+- **按原文直接执行：存在一个运行时参数覆盖缺口，不可直接部署**
+- **按上述补丁微调后：可部署**
+- Step 19 可通过，等待用户确认进入 Step 20
 
 ---
 
