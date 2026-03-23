@@ -226,13 +226,13 @@ controller_server:
   ros__parameters:
     # TF 容忍时间；决定该模块接受多大的 TF 时间偏差。
     # 调大：对 TF 延迟更宽松；调小：更严格但更容易因延迟失败。
-    transform_tolerance: 0.35
+    transform_tolerance: 0.5
     # 是否使用仿真时间；决定该节点读取 /clock 还是真实系统时间。
     # 改为 true：依赖外部仿真时钟；改为 false：直接使用系统时间。
     use_sim_time: false
     # 控制循环频率；决定局部控制器每秒更新多少次速度指令。
     # 调大：响应更快但 CPU 更高；调小：负载更低但控制更迟缓。
-    controller_frequency: 20.0
+    controller_frequency: 15.0
     # 前向速度死区阈值；低于该值的前向速度会被视为零。
     # 调大：更能压制微抖动；调小：更容易保留细小前进速度。
     min_x_velocity_threshold: 0.001
@@ -301,11 +301,11 @@ controller_server:
       max_lookahead_dist: 1.80
       lookahead_time: 1.8
       use_velocity_scaled_lookahead_dist: true
-      transform_tolerance: 0.35
+      transform_tolerance: 0.5
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
       use_collision_detection: true
-      max_allowed_time_to_collision_up_to_carrot: 0.6
+      max_allowed_time_to_collision_up_to_carrot: 1.2
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 1.2
@@ -376,7 +376,7 @@ local_costmap:
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: true
-        voxel_decay: 1.2
+        voxel_decay: 0.8
         decay_model: 0
         voxel_size: 0.05
         track_unknown_space: false
@@ -385,7 +385,7 @@ local_costmap:
         combination_method: 1
         origin_z: -0.45
         publish_voxel_map: false
-        transform_tolerance: 0.35
+        transform_tolerance: 0.5
         mapping_mode: false
         map_save_duration: 60.0
         observation_sources: pointcloud_mark pointcloud_clear
@@ -564,7 +564,7 @@ planner_server:
   ros__parameters:
     # TF 容忍时间；决定该模块接受多大的 TF 时间偏差。
     # 调大：对 TF 延迟更宽松；调小：更严格但更容易因延迟失败。
-    transform_tolerance: 0.5
+    transform_tolerance: 0.8
     # 期望规划频率；用于监控全局规划线程是否跟上预期节奏。
     # 调大：更强调高频规划；调小：监控更宽松。
     expected_planner_frequency: 3.0

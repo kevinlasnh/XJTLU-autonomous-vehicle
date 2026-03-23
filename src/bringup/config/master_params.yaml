@@ -189,9 +189,9 @@
     # 真正切换时的提醒阈值；用于记录 bootstrap 和 PGO 仍有轻微差异。
     pgo_switch_warn_deg: 2.0
     # 新 waypoint 开始时允许的最大前向投影；超过说明 alignment 已把车位错误投到段内。
-    waypoint_start_progress_guard_m: 4.0
+    waypoint_start_progress_guard_m: 10.0
     # 新 waypoint 开始时允许的最大横向偏差；超过则优先复用上一个 waypoint 的 alignment。
-    waypoint_start_cross_track_guard_m: 3.0
+    waypoint_start_cross_track_guard_m: 5.0
 
 /serial_twistctl_node:
   ros__parameters:

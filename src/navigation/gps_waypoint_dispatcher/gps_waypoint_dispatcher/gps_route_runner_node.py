@@ -81,8 +81,8 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
-        self.declare_parameter("waypoint_start_progress_guard_m", 4.0)
-        self.declare_parameter("waypoint_start_cross_track_guard_m", 3.0)
+        self.declare_parameter("waypoint_start_progress_guard_m", 10.0)
+        self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)
 
         # Legacy parameters kept declared for backward compatibility with existing YAML.
         self.declare_parameter("bootstrap_switch_distance_m", 6.0)
@@ -543,7 +543,7 @@ class GPSRouteRunner(Node):
             or abs(candidate_cross_track_m) > self._waypoint_start_cross_track_guard_m
         )
         previous_is_better = (
-            previous_progress_m + 0.5 < candidate_progress_m
+            abs(previous_progress_m) + 1.0 < abs(candidate_progress_m)
             or abs(previous_cross_track_m) + 0.5 < abs(candidate_cross_track_m)
         )
         if candidate_suspicious and previous_is_better:
