@@ -1,12 +1,110 @@
-# Corridor v2 — GPS-aligned 多点导航实施计划
+# Corridor v2 — 运行期微调方案
 
-**Status**: `CC 复审完成 / Bootstrap 方案 A 锁定 / 交还 Codex 部署`
+**Status**: `Waypoint 1 已到达 / 运行期微调方案拟定`
 **当前分支**: `gps`
-**最后更新**: 2026-03-22
+**最后更新**: 2026-03-23
 
 ---
 
-## 总体架构
+## 当前状态
+
+**已完成**：
+- 独立 global aligner 架构已部署（commit `e51a46a`~`2bb6fbf`）
+- Waypoint 1 已稳定到达（session `2026-03-22-21-05-17`）
+
+**当前问题**：
+1. Waypoint 边界 alignment 漂移：第二段起始 progress 跳到 16.51m
+2. Nav2 平顺性：collision ahead 236 次，stop-go 顿挫
+3. TF extrapolation 51 次，controller 掉频
+
+---
+
+## 运行期微调方案
+
+### Phase 1：Nav2 参数调优（必须部署）
+
+#### 1.1 Collision Ahead 触发阈值放宽
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+**修改**:
+```yaml
+# 第 308 行
+max_allowed_time_to_collision_up_to_carrot: 1.2  # 从 0.6 提高到 1.2
+```
+
+**理由**:
+- 当前 0.6s 仅前瞻 0.27m，小于安全边界 0.84m
+- 1.2s 前瞻 0.54m，覆盖安全边界
+- 符合 Nav2 最佳实践（默认 1.0s）
+
+**预期**: collision ahead 触发次数降低 60-70%
+
+#### 1.2 STVL Voxel 衰减加速
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+**修改**:
+```yaml
+# 第 385 行
+voxel_decay: 0.8  # 从 1.2 降到 0.8
+```
+
+**理由**:
+- 点云噪声更快消失，减少误报源头
+- 配合 1.1 使用效果更佳
+
+**风险**: 低（动态障碍物可能过早消失，但 corridor 场景影响小）
+
+#### 1.3 Transform Tolerance 放宽
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+**修改**:
+```yaml
+# 第 229 行
+controller_server:
+  ros__parameters:
+    transform_tolerance: 0.5  # 从 0.35 提高到 0.5
+
+# 第 304 行
+FollowPath:
+  transform_tolerance: 0.5  # 从 0.35 提高到 0.5
+
+# 第 370 行（local_costmap STVL）
+transform_tolerance: 0.5  # 从 0.35 提高到 0.5
+
+# 第 145 行（planner）
+planner_server:
+  ros__parameters:
+    transform_tolerance: 0.8  # 从 0.5 提高到 0.8
+```
+
+**理由**:
+- 当前 0.35s 对 Jetson 偏严
+- 0.5s 是嵌入式平台常见值
+- 容忍 CPU 波动，减少 future extrapolation
+
+**预期**: TF extrapolation 次数降低 50-70%
+
+#### 1.4 Controller 频率降低
+
+**文件**: `src/bringup/config/nav2_explore.yaml`
+
+**修改**:
+```yaml
+# 第 227 行
+controller_server:
+  ros__parameters:
+    controller_frequency: 15.0  # 从 20.0 降到 15.0
+```
+
+**理由**:
+- 当前已经 miss 20Hz 目标
+- 15Hz 仍能保证控制响应
+- 减少 TF 查询压力和 CPU 负载
+
+**风险**: 低（控制响应略慢，但 corridor 直线场景影响小）
 
 ```
 NMEA 驱动 → /fix → PGO（ENU→map 旋转估计 + GPS 因子融合）
@@ -19,6 +117,510 @@ GPS Route Runner → 读 ENU→map 变换 → GPS 路点转 map 坐标 → Nav2 
 ```
 
 **不用 gps_anchor_localizer_node**。PGO 自己估计完整的 ENU→map 变换（旋转+平移），同时做 GPS 因子融合。Runner 节点读这个变换做 GPS→map 坐标转换。简化管道，减少依赖。
+
+### Phase 2：Runner Waypoint 边界保护（必须部署）
+
+#### 2.1 Waypoint 边界 Alignment 切换限幅
+
+**文件**: `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+
+**修改位置**: `_choose_waypoint_alignment()` 方法（第 520-563 行）
+
+**修改内容**:
+
+1. 提高保护阈值参数：
+```python
+# 第 84-85 行
+self.declare_parameter("waypoint_start_progress_guard_m", 10.0)  # 从 4.0 提高到 10.0
+self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)  # 从 3.0 提高到 5.0
+```
+
+2. 修改保护逻辑（第 545-548 行）：
+```python
+# 原代码：
+previous_is_better = (
+    previous_progress_m + 0.5 < candidate_progress_m
+    or previous_cross_track_m + 0.5 < candidate_cross_track_m
+)
+
+# 改为：
+previous_is_better = (
+    abs(previous_progress_m) + 1.0 < abs(candidate_progress_m)
+    or abs(previous_cross_track_m) + 0.5 < abs(candidate_cross_track_m)
+)
+```
+
+**理由**:
+- 当前 4.0m 阈值不够，16.51m 跳变未被拦截
+- 新逻辑：只要 previous 更接近 0 就用 previous
+- 避免 waypoint 边界处的投影跳变
+
+**预期**: 第二段起始 progress 接近 0m
+
+---
+
+## 构建与部署
+
+### 构建步骤
+
+```bash
+# 只需重建修改的包
+colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1
+source install/setup.bash
+```
+
+### 验证步骤
+
+1. 实车测试 corridor
+2. 观察日志：
+   - Collision ahead 次数应显著降低
+   - Waypoint 2 起始 progress 应接近 0m
+   - TF extrapolation 次数应降低
+   - Controller 应稳定达到 15Hz
+
+---
+
+## 风险评估
+
+| 修改项 | 风险等级 | 回退方案 |
+|--------|---------|---------|
+| Collision ahead 阈值 1.2s | 低 | 改回 0.6s |
+| Voxel decay 0.8s | 低 | 改回 1.2s |
+| Transform tolerance 0.5s | 低 | 改回 0.35s |
+| Controller 15Hz | 低 | 改回 20Hz |
+| Waypoint 保护逻辑 | 低 | 改回原逻辑 |
+
+所有修改都是参数级或简单逻辑调整，不涉及架构变更。
+
+---
+
+## 预期效果
+
+- Collision ahead 触发次数：236 → ~70-90 次
+- TF extrapolation 次数：51 → ~10-20 次
+- Waypoint 2 起始 progress：16.51m → ~0-2m
+- Stop-go 顿挫：明显改善
+- Controller 频率：稳定达到 15Hz
+
+---
+
+最新多轮实车后，出现了一个超出普通调参范围的新问题：
+
+- fixed-launch bootstrap 阶段，车辆能较直地向第一个 waypoint 推进
+- 一旦切到 PGO，对齐源仍继续漂移
+- runner 会在切换后重算当前 waypoint 的剩余 subgoal 链
+- controller 随后进入 `collision ahead` / backup recovery，车辆出现回头与转圈
+
+因此当前需要补做一轮架构级调研，核心问题不是“要不要 GPS”，而是：
+
+1. GPS 是否应继续直接耦合进当前 PGO，并在 corridor 运行中接管
+2. 还是应拆分成独立的 global aligner，只负责平滑发布 `ENU -> map`
+3. runner 是否应只消费稳定的 `ENU -> map`，而不让 PGO 图优化结果直接改变 Nav2 正在使用的参考系
+
+### 本轮调研目标
+
+- 基于现有日志与代码，判断 `GPS-in-PGO` 在当前 fixed-launch corridor 场景中是否仍是正确方向
+- 若不是，给出最小改造面版本的替代架构
+- 明确：
+  - 哪些组件保留
+  - 哪些组件拆分
+  - `map/odom/base_link` 的语义如何维持一致
+  - route runner 应消费哪一个全局对齐源
+
+### 约束
+
+- 先做调研，不立即改架构代码
+- 结论必须同时解释：
+  - 为什么 bootstrap 前半段更稳
+  - 为什么 PGO 接管后会退化
+  - 如何在不丢掉 GPS 全局纠偏能力的前提下，避免运行中参考系抖动
+
+### 本轮调研结论（Codex 代行架构评估）
+
+#### 结论 1：GPS 仍然应该保留，但不应继续以当前 live PGO handoff 方式进入 corridor 控制闭环
+
+当前日志与代码共同说明：
+- bootstrap 阶段车辆可较稳定推进第一个 waypoint
+- 一旦切到 PGO：
+  - `ENU -> map` 仍继续漂移
+  - runner 会重算当前 waypoint 的剩余 subgoals
+  - controller 随后进入 collision / backup recovery
+
+因此当前主问题不是“要不要 GPS”，而是：
+- GPS 是否必须继续直接耦合进当前 PGO 并在运行中接管 corridor
+
+评估结论：
+- **不推荐继续强化当前这条 live handoff 链**
+
+#### 结论 2：当前最合理的方向是“保留 FAST-LIO2，拆出独立 global aligner”
+
+推荐目标架构：
+
+```text
+FAST-LIO2 -> 提供局部连续位姿 / odom
+GPS global aligner -> 估计平滑 ENU -> map
+GPS Route Runner -> 消费平滑 ENU -> map，把固定 route waypoint 投到当前 map
+Nav2 -> 只追当前 map 中的目标点
+PGO -> 降级为离线/可选全局优化模块，不再作为 corridor 运行时接管源
+```
+
+关键原则：
+- GPS 仍参与全局纠偏
+- 但 corridor 运行时，不再让 live PGO 图优化直接改变 Nav2 正在追的对齐源
+- runner 不应在当前 subgoal 中途因 alignment 源变化而重算已执行进度
+
+#### 结论 3：若尽量复用现成包，优先是分层全局定位模块，不是整包替换 SLAM
+
+优先级判断：
+
+1. **首选**：`robot_localization + navsat_transform`
+   - 作用：作为独立 global aligner 的骨架
+   - 原因：最符合 ROS 官方“局部连续 + 全局纠偏”分层范式
+
+2. **不推荐当前阶段直接采用**：LIO-SAM 类整包替换
+   - 原因：
+     - 官方实现历史上以 ROS1/catkin 为主
+     - 对 Livox 固态雷达并非低风险 drop-in
+     - 现有 Humble + MID360 + Nav2 栈替换成本过高
+
+#### 结论 4：后续若进入架构实施，最小改造面应如下
+
+1. 新增 `global_aligner` 节点，专门输出平滑 `ENU -> map`
+2. route runner 保留，但改为：
+   - 不在当前 subgoal 中途因 alignment 更新而重建剩余子目标链
+   - 只在 waypoint 边界或安全边界吸收新的 alignment
+3. corridor 运行链中停止使用“PGO ready 后自动接管当前 route”
+4. PGO 保留为：
+   - 离线分析 / 日志验证
+   - 后续独立评估是否还能作为全局辅助，而不是当前控制主链的一部分
+
+## 2026-03-22 Night 独立 Global Aligner 部署方案（锁定候选）
+
+**工作流位置**: Step 17-19 重新开始（新架构方向）
+
+### 目标
+
+在**不更换主 SLAM 包**的前提下，把 corridor v2 收敛为一条更稳的运行链：
+
+```text
+/fix + map->base_link + fixed route datum
+    -> gps_global_aligner
+    -> /gps_corridor/enu_to_map
+    -> gps_route_runner
+    -> Nav2
+
+FAST-LIO2 + PGO(loop closure only)
+    -> 持续提供局部定位 / map->odom
+```
+
+### Phase 1（必须部署，最小改造面）
+
+#### 1.1 新增独立 `gps_global_aligner_node`
+
+**建议放置位置**: `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_global_aligner_node.py`
+
+**原因**:
+- 现有 `gps_waypoint_dispatcher` 已具备：
+  - `pyproj`
+  - route YAML 读取
+  - ENU 投影工具
+  - TF 查询能力
+- 直接复用当前 `alignment_topic` 抽象，改造面最小
+
+**输入**
+- `/fix`
+- `map -> base_link` TF
+- `route_file`
+- 固定 ENU 原点
+
+**输出**
+- `/gps_corridor/enu_to_map`
+  - 继续复用当前 `Float64MultiArray [theta, tx, ty, valid]`
+- 新增调试状态：
+  - `/gps_corridor/alignment_status`
+  - `/gps_corridor/alignment_debug`（可选）
+
+**内部逻辑**
+1. 启动阶段先基于：
+   - `start_ref`
+   - `launch_yaw_deg`
+   - 当前 `map -> base_link`
+   构造 bootstrap `ENU -> map`
+2. bootstrap 一旦建立，立即开始对外发布有效 alignment
+3. 运行阶段持续采集：
+   - 当前稳定 GPS → ENU
+   - 当前 `map -> base_link` 位置
+   形成在线 `ENU/map` 配对
+4. 基于最近窗口解算刚体变换
+5. 对解算结果做**平滑与限速**
+   - 限制角速度更新
+   - 限制平移更新
+   - 严格拒绝离群点
+
+**关键原则**
+- 运行中 alignment 可以更新
+- 但必须是**平滑收敛**
+- 不能像当前 PGO handoff 那样瞬间切换参考系
+
+#### 1.2 corridor 模式下 route runner 改为“消费稳定 aligner”，不再做 live PGO handoff
+
+**文件**: `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+
+**改动要点**
+- 去掉 corridor 运行时 `bootstrap -> pgo` 接管状态机
+- runner 不再自己判断 `pgo_switch_*`
+- runner 只消费 `/gps_corridor/enu_to_map`
+
+**新的进度语义**
+- 不允许在 alignment 更新时重建已经执行到一半的子目标链
+- 当前 segment / subgoal 的进度必须保留
+
+**推荐实现**
+- 将 waypoint 几何保留在 ENU 域
+- 每次用最新 alignment 只做：
+  - 当前 robot map pose -> 反解 ENU 位置
+  - 在当前 ENU 段上求 progress
+  - 生成“前方一个 lookahead/subgoal”
+- 不再用“从当前 map pose 直接重新切完整剩余段”的方式生成 subgoal
+
+#### 1.3 corridor 模式下关闭 PGO 的 GPS 因子
+
+**原因**
+- 当前目标是把 GPS 从 PGO 运行时接管链中移出
+- 若 corridor 模式仍让 PGO 同时融合 GPS，则会形成双重全局修正，增加耦合和调试难度
+
+**实施方式**
+- corridor launch 下给 `/pgo/pgo_node` 单独覆盖：
+  - `"gps.enable": false`
+
+**保留内容**
+- PGO 仍保留：
+  - 图优化 / 回环
+  - `map -> odom`
+  - `optimized_odom`
+
+#### 1.4 启动链调整
+
+**文件**
+- `src/bringup/launch/system_gps_corridor.launch.py`
+- `src/navigation/gps_waypoint_dispatcher/setup.py`
+
+**改动**
+1. 新增 `gps_global_aligner_node` console script
+2. corridor launch 中：
+   - 先启动 explore 栈
+   - 再启动 NMEA
+   - 再启动 `gps_global_aligner`
+   - 最后启动 `gps_route_runner`
+3. runner 仅等待：
+   - Nav2 ready
+   - valid alignment topic
+   - 启动位 sanity check
+
+#### 1.5 日志与 bag 补充
+
+**新增录制**
+- `/gps_corridor/enu_to_map`
+- `/gps_corridor/alignment_status`
+- `/gps_corridor/alignment_debug`（若实现）
+
+**原因**
+- 下一轮现场若再出现“前半段好、后半段偏”，需要直接区分：
+  - GPS 本身问题
+  - aligner 输出漂移
+  - runner progress 语义问题
+
+### Phase 2（可选增强，不作为首轮 mandatory）
+
+#### 2.1 用 `robot_localization + navsat_transform` 替代 aligner 内核
+
+**定位**
+- 不是替换 FAST-LIO2 / Nav2
+- 而是替换 `gps_global_aligner` 的内部实现骨架
+
+**适用时机**
+- 当 Phase 1 自研 aligner 证明方向正确后
+- 若后续希望更接近 ROS 官方分层范式，再引入
+
+**当前不作为首轮 mandatory 的原因**
+- 需要额外梳理：
+  - datum / 世界航向约束
+  - 与现有 FAST-LIO2 / PGO TF 语义的衔接
+- 首轮部署会比自研轻量 aligner 更重
+
+#### 2.2 若 PGO loop closure 仍导致 map 明显跳变，再评估 corridor 纯 FAST-LIO2 模式
+
+这是 fallback，不是首选方案。
+
+### 部署性审查结论
+
+#### 可部署项
+
+1. **新增 Python global aligner**：可直接落在现有 `gps_waypoint_dispatcher` 包，无需新重依赖
+2. **runner 改消费稳定 alignment**：现有代码已通过 `alignment_topic` 解耦，改造面明确
+3. **corridor 模式关闭 PGO GPS**：当前 PGO 已有 `gps.enable` 参数，配置面明确
+
+#### 风险点
+
+1. **runner 进度语义重构** 是本轮最大代码风险
+   - 如果只简单“继续每轮重算 map subgoal”，问题会复现
+2. **PGO loop closure 仍可能对 `map -> odom` 造成跳变**
+   - 但这和“GPS-in-PGO 接管”是两个问题
+   - 本轮先把 GPS 这一层耦合去掉，再单独看 loop closure 是否仍是 blocker
+
+#### 审查结论
+
+- 这条新方案**可部署**
+- 且比“直接整包替换成另一套 GPS 紧耦合 SLAM”风险更低
+- Step 19 可通过，等待用户进入 Step 20 锁定
+
+## 2026-03-22 微调优化方案（方案 B）
+
+**工作流位置**: Step 8-16 完成，等待 Codex 执行 Step 17-25
+
+### 优化目标
+
+1. **PGO 接管门槛**：从数学不可能 → 可切换
+2. **Costmap 障碍清除**：从 ~2 秒残留 → ~0.5 秒清除
+3. **系统响应速度**：提高 Global Costmap 刷新率，减少绿色路径滞后
+
+### Phase 1（必须部署）
+
+#### 1.1 PGO 接管门槛修正
+**文件**: `src/bringup/config/master_params.yaml`
+```yaml
+gps_route_runner:
+  pgo_switch_min_stable_updates: 3      # 从 4 降到 3
+  pgo_switch_stable_window_s: 3.0       # 保持
+  bootstrap_switch_distance_m: 6.0      # 保持
+```
+**风险**: 低
+
+#### 1.2 Costmap 频率提升（激进）
+**文件**: `src/bringup/config/nav2_explore.yaml`
+```yaml
+local_costmap:
+  update_frequency: 12.0                # 从 10.0 提高到 12.0
+global_costmap:
+  update_frequency: 5.0                 # 从 2.0 提高到 5.0
+  publish_frequency: 2.0                # 从 1.0 提高到 2.0
+```
+**风险**: 中高（可能导致 Jetson 掉频）
+**回退方案**: Local 10Hz / Global 3Hz
+
+#### 1.3 STVL 障碍清除
+**文件**: `src/bringup/config/nav2_explore.yaml`
+```yaml
+local_costmap:
+  voxel_layer:
+    plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
+    voxel_decay: 2.0                    # 2 秒后自动清除
+    decay_model: 1                      # 指数衰减
+    decay_acceleration: 0.5
+    raytrace_min_range: 0.2             # 保持，不扩大死区
+```
+**前置条件**: `sudo apt install ros-humble-spatio-temporal-voxel-layer`
+**风险**: 低
+
+### Phase 2（可选）
+
+#### 2.1 FAST-LIO2 感知范围
+```yaml
+fastlio2:
+  det_range: 55.0                       # 从 60.0 降到 55.0
+```
+
+#### 2.2 PGO 回环参数
+```yaml
+pgo:
+  loop_search_radius: 1.5               # 从 1.0 提高到 1.5
+  gps:
+    alignment_min_spread_m: 4.0         # 从 5.0 降到 4.0
+```
+
+### 验证方法
+
+1. **PGO 接管**: `ros2 topic echo /gps_corridor/status`
+2. **Costmap 清除**: RViz 观察障碍移动后更新速度
+3. **频率稳定**: `ros2 topic hz /cmd_vel /local_costmap/costmap /global_costmap/costmap`
+4. **系统负载**: `htop` 确保 CPU < 80%
+
+---
+
+## 2026-03-22 Codex 对方案 B 的部署性审查
+
+**审查结论**: 原方案 B 有 2 个部署缺口；在不改变总体架构的前提下补齐后，计划可部署。
+
+### 1. PGO 接管门槛修正可直接部署
+
+- 当前代码的真实 hold reason 已明确是 `have 3/4 recent PGO updates`
+- 因此把 `pgo_switch_min_stable_updates: 4 -> 3` 属于低风险、直接对症的修正
+- `pgo_switch_stable_window_s: 3.0` 与这一改动可先保持一致，先验证是否足以触发切换
+
+### 2. Global Costmap `5Hz` 不能直接作为“绿色 `/plan` 更快”的依据
+
+- 当前仓库没有自定义 NavigateToPose BT XML 覆盖默认行为树
+- Jetson 本机 Nav2 Humble 默认 BT 仍使用 `RateController hz="1.0"` 对 planner 重规划节流
+- 因此即使把 Global Costmap 提到 `5Hz`，`/plan` 也不会自动变成 `5Hz`
+- 与此同时，最新现场日志已经出现：
+  - controller miss `20Hz`
+  - planner loop 实际掉到约 `2Hz`
+
+**部署修正**:
+- Phase 1.2 改成 staged rollout：
+  - 首轮部署目标：`global_costmap update_frequency: 3.0`, `publish_frequency: 1.5`
+  - `5.0 / 2.0` 只作为二轮实验值，不作为首轮 mandatory
+- 如果后续确实要让绿色 `/plan` 比 `1Hz` 更快，必须新增 **BT XML override**，而不是只改 costmap Hz
+
+### 3. STVL 不是“换插件名 + 加 voxel_decay”就能直接落地
+
+- Jetson 当前 **未安装** `ros-humble-spatio-temporal-voxel-layer`
+- 但 apt 源中已有可安装候选包，因此这不是架构 blocker，而是部署前置条件
+- STVL 的配置结构也与当前 `VoxelLayer` 不同，不能直接复用现有参数块
+
+**部署修正**:
+- 在 Step 21 前，先补明确前置步骤：
+  - `sudo apt install ros-humble-spatio-temporal-voxel-layer`
+- 在 YAML 中使用完整的 STVL 参数块，而不是只替换 plugin 字符串
+- STVL 配置必须至少补齐：
+  - layer-level: `voxel_size`, `obstacle_range`, `observation_sources`, `transform_tolerance`
+  - marking source
+  - clearing source
+  - `model_type: 1`（3D lidar）
+  - `horizontal_fov_angle`
+  - `vertical_fov_angle`
+  - `vertical_fov_offset`
+  - `clear_after_reading`
+- 对 Livox MID360，需显式写 `vertical_fov_offset`；官方 README 示例已点名 MID360 需要该参数
+
+### 4. 锁定后的可执行版本
+
+#### Phase 1（首轮 mandatory）
+
+1. `pgo_switch_min_stable_updates: 3`
+2. `local_costmap update_frequency: 12.0`
+3. `global_costmap update_frequency: 3.0`
+4. `global_costmap publish_frequency: 1.5`
+5. `controller_frequency: 20.0`
+
+#### Phase 1.3（条件 mandatory）
+
+- 若安装 STVL 包成功，则切换到完整 STVL 配置
+- 若 Jetson 安装或 smoke test 失败，则本轮先保留现有 `VoxelLayer`，不在同一轮里硬切插件
+
+#### Phase 2（可选）
+
+- FAST-LIO2 `det_range: 55.0`
+- PGO `loop_search_radius: 1.5`
+- 若首轮已稳定，再评估 `global_costmap 5.0 / 2.0` 与 BT XML override
+
+### 5. 部署性结论
+
+- **按 CC 原文直接执行：不可直接部署**
+- **按上述 Codex 微调后：可部署**
+- Step 19 可通过，等待用户进入 Step 20 锁定
+
+---
 
 ## 2026-03-22 Afternoon Runtime Loop Status
 
@@ -647,3 +1249,23 @@ source install/setup.bash
 | v7 scene graph + route_server | 对需求过重 |
 | v6 整条 route 动态重算 | frame 混用风险 |
 | 旧 gnss_global_path_planner A* | 依赖旧路网 |
+
+---
+
+## 当前运行期微调焦点（2026-03-22 最新）
+
+独立 `global_aligner` 架构已经证明方向正确：
+- waypoint 1 已可稳定到达
+- 运行失败点已后移到 waypoint 2
+
+当前不再优先怀疑 route GPS 采图，而是聚焦两项运行期微调：
+
+1. **Waypoint 边界 alignment 漂移控制**
+   - runner 已在 waypoint 内冻结 alignment
+   - 但切到 waypoint 2 时，冻结到的 alignment 已把当前车位错误投影到第二段约 `16.5m` 处
+   - 需要进一步限制 aligner 在 waypoint 边界可接受的跳变幅度
+
+2. **Nav2 平顺性优化（不改系统运行逻辑）**
+   - 目标不是换架构，而是减少 stop-go
+   - 已知主因是 `collision ahead` 高频误触发与 `transformPoseInTargetFrame` future extrapolation
+   - 下一轮优先通过 Nav2 / TF 容差 / 局部代价地图灵敏度微调来提升平顺性

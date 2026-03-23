@@ -6,16 +6,59 @@
 
 ## 当前状态
 
-**Corridor v2 已完成多轮部署与实车测试。架构调研已完成首轮收敛，当前断点为“独立 global aligner 方案已形成，等待锁定后进入新一轮 Step 21 实施”。**
+**Corridor v2 运行期微调方案已拟定，等待 Codex 执行部署。**
 
 | 项目 | 状态 |
 |------|------|
-| Corridor v1 | 室外验证通过，作为 baseline 保留 |
-| Corridor v2 首轮部署 | **已完成** |
-| 微调优化计划 | **已完成（Step 8-16）** |
-| 优化方案 | **方案 B（经 Codex 微调后可部署）** |
-| 当前工作流位置 | **Step 19 通过，等待 Step 20 锁定新方案** |
+| Corridor v2 独立 aligner 架构 | **已部署** |
+| Waypoint 1 到达 | **已验证** |
+| 运行期微调方案 | **已拟定，等待部署** |
 | 当前分支 | `gps` |
+
+---
+
+## 最近完成 (2026-03-23)
+
+### 运行期微调方案调研（Step 8-16）
+
+- [x] 重新读取 L2 文件，确认当前真实问题
+- [x] 派 3 个子代理并行调研：
+  - Collision ahead 误触发解决方案
+  - Waypoint 边界 alignment 漂移解决方案
+  - TF extrapolation 和 costmap 优化方案
+- [x] 自审调研结论，验证数据来源
+- [x] 整合完整部署方案
+- [x] 输出到 task_plan.md
+
+### 调研结论
+
+**问题 1：Collision ahead 误触发（236 次）**
+- 根因：`max_allowed_time_to_collision: 0.6s` 过短，STVL 衰减慢
+- 方案：延长到 1.2s，加速衰减到 0.8s
+
+**问题 2：Waypoint 边界 alignment 漂移（16.51m）**
+- 根因：Global aligner 持续修正，waypoint 边界切换时坐标反投影偏移
+- 方案：提高保护阈值到 10.0m，修改保护逻辑
+
+**问题 3：TF extrapolation（51 次）+ Controller 掉频**
+- 根因：`transform_tolerance: 0.35s` 偏严，20Hz 超算力边界
+- 方案：放宽到 0.5s，降频到 15Hz
+
+### 部署方案摘要
+
+**Phase 1：Nav2 参数调优**
+1. `max_allowed_time_to_collision: 1.2`
+2. `voxel_decay: 0.8`
+3. `transform_tolerance: 0.5` (controller/costmap)
+4. `transform_tolerance: 0.8` (planner)
+5. `controller_frequency: 15.0`
+
+**Phase 2：Runner waypoint 边界保护**
+1. `waypoint_start_progress_guard_m: 10.0`
+2. `waypoint_start_cross_track_guard_m: 5.0`
+3. 修改保护逻辑：优先使用更接近 0 的 alignment
+
+**构建**: `colcon build --packages-select gps_waypoint_dispatcher bringup`
 
 ---
 
