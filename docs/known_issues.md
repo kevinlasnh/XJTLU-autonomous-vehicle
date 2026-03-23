@@ -52,11 +52,11 @@
 9. **[重要] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
    - 状态: 通过最大障碍物高度 `1.5m` 有部分缓解
-   - 2026-03-22 新发现:
-     - Global costmap 保留启动前人站在车前等陈旧障碍，导致 `/plan` 绿色路径先被带弯
-     - Local costmap 近场碰撞判定放大问题，产生 `collision ahead` stop-go 和 recovery
-     - 两层都需要修: 优先收 global 陈旧障碍，再清 local collision ahead 误报
-     - Global costmap 已收紧范围 (`obstacle_max_range` 10→4, `raytrace_max_range` 12→5) 但 clearing 语义仍需进一步调整
+   - 2026-03-22 corridor v2 实车发现:
+     - Global costmap 保留启动前陈旧障碍，导致 `/plan` 绿色路径先被带弯
+     - Local costmap 近场碰撞判定产生 `collision ahead` stop-go 和 recovery
+     - 独立 global aligner 架构部署后，waypoint 1 已可稳定到达
+     - 当前问题后移到 waypoint 边界 alignment 漂移 + Nav2 平顺性微调
 
 ## 中等问题
 

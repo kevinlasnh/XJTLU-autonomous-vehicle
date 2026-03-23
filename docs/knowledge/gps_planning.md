@@ -11,9 +11,11 @@
 
 2. **Fixed-launch GPS corridor**（`gps` 分支，当前主开发线）
    - 使用 `collect_gps_route.py` 采集多点路线
-   - `gps_route_runner_node` 执行 bootstrap + PGO 对齐切换
-   - **已完成 corridor v2 首轮部署和多轮实车测试**
-   - 当前问题已收敛到 PGO handoff 门槛 + costmap 微调
+   - **独立 global aligner 架构**（commit `e51a46a`~`2bb6fbf`）
+   - `gps_global_aligner_node` 平滑发布 `ENU->map` 变换
+   - `gps_route_runner_node` 消费稳定 alignment，冻结 waypoint 内进度
+   - **waypoint 1 已稳定到达**（session `2026-03-22-21-05-17`）
+   - 当前问题：waypoint 边界 alignment 漂移 + Nav2 平顺性微调
 
 ## 2. Source Of Truth 与运行时产物
 
