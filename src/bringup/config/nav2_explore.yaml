@@ -305,7 +305,7 @@ controller_server:
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
       use_collision_detection: true
-      max_allowed_time_to_collision_up_to_carrot: 1.2
+      max_allowed_time_to_collision_up_to_carrot: 0.6
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 1.2
@@ -358,7 +358,7 @@ local_costmap:
       denoise_layer:
         plugin: "nav2_costmap_2d::DenoiseLayer"
         enabled: true
-        minimal_group_size: 3
+        minimal_group_size: 4
         group_connectivity_type: 8
       # 膨胀层参数块；负责给障碍物外围增加安全缓冲。
       # 改错结构或参数：障碍安全边界会偏大或偏小。
@@ -489,7 +489,7 @@ global_costmap:
         combination_method: 1
         origin_z: -0.45
         publish_voxel_map: false
-        transform_tolerance: 0.35
+        transform_tolerance: 0.5
         mapping_mode: false
         map_save_duration: 60.0
         observation_sources: pointcloud_mark pointcloud_clear

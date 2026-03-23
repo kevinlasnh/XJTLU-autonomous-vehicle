@@ -81,7 +81,7 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
-        self.declare_parameter("waypoint_start_progress_guard_m", 10.0)
+        self.declare_parameter("waypoint_start_progress_guard_m", 5.0)
         self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)
 
         # Legacy parameters kept declared for backward compatibility with existing YAML.
