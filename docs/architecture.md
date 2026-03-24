@@ -212,40 +212,46 @@ src/
 - `ros-humble-geographic-msgs`
 
 
-## 5.3 Fixed-Launch GPS Corridor 模式
+## 5.3 GPS Corridor v2 模式（独立 Global Aligner 架构）
 
 ```text
-two_point_corridor.yaml
-  -> start_ref / goal_ref / body_vector_m / thresholds
+current_route.yaml
+  -> start_ref / waypoints[] / launch_yaw_deg / enu_origin
 
-/fix ----------------------------------------------+
-                                                    |
-map -> base_link (FAST-LIO2 + PGO) ----------------+-> gps_corridor_runner
-                                                    |    1. 等稳定 /fix
-                                                    |    2. 检查当前启动点是否靠近 start_ref
-                                                    |    3. 读取当前 map 启动位姿
-                                                    |    4. 用 body_vector_m 生成 goal_map
-                                                    |    5. 沿直线切出多个 subgoals
-                                                    |    6. 串行调用 NavigateToPose
-                                                    v
-                                             Nav2 Explore stack
-                                             -> planner/controller/costmaps
-                                             -> /cmd_vel
+/fix -----> gps_global_aligner -----> /gps_corridor/enu_to_map (平滑 ENU→map 变换)
+                 |                              |
+                 | TF: map->base_link           |
+                 +------------------------------+---> gps_route_runner
+                                                      1. bootstrap: yaw0 + launch_yaw_deg → 初始 ENU→map
+                                                      2. 等稳定 /fix
+                                                      3. 检查启动点 ≤ start_ref 容差
+                                                      4. GPS waypoints → ENU → map (用 aligner 输出)
+                                                      5. waypoint 内冻结 alignment，按段切 subgoals
+                                                      6. 串行 NavigateToPose
+                                                      v
+                                               Nav2 Explore stack (RPP controller)
+                                               -> planner/controller/costmaps
+                                               -> /cmd_vel
 ```
 
 该模式与 `nav-gps` 的区别：
-- 不使用 scene graph
-- 不使用 `route_server`
+- 不使用 scene graph / `route_server`
 - 不使用 `gps_waypoint_dispatcher` 的 `goto_name` / menu 交互
 - 不使用 runtime `current_scene/` 编译产物
+- 使用独立 `gps_global_aligner_node` 替代 PGO live handoff
 
 该模式的定位假设：
-- 车辆从固定物理 Launch Pose 启动
-- 车辆启动朝向物理固定
-- corridor 第一版仅覆盖“从固定启动位到固定终点”的单条直线走廊
+- 车辆从固定物理 Launch Pose 启动，朝向物理固定
+- `launch_yaw_deg` 记录车辆启动时的地理朝向（ENU 约定）
+- 支持多点 waypoint 路线（不限于两点直线）
+
+该模式的关键架构决策：
+- **独立 global aligner**: 与 PGO 解耦，平滑发布 `ENU→map` 变换
+- **Waypoint 内冻结 alignment**: 不在 subgoal 执行中途重算已执行进度
+- **Bootstrap 启动**: 用 `yaw0 - radians(launch_yaw_deg)` 立即计算初始对齐，不等 GPS
 
 该模式的数据面：
-- `~/fyp_runtime_data/gnss/two_point_corridor.yaml`
-- `start_ref` / `goal_ref` 用于记录现场参考 GPS
-- `body_vector_m` 才是运行时直接投到 `map` 的几何源数据
+- `~/fyp_runtime_data/gnss/current_route.yaml`（`collect_gps_route.py` 生成）
+- `start_ref` + 多个 `waypoints[]` 的 GPS 坐标
+- `launch_yaw_deg` 为必填字段
 

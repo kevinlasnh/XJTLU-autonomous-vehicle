@@ -168,9 +168,7 @@ map -> odom -> base_link
 - GPS factor 加入路径
 - `map -> odom` 广播前的 offset 更新链
 
-## 10. Corridor v2 ENU→map 对齐机制（2026-03-22）
-
-Corridor v2 在 `gps` 分支引入了 PGO 发布 ENU→map 变换的能力，用于 GPS 路点坐标转换。
+## 10. Corridor v2 ENU→map 对齐机制演变（2026-03-22~24）
 
 ### 10.1 设计背景
 
@@ -179,20 +177,25 @@ Corridor v2 在 `gps` 分支引入了 PGO 发布 ENU→map 变换的能力，用
 - 但 FAST-LIO2 的 `map` 坐标系 yaw 是随机的（取决于启动时 IMU 姿态）
 - 因此需要估计 ENU→map 的旋转角 θ 和平移 t
 
-### 10.2 实现方式（计划中，尚未部署到 `gps` 分支）
+### 10.2 架构演变
 
-PGO 将在运行中累积 (enu_xy, map_xy) 配对，用 2D 最小二乘估计旋转：
-- 每次 GPS factor 加入时记录一对 (enu_xy, map_xy)
-- 满足最小配对数（5）和空间展幅（5m）后开始估计
-- 用 cross-covariance 方法计算 θ
-- 发布到 `/gps_corridor/enu_to_map`（payload: `[theta, tx, ty, is_valid]`）
+**v2 初版（PGO 侧 ENU→map 估计）**:
+- 最初计划让 PGO 在运行中累积 (enu_xy, map_xy) 配对，发布到 `/gps_corridor/enu_to_map`
+- 实车发现：PGO 接管后 `ENU→map` 仍继续漂移，runner 重算 subgoal 导致回头/recovery
+- **该方案已淘汰**
 
-### 10.3 当前 `gps` 分支状态
+**v2 最终版（独立 Global Aligner）**:
+- 新增独立 `gps_global_aligner_node.py`（commit `e51a46a`），与 PGO 解耦
+- Aligner 自行采集 GPS→ENU 与 map→base_link 配对，在线估计平滑 ENU→map 变换
+- 输出到 `/gps_corridor/enu_to_map`（同一 topic，但来源从 PGO 切换为独立 aligner）
+- 对估算结果做限速与平滑，防止跳变
+- Corridor 模式下 PGO 的 `gps.enable` 被关闭，PGO 仅做 loop closure
 
-- **PGO 侧**: 计划中的 ENU→map 估计代码尚未合并到 `gps` 分支
-- **Runner 侧**: `gps_route_runner_node` 已实现 bootstrap + PGO alignment 切换逻辑
-- **实车表现**: PGO 在运行中已能发布有效 `enu_to_map`（说明某种形式的对齐已在工作）
-- **当前问题**: Runner 持续停在 bootstrap 模式，未切换到 PGO — 原因是 handoff gate 对 ~1Hz PGO 频率偏严
+### 10.3 当前 PGO 在 Corridor 模式中的角色
+
+- **保留**: 图优化 / 回环检测 / 发布 `map → odom` / `optimized_odom`
+- **关闭**: GPS factor（`gps.enable: false`），不再直接参与 corridor 对齐
+- **独立 aligner 接管**: GPS 全局纠��通过 `gps_global_aligner_node` 完成
 
 ### 10.4 Bootstrap 机制
 
@@ -200,6 +203,6 @@ Runner 在启动时用固定 yaw bootstrap 立即开始导航：
 - 从 TF 读取 `map->base_link` 的 yaw0
 - 用 route YAML 的 `launch_yaw_deg` 计算 `θ_bootstrap = yaw0 - radians(launch_yaw_deg)`
 - 构造初始 ENU→map 变换
-- 不等 PGO valid，立即发出第一个目标
+- 不等 aligner 收敛，立即发出第一个目标
 
 这解决了 v2 计划初期的"静止启动死锁"问题。

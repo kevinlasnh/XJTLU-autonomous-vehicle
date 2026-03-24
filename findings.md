@@ -1,6 +1,62 @@
 # FYP Autonomous Vehicle - Findings
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-24
+
+---
+
+## 2026-03-24 Codex 恢复部署后的现场发现
+
+### 1. 修正 v2 已真正部署到 Jetson，原 Step 23 阻塞已解除
+
+- Jetson 当前可通过 `ssh jetson@100.97.227.24` 访问
+- 远端 `gps` 分支原先停在 `1898655`
+- 本轮已成功执行 `git pull --ff-only origin gps`，快进到 `a7dc2fd`
+- `a7dc2fd` 的变更集只涉及：
+  - `src/bringup/config/nav2_explore.yaml`
+  - `src/bringup/config/master_params.yaml`
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+  - L2 文件
+- Jetson 现存脏文件仅为 `src/perception/pgo_gps_fusion/rviz/pgo.rviz`，与本轮修正无关，没有阻塞 pull
+
+结论：
+- 之前的“Jetson 不可达，部署卡在 Step 23”已不再成立
+- 修正 v2 代码已经真实落到车端工作区
+
+### 2. 修正 v2 的车端 build 已通过，当前没有新的构建级回归
+
+- Jetson 已执行：
+  - `colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+- `ros2 pkg prefix bringup` 与 `ros2 pkg prefix gps_waypoint_dispatcher` 都正常返回 `~/fyp_autonomous_vehicle/install/...`
+
+结论：
+- 本轮参数回退与 guard 收紧没有引入新的 build/package 级断裂
+
+### 3. 2026-03-24 零运动 corridor smoke test 证明启动链正常，阻塞点仍是 GPS `NO_FIX`
+
+- 为避免在用户不在场时触发真实行驶，本轮使用临时 `deploy_smoke_route.yaml`
+  - 唯一 waypoint 直接设为 `start_ref`
+  - 用于验证 corridor 全链路启动，不发实际导航目标
+- smoke test session：`/home/jetson/fyp_runtime_data/logs/2026-03-24-12-34-31/`
+- 启动日志确认：
+  - `lifecycle_manager_navigation`: `Managed nodes are active`
+  - `controller_server`: `Controller frequency set to 15.0000Hz`
+  - `gps_global_aligner`: `ALIGNER_WAITING_FOR_STABLE_FIX`
+  - `gps_route_runner`: `WAITING_FOR_STABLE_FIX`
+
+- 同一 session 中，`nmea_navsat_driver` 仍持续输出：
+  - `GNGGA ... 0,00,...`
+  - `GNRMC,,V,...`
+  - `GPGSV,1,1,00`
+  - `BDGSV,1,1,00`
+  - `GPTXT ... ANTENNA OK`
+
+结论：
+- 本轮没有看到 launch / lifecycle / plugin / build 级回归
+- 当前阻塞再次确认仍是：
+  - 天线在线
+  - 但 GPS 无 fix、可见卫星数 0
+- 因此真实 corridor 启动与后续 Step 26 实车测试，仍需等现场具备 stable GPS fix
 
 ---
 
@@ -69,6 +125,88 @@
 | Controller 18Hz | 高 | 可行 |
 | Global Costmap 20Hz | 低 | 最高 5Hz |
 | Local Costmap 12Hz | 中 | 可尝试，有风险 |
+
+---
+
+## 2026-03-23 Codex 对修正方案 v2 的收敛修正
+
+### 1. 高度门限改动被从锁定批次中移除
+
+- 原始修正 v2 试图把 local/global `min_obstacle_height` 统一抬到 `0.15`，并把 `pointcloud_clear.min_z` 抬到 `0.10`
+- 但仓库内现有高度参考写明：
+  - `base_link` 离地约 `0.403m`
+  - `body_cloud` 中地面 `z ≈ -0.40m`
+  - `10cm` 马路牙 `z ≈ -0.30m`
+  - `50cm` 矮墙 `z ≈ +0.10m`
+- 因此若把 `min_obstacle_height` 直接抬到 `0.15`，会有过滤约 `50cm` 低矮真实障碍的风险
+- 另外，STVL 官方 README 中 `min_z` 是 clearing source 的 z 过滤参数；当前项目没有足够证据证明把它从 `0.05` 抬到 `0.10/0.15` 会更安全
+
+结论：
+- 这组高度门限改动不进入当前锁定部署批次
+- 当前锁定版保持 local/global `min_obstacle_height=0.05`、`pointcloud_clear.min_z=0.05`
+
+### 2. `max_allowed_time_to_collision_up_to_carrot` 锁定为回退到 `0.6`，而不是改到 `0.8`
+
+- `1.2` 已确认方向错误：检测更远碰撞，导致更多停车
+- 但 `0.8` 仍比最近一次实际跑通路线时的 `0.6` 更敏感
+- 在高度门限改动被移出本轮后，当前没有足够现场证据支持把 collision time 从 `0.6` 上调到 `0.8`
+
+结论：
+- 当前锁定版把 `max_allowed_time_to_collision_up_to_carrot` 从 `1.2` 回退到 `0.6`
+- 这不是“最激进优化”，但它是当前证据下更稳妥的部署口径
+
+### 3. 当前可直接部署的修正 v2 子集
+
+- `max_allowed_time_to_collision_up_to_carrot: 1.2 -> 0.6`
+- local `denoise_layer.minimal_group_size: 3 -> 4`
+- `/gps_route_runner.waypoint_start_progress_guard_m: 10.0 -> 5.0`
+- global STVL `transform_tolerance: 0.35 -> 0.5`
+
+审查结论：
+- **原始修正 v2 文本：不可直接部署**
+- **经 Codex 收敛后的锁定版：可部署**
+- 当前 Step 19 已闭环，可以进入 Step 20 等用户锁定
+
+---
+
+## 2026-03-23 Codex 对修正方案 v2 的部署性审查发现
+
+### 1. `task_plan.md` 当前同时保留了修正 v2 和旧 v1 指令，存在直接执行歧义
+
+- 顶部修正 v2 要求：
+  - `max_allowed_time_to_collision_up_to_carrot: 0.8`
+  - `waypoint_start_progress_guard_m: 5.0`
+- 但同一文件后半仍保留旧 v1：
+  - `max_allowed_time_to_collision_up_to_carrot: 1.2`
+  - `waypoint_start_progress_guard_m: 10.0`
+
+结论：
+- 不先收敛文本，部署执行口径不唯一
+
+### 2. `min_obstacle_height: 0.15` 与仓库现有高度参考冲突，存在过滤真实低矮障碍的风险
+
+- `task_plan.md` 当前已记录的坐标参考写明：
+  - `base_link` 离地约 `0.403m`
+  - `body_cloud` 中地面 `z ≈ -0.40m`
+  - `10cm` 马路牙 `z ≈ -0.30m`
+  - `50cm` 矮墙 `z ≈ +0.10m`
+- 因此若把 `pointcloud_mark.min_obstacle_height` 提到 `0.15`，按现有参考会把约 `50cm` 低墙也从 Local + Global STVL 中过滤掉
+- 这不是代码注入问题，而是参数目标与已知实测参考不一致
+
+### 3. 其余 v2 修改项本身没有发现新的部署链断点
+
+- `nav2_explore.yaml` 中目标字段都真实存在：
+  - local/global `min_obstacle_height`
+  - local/global `min_z`
+  - `max_allowed_time_to_collision_up_to_carrot`
+  - `denoise_layer.minimal_group_size`
+  - global STVL `transform_tolerance`
+- `master_params.yaml` 和 `gps_route_runner_node.py` 也都能承接 `5.0` 的 waypoint guard 调整
+
+审查结论：
+- **修正方案 v2 原文：不可直接部署**
+- 原因不是拉不起来，而是计划口径冲突 + 低矮障碍过滤风险未闭合
+- 需要 CC 先输出收敛后的单一版本方案，再进入 Step 20 锁定
 
 ---
 

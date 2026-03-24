@@ -48,7 +48,8 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - `RPP.min_lookahead_dist: 0.45`
 - `RPP.max_lookahead_dist: 1.5`
 - `RPP.lookahead_time: 1.5`
-- `RPP.max_allowed_time_to_collision_up_to_carrot: 1.0`
+- `RPP.max_allowed_time_to_collision_up_to_carrot: 0.6`
+  - 注: v1 部署时曾从 0.6 误调到 1.2（方向错误：增大=检测更远=更多停车），修正 v2 已回退到 0.6
 - `RPP.regulated_linear_scaling_min_radius: 0.9`
 - `RPP.regulated_linear_scaling_min_speed: 0.25`
 - `RPP.use_rotate_to_heading: false`
@@ -81,7 +82,7 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - `raytrace_min_range: 0.5`
 - 使用 rolling window, width/height: 50
 
-### 实车发现（2026-03-22）
+### 实车发现（2026-03-22~24）
 
 - `cost_scaling_factor: 2.5`, `inflation_radius: 0.4`
 - `max obstacle height: 1.5m`
@@ -89,6 +90,7 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - Local costmap collision ahead 判定在 controller 掉频时更容易误触发
 - Controller 已 miss 20Hz，Planner 降至 ~2Hz — 继续提高刷新率会加剧掉频
 - 下一步应优先修 obstacle layer 清障策略而非继续调频率
+- **2026-03-23 修正 v2**: local `denoise_layer.minimal_group_size` 从 3 提到 4（抑制孤立噪声点），global STVL `transform_tolerance` 从 0.35 对齐到 0.5
 
 ## 6. GPS 专用配置（`nav2_gps.yaml`）
 
@@ -117,7 +119,7 @@ GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `
 3. `nav2_default.yaml`、`nav2_explore.yaml`、`nav2_travel.yaml` 已在 2026-03-18 做过注释和格式重写，但没有改参数值。
 4. `nav2_gps.yaml` 目前在 `feature/gps-navigation-v4` 上完成软件部署，室外调优还没有结束。
 5. Corridor 模式（`gps` 分支）复用 `nav2_explore.yaml`，其中 controller 段已从 DWB 改为 Rotation Shim + RPP，costmap 参数也已按 corridor 需求调整。
-6. 当前 Jetson 上 controller 目标 20Hz 实际达不到，planner 降至 ~2Hz。不应继续一味拉高频率。
+6. 当前 Jetson 上 controller 目标从 20Hz 降为 15Hz（修正 v2），planner 降至 ~2Hz。不应继续一味拉高频率。
 
 ## 8. 航点系统
 

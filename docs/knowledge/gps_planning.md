@@ -307,13 +307,14 @@ source install/setup.bash
 这说明当前 corridor 链的关键控制流已经打通，剩余验证转为现场真实 `/fix` 与实车走廊测试。
 
 
-## 12. Corridor v2 架构与实车验证（2026-03-22）
+## 12. Corridor v2 独立 Global Aligner 架构（2026-03-22~24）
 
 ### 12.1 设计目标
 
 Corridor v2 解决 v1 的核心问题：
 - v1 用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m
-- v2 引入 PGO ENU→map 对齐，用 GPS 坐标直接转 map 坐标
+- v2 初版尝试 PGO ENU→map 对齐，但实车发现 PGO live handoff 在运行中继续漂移，导致 subgoal 重算和 recovery
+- **v2 最终版引入独立 `gps_global_aligner_node`，与 PGO 解耦，平滑发布 `ENU→map` 变换**
 
 ### 12.2 核心机制
 
@@ -321,42 +322,52 @@ Corridor v2 解决 v1 的核心问题：
 - 车辆上电后从 TF 读取 `map->base_link` 的 yaw0
 - 用 route YAML 的 `launch_yaw_deg`（车的地理朝向）计算初始 ENU→map 旋转
 - 公式: `θ_bootstrap = yaw0 - radians(launch_yaw_deg)`
-- 立即开始导航，不等 PGO valid
+- 立即开始导航，不等 GPS stable fix 之外的任何额外条件
 
-**PGO 对齐切换**:
-- PGO 在后台持续发布 `/gps_corridor/enu_to_map`（包含 θ, tx, ty, is_valid）
-- Runner 监听该 topic，当满足以下条件时切换到 PGO 对齐:
-  - 累计行驶距离 >= `bootstrap_switch_distance_m`（当前 6m）
-  - 时间窗口内收到足够稳定的 PGO 更新
-  - Bootstrap 与 PGO 角度差 <= `pgo_switch_max_bootstrap_delta_deg`（当前 5°）
-- 切换后重算后续未访问路点的 map 坐标
+**独立 Global Aligner**:
+- `gps_global_aligner_node` 持续采集 GPS→ENU 与 map→base_link 配对
+- 在线估计平滑 `ENU→map` 刚体变换（旋转+平移）
+- 输出到 `/gps_corridor/enu_to_map`
+- 对估算结果做**限速与平滑**，防止跳变
+- 不依赖 PGO 的 live 图优化结果
 
-**子目标追踪重构**:
-- v2 不再批量发送所有 subgoal
-- 每完成一个 subgoal 后，用最新对齐重新计算下一个
-- 使 PGO alignment 切换能即时反映到后续目标
+**Waypoint 内冻结 alignment**:
+- Runner 在进入一个 waypoint 后，冻结当前 alignment
+- 不在 subgoal 执行中途因 alignment 更新而重算已执行进度
+- 仅在 waypoint 边界才吸收新 alignment
 
-### 12.3 实车验证结论
+### 12.3 运行期微调（2026-03-23~24）
+
+v2 部署后经 CC 复审发现参数问题，经两轮修正收敛：
+
+| 参数 | v1 部署值 | 修正 v2 锁定值 | 理由 |
+|------|-----------|----------------|------|
+| `max_allowed_time_to_collision` | 1.2 | **0.6** | v1 方向错误：增大=更多停车 |
+| local `denoise_layer.minimal_group_size` | 3 | **4** | 抑制孤立噪声点 |
+| `waypoint_start_progress_guard_m` | 10.0 | **5.0** | GPS 2-sigma ~5m |
+| global STVL `transform_tolerance` | 0.35 | **0.5** | 与 local 一致 |
+
+commit `a7dc2fd`: `Revert unsafe corridor tuning and tighten waypoint guard`
+
+### 12.4 实车验证结论
 
 **已验证成立**:
-- Corridor v2 已从”无法起跑”推进到”可稳定启动并进入 RUNNING_ROUTE”
-- 最新 session `2026-03-22-15-16-00` 中，route runner 连续推进到第一个 waypoint 的倒数第二个 subgoal（6 个中第 5 个）
-- 启动级 blocker 全部解决（固定 yaw bootstrap 使系统能在静止状态下立即起跑）
-- GPS fix 在多轮室外测试中稳定工作
+- 独立 global aligner 架构从”无法起跑”推进到 waypoint 1 完成（session `2026-03-22-21-05-17`）
+- 修正 v2 已部署到 Jetson（2026-03-24 smoke test 确认启动链正常）
+- 当前阻塞是现场 GPS 无 fix，不是部署链
 
 **当前收敛问题**:
-1. **PGO 接管门槛未闭合**: PGO 已发布有效 ENU→map，但 runner 持续保持 bootstrap。Hold reason 反复是 `have 3/4 recent PGO updates`。当前 `4 updates / 3s` 对现场 ~1Hz PGO 频率仍偏严。
-2. **Costmap 陈旧障碍**: Global costmap 残留启动前障碍带偏 `/plan`，local costmap collision ahead 产生 stop-go。
-3. **Controller/Planner 掉频**: Controller miss 20Hz，Planner 降至 ~2Hz，不应继续拉高刷新率。
+1. **Waypoint 边界 alignment 漂移**: 切到 waypoint 2 时投影跳到 16.5m，需进一步限幅
+2. **Nav2 stop-go**: collision ahead 误触发 + TF extrapolation，需 costmap/controller 微调
 
-**问题性质**: 不是架构 blocker，属于 Step 21 小问题迭代（PGO 接管门槛 + costmap 清障策略 + collision ahead 误报）。
-
-### 12.4 与 v1 对比
+### 12.5 与 v1 对比
 
 | | Corridor v1 | Corridor v2 |
 |--|-------------|-------------|
-| 路点坐标系 | body_vector（车体前方） | GPS→ENU→map（PGO 对齐） |
+| 路点坐标系 | body_vector（车体前方） | GPS→ENU→map（独立 aligner） |
 | 启动对齐 | 无 | 固定 yaw bootstrap |
-| 运行对齐 | 无 | PGO ENU→map 切换 |
-| 终点精度 | ~4m（受 yaw0 影响） | 理论更高（取决于 PGO 对齐质量） |
+| 运行对齐 | 无 | 独立 global aligner（平滑） |
+| 对齐更新方式 | N/A | waypoint 内冻结，边界吸收 |
+| 终点精度 | ~4m（受 yaw0 影响） | 理论更高（取决于 aligner 质量） |
+| PGO 角色 | 提供 map→odom | 仅 loop closure，不参与 corridor 对齐 |
 | 实车状态 | baseline 保留 | 已部署，问题收敛到微调 |

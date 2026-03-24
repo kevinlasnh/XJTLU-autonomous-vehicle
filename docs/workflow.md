@@ -34,16 +34,12 @@ source install/setup.bash
 ### 2.2 创建分支
 
 ```bash
-git checkout -b feature/your-topic
+git checkout -b gps
 ```
 
-允许的前缀：
+分支命名直接用描述名，不加前缀：
 
-- `feature/`
-- `fix/`
-- `tune/`
-- `docs/`
-- `experiment/`
+- 示例: `gps`、`nav-tuning`、`lidar-fix`、`docs-sync`
 
 ### 2.3 研究与实施
 
@@ -163,24 +159,27 @@ git fetch --prune
 6. 如果有新的系统事实、问题或阻塞，已写入开发日志和问题追踪。
 
 
-## 2.7 Fixed-Launch Corridor 工作流
+## 2.7 Fixed-Launch GPS Corridor 工作流
 
-当任务目标收缩成“固定启动位 -> 固定终点”的最小 GPS corridor 验证时，优先使用：
+当任务目标收缩成”固定启动位 → GPS 路线终点”的 corridor 验证时，优先使用：
 
-1. 采集 corridor 数据：
-   - `python3 scripts/collect_two_point_corridor.py`
+1. 采集 corridor 多点路线：
+   - `python3 scripts/collect_gps_route.py`
 2. 将车停回固定 Launch Pose，朝向摆正
 3. 直接启动：
-   - `ros2 launch bringup system_gps_corridor.launch.py`
+   - `make launch-corridor`
+   - 或 `bash scripts/launch_with_logs.sh corridor`
 4. 观察：
    - `/gps_corridor/status`
-5. 由 `gps_corridor_runner_node` 自动：
+5. 由 `gps_global_aligner_node` + `gps_route_runner_node` 自动：
+   - 独立 aligner 估计平滑 `ENU→map` 变换
    - 检查当前 `/fix` 是否靠近 `start_ref`
-   - 读取当前 `map -> base_link`
-   - 生成直线 corridor subgoals
+   - Bootstrap 启动（`yaw0 + launch_yaw_deg`）
+   - GPS waypoints → ENU → map 转换
+   - Waypoint 内冻结 alignment，按段切 subgoals
    - 串行 `NavigateToPose`
 
-这条工作流不再需要：
+这���工作流不再需要：
 - `nav_gps_menu.py`
 - `goto_name`
 - `route_server`

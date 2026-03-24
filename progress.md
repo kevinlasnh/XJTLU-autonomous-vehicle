@@ -1,20 +1,89 @@
 # FYP Autonomous Vehicle - Progress Log
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-24
 
 ---
 
 ## 当前状态
 
-**Corridor v2 运行期微调 v1 已部署；CC 复审发现关键参数方向错误，修正 v2 方案已拟定，等待 Codex 部署性审查。**
+**修正 v2 已部署到 Jetson；docs 全量同步完成（9 个文件）；当前等待现场 GPS fix 后继续实车测试。**
 
 | 项目 | 状态 |
 |------|------|
 | Corridor v2 独立 aligner 架构 | **已部署** |
 | Waypoint 1 到达 | **已验证** |
 | 运行期微调 v1 | **已部署，发现问题** |
-| 运行期微调 v2（修正） | **方案已拟定，等待 Codex 部署性审查** |
+| 运行期微调 v2（修正） | **已部署到 Jetson；启动级 smoke test 再次被 GPS NO_FIX 阻塞** |
 | 当前分支 | `gps` |
+
+---
+
+## 最近完成 (2026-03-24)
+
+### CC 文档阶段（Step 33-38）
+
+- [x] 读 L2 文件（progress.md + task_plan.md + findings.md）
+- [x] git diff 看 docs 增量
+- [x] 读 docs/index.md 了解当前文档结构
+- [x] 判断文档类型：无需新增，按触发矩阵更新 9 个现有文件
+- [x] 更新所有相关文档：
+  - `devlog/2026-03.md`: +46 行，03-23 运行期微调全过程 + 03-24 Jetson 恢复部署
+  - `architecture.md`: Section 5.3 重写为独立 global aligner 数据流图
+  - `gps_planning.md`: Section 12 重写，PGO handoff → 独立 aligner + 修正 v2 参数表
+  - `pgo.md`: Section 10 重写，标记 PGO 侧对齐已淘汰，记录架构演变
+  - `nav2_tuning.md`: collision time 1.0→0.6 + 修正 v2 上下文
+  - `known_issues.md`: #20 更新独立 aligner 状态，#21 标记已解决，#22 更新降频缓解
+  - `workflow.md`: Section 2.2 + 2.7 对齐分支命名 + v2 采集/启动命令
+  - `conventions.md`: 分支命名改为描述名
+  - `index.md`: 日期 → 2026-03-24，系统摘要补充独立 aligner
+- [x] 调用 planning-with-files 记录进度
+- [ ] git commit + push
+
+### Codex 恢复部署（修正 v2，继续 Step 23-25）
+
+- [x] 重新读取 L2 文件，确认上次真实断点在 `Step 23`
+- [x] 复核锁定执行口径：
+  - 本地最新提交为 `a7dc2fd` `Revert unsafe corridor tuning and tighten waypoint guard`
+  - 目标参数仍是：
+    - `max_allowed_time_to_collision_up_to_carrot: 0.6`
+    - local `denoise_layer.minimal_group_size: 4`
+    - `/gps_route_runner.waypoint_start_progress_guard_m: 5.0`
+    - global STVL `transform_tolerance: 0.5`
+- [x] Jetson 网络恢复：
+  - `Test-NetConnection 100.97.227.24 -Port 22` 成功
+  - `ssh jetson@100.97.227.24` 可登录
+- [x] Jetson 仓库状态确认：
+  - 分支 `gps`
+  - 旧 HEAD 为 `1898655`
+  - 工作树仅有无关脏文件：`src/perception/pgo_gps_fusion/rviz/pgo.rviz`
+- [x] Jetson `git pull --ff-only origin gps`
+  - 成功快进：`1898655 -> a7dc2fd`
+  - 目标提交不触碰 `pgo.rviz`，因此 pull 未与远端脏文件冲突
+- [x] Jetson `colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+- [x] Jetson `source install/setup.bash`
+  - `ros2 pkg prefix bringup` 正常
+  - `ros2 pkg prefix gps_waypoint_dispatcher` 正常
+- [x] 进行零运动 corridor smoke test：
+  - session: `/home/jetson/fyp_runtime_data/logs/2026-03-24-12-34-31/`
+  - 方式：临时生成 `deploy_smoke_route.yaml`，把唯一 waypoint 设为 `start_ref`，用于验证 corridor 全链路但不发实际导航目标
+- [x] 自定义 smoke harness 首轮失败已定位：
+  - `source /opt/ros/humble/setup.bash` 在 `set -u` 下报 `AMENT_TRACE_SETUP_FILES: unbound variable`
+  - 按仓库现有 `launch_with_logs.sh` 口径改为 `source` 前 `set +u`，随后重跑成功进入启动监控
+- [x] smoke test 启动链验证通过：
+  - `lifecycle_manager_navigation`: `Managed nodes are active`
+  - `controller_server`: `Controller frequency set to 15.0000Hz`
+  - `gps_global_aligner`: `ALIGNER_WAITING_FOR_STABLE_FIX`
+  - `gps_route_runner`: `WAITING_FOR_STABLE_FIX`
+- [x] 当前阻塞再次确认仍是 GPS `NO_FIX`：
+  - `GNGGA ... fix=0`
+  - `GNRMC ... V`
+  - `GPGSV/BDGSV ... 00`
+  - `GPTXT ... ANTENNA OK`
+- [x] 当前结论：
+  - Step 23 已完成
+  - Step 24 已完成
+  - Step 25 已完成零运动启动级 smoke test
+  - 真实 corridor 启动仍等待现场恢复 stable GPS fix；之后才能继续用户 Step 26 实车测试
 
 ---
 
@@ -141,6 +210,62 @@
   - `denoise_layer.minimal_group_size`: 3 → 4
   - `waypoint_start_progress_guard_m`: 10.0 → 5.0
   - Global STVL `transform_tolerance`: 0.35 → 0.5
+
+### Codex 部署性审查（修正 v2，Step 17-19）
+
+- [x] 重新读取 `task_plan.md`、`findings.md`、`progress.md`
+- [x] 核对 v1 已部署代码基线：
+  - `src/bringup/config/nav2_explore.yaml`
+  - `src/bringup/config/master_params.yaml`
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+- [x] 发现部署阻塞 1：`task_plan.md` 同时保留修正 v2 与旧 v1 指令，执行口径冲突
+- [x] 发现部署阻塞 2：`min_obstacle_height: 0.15` 与仓库现有 `body_cloud` 高度参考冲突，若直接用于 Local + Global 可能过滤约 `50cm` 低墙
+- [x] 复核其余 v2 改动的参数注入链：字段和覆盖路径都真实存在
+- [x] 结论：**修正 v2 当前不可直接部署，Step 19 未通过；等待 CC 收敛最终方案后再复审**
+
+### Codex 收敛修正（修正 v2，Step 19 闭环）
+
+- [x] 用户授权由 Codex 直接收敛方案，不再等待 CC 二次整理
+- [x] 重读：
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+  - `corridor_v2_runtime_issues_analysis.md`
+  - `docs/hardware_spec.md`
+- [x] 重新比对现有高度参考与 STVL 参数语义
+- [x] 收敛修正 1：将 `min_obstacle_height/min_z` 从锁定批次中移除
+  - 原因：`0.15` 与仓库现有 `body_cloud` 高度参考冲突，可能过滤约 `50cm` 低墙
+  - 原因：当前没有足够项目证据支撑把 `pointcloud_clear.min_z` 从 `0.05` 提到 `0.10/0.15`
+- [x] 收敛修正 2：将 `max_allowed_time_to_collision_up_to_carrot` 锁定为 `1.2 -> 0.6`
+  - 原因：`1.2` 方向错误
+  - 原因：`0.8` 仍比最近一次实际 route 基线 `0.6` 更敏感；在高度门限不动的前提下不宜上调
+- [x] 保留可直接部署的低风险项：
+  - local `denoise_layer.minimal_group_size: 3 -> 4`
+  - `/gps_route_runner.waypoint_start_progress_guard_m: 10.0 -> 5.0`
+  - global STVL `transform_tolerance: 0.35 -> 0.5`
+- [x] 重写 `task_plan.md` 顶部为单一“Codex 收敛锁定版”执行口径，并把旧方案改为历史存档
+- [x] 结论：**修正 v2 经 Codex 收敛后可部署，Step 19 通过；等待用户 Step 20 锁定**
+
+### Codex 部署执行（修正 v2，Step 21-25）
+
+- [x] 本地修改：
+  - `src/bringup/config/nav2_explore.yaml`
+  - `src/bringup/config/master_params.yaml`
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+- [x] 本地静态检查通过：
+  - `py_compile` 通过
+  - `nav2_explore.yaml` / `master_params.yaml` YAML 解析通过
+- [x] 提交并推送：
+  - commit `a7dc2fd` `Revert unsafe corridor tuning and tighten waypoint guard`
+- [x] Jetson `git pull --ff-only origin gps`
+- [x] Jetson `colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+- [x] Jetson `source install/setup.bash`
+- [x] corridor 启动级 smoke test（零运动临时 route）
+- [x] 阻塞定位：
+  - `ssh jetson@100.97.227.24` 现已恢复
+  - 当前 smoke test 仍卡在 `WAITING_FOR_STABLE_FIX`
+  - `nmea_navsat_driver` 继续输出 `fix=0 / satellites=0 / ANTENNA OK`
+- [x] 当前结论：**修正 v2 已完成 Jetson 部署；当前剩余阻塞不再是部署链，而是现场 GPS 仍无 fix**
 
 ---
 
@@ -419,12 +544,14 @@
 10. **架构调研已有首轮结论**：推荐方向是“保留 FAST-LIO2，拆出独立 global aligner”，而不是继续强化当前 live PGO handoff
 11. **若用户要求尽量用现成包**：优先考虑 `robot_localization/navsat_transform` 作为全局对齐模块骨架，而不是直接整包换 SLAM
 12. **新方案的最大实现风险不在定位数学，而在 runner 进度语义**：必须避免 alignment 更新时重切当前剩余 subgoal 链
+13. **修正 v2 已部署到 Jetson**：远端 `gps` 分支已快进到 `a7dc2fd`，`gps_waypoint_dispatcher` + `bringup` build 通过
+14. **2026-03-24 零运动 smoke test 仍卡在 GPS**：session `/home/jetson/fyp_runtime_data/logs/2026-03-24-12-34-31/` 中 Nav2 生命周期正常激活，但 `nmea_navsat_driver` 仍持续输出 `fix=0 / satellites=0 / ANTENNA OK`
 
 ---
 
 ## 断点位置
 
-**Step 19 已通过 → 等待用户 Step 20 锁定“独立 global aligner”方案 → 锁定后从 Step 21 开始新一轮实现**
+**Step 33-38 文档阶段已完成（9 个文件 + L2 更新 + commit）。下一步等待现场恢复 stable GPS fix 后，用真实 route 完成 corridor 启动验证（Step 25 最终验证），再交给用户进入 Step 26 实车测试。**
 
 ---
 

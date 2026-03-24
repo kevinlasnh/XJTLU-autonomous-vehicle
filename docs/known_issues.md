@@ -115,19 +115,22 @@
    - 修复: 在 `feature/gps-navigation-v4` 上新增 `gps_waypoint_dispatcher`、`nav2_gps.yaml`、固定 ENU 原点、`system_nav_gps.launch.py` 与 `nav-gps` 模式。
    - 状态: 室内软件 smoke 已通过，等待室外最终验证
 
-20. **[已升级] Corridor v1 终点几米级残差 → v2 已部署**
+20. **[已升级] Corridor v1 终点几米级残差 → v2 独立 aligner 已部署**
    - 描述: v1 使用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m。
-   - 状态: 已升级到 corridor v2（PGO ENU→map 对齐 + bootstrap），v1 作为 baseline 保留
-   - v2 当前状态: 能稳定启动并推进到第一个 waypoint 的倒数第二个 subgoal，问题已收敛到 PGO handoff 和 costmap 微调
+   - 状态: 已升级到 corridor v2（独立 global aligner 架构），v1 作为 baseline 保留
+   - v2 当前状态:
+     - waypoint 1 已稳定到达（session `2026-03-22-21-05-17`）
+     - 独立 global aligner 替代了 PGO live handoff
+     - 运行期微调修正 v2 已部署（commit `a7dc2fd`）
+     - 当前等待现场 GPS fix 后继续实车验证
 
-21. **[重要] Corridor v2 PGO handoff 门槛与现场频率不匹配**
-   - 描述: PGO 在运行中已能发布有效 `ENU->map` 对齐，但 route runner 始终停在 bootstrap 模式不切换。Hold reason 反复为 `have 3/4 recent PGO updates` / `have 2/4 recent PGO updates`。
-   - 根因: `pgo_switch_min_stable_updates=4` + `pgo_switch_stable_window_s=3.0` 对现场约 `~1Hz` 的 PGO 更新频率偏严
-   - 状态: 参数已从 8/5→4/3 放松一轮，仍未闭合
-   - 影响: 导航全程使用 bootstrap 对齐而非更精确的 PGO 对齐
+21. **[已解决] Corridor v2 PGO handoff 门槛与现场频率不匹配**
+   - 描述: v2 初版使用 PGO live handoff，但 PGO ~1Hz 更新频率达不到切换门槛。
+   - 状态: **已通过架构变更解决** — 独立 global aligner 替代了 PGO handoff，不再需要切换门槛
+   - 影响: 不再适用
 
 22. **[中等] Controller / Planner 循环频率不达标**
-   - 描述: Controller 反复报 `Control loop missed its desired rate of 20Hz`，Planner 降至 `~2Hz`。
+   - 描述: Controller 反复报 `Control loop missed its desired rate`，Planner 降至 `~2Hz`。
+   - 状态: 修正 v2 已将 controller 目标频率从 20Hz 降至 15Hz，减轻 CPU 压力
    - 根因: 当前 Jetson 上 costmap 更新 + TF 查询 + 点云处理的总计算量已接近瓶颈
-   - 状态: 不应继续拉高 costmap 刷新率；应从减少 costmap cells、优化 obstacle layer 语义入手
-   - 影响: TF extrapolation warnings、collision ahead 误报概率增加
+   - 影响: TF extrapolation warnings、collision ahead 误报概率增加（但已通过降频缓解）

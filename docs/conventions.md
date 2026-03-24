@@ -10,12 +10,8 @@
 ## 2. Git 与 PR 规则
 
 1. `main` 是受保护稳定分支，不直接推送。
-2. 所有改动从功能分支进入：
-   - `feature/`
-   - `fix/`
-   - `tune/`
-   - `docs/`
-   - `experiment/`
+2. 所有改动从功能分支进入，分支命名直接用描述名，不加前缀：
+   - 示例: `gps`、`nav-tuning`、`lidar-fix`、`docs-sync`
 3. 不使用 `git add -A` 或 `git add .`。
 4. Commit message 使用英文，写明改了什么和为什么。
 5. PR 必须写清楚：
