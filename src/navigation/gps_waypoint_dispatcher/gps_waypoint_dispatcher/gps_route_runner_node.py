@@ -424,6 +424,15 @@ class GPSRouteRunner(Node):
         pose.pose.orientation.w = qw
         return pose
 
+    def _subgoal_index(
+        self, segment: SegmentPlan, current_progress_m: float, segment_length_m: float
+    ) -> int:
+        if segment.total_subgoals <= 1:
+            return 1
+        safe_segment_length_m = max(0.5, segment_length_m)
+        completed_subgoals = int(math.floor(max(0.0, current_progress_m) / safe_segment_length_m))
+        return max(1, min(segment.total_subgoals, completed_subgoals + 1))
+
     def _append_map_segment(
         self,
         path: NavPath,
@@ -590,13 +599,7 @@ class GPSRouteRunner(Node):
 
             next_progress_m = min(segment.total_length_m, current_progress_m + segment_length_m)
             next_subgoal = self._segment_pose(segment, next_progress_m, frozen_alignment)
-            subgoal_index = max(
-                1,
-                min(
-                    segment.total_subgoals,
-                    int(math.ceil(next_progress_m / max(0.5, segment_length_m))),
-                ),
-            )
+            subgoal_index = self._subgoal_index(segment, current_progress_m, segment_length_m)
             self._publish_status(
                 "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
                 % (
