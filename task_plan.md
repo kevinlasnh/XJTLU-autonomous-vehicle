@@ -1,12 +1,118 @@
-# Corridor v2 — 运行期微调方案
+# GPS 采集脚本改进 + Corridor v2 运行期微调
 
-**Status**: `Waypoint 1 已到达 / 修正 v2 已部署到 Jetson / 启动级 smoke test 仍被 GPS NO_FIX 阻塞`
+**Status**: `collect_gps_route.py 已部署到 GitHub / Jetson，等待现场交互验证`
 **当前分支**: `gps`
-**最后更新**: 2026-03-24
+**最后更新**: 2026-03-25
 
 ---
 
-## 当前状态
+## 当前活跃任务：collect_gps_route.py 改进
+
+**工作流位置**: Step 25 已完成静态部署验证，等待用户现场运行脚本
+**修改文件**: `scripts/collect_gps_route.py`（唯一目标）
+**最新提交**: `41f88d9` `Improve GPS route collection review and preview for safer capture`
+**Jetson 状态**: 已 `git pull` 到 `41f88d9`，`python3 -m py_compile scripts/collect_gps_route.py` 通过，无需 `colcon build`
+
+### 2026-03-25 Codex 部署结果
+
+- 已实现 5 个锁定改动，且只修改 `scripts/collect_gps_route.py`
+- 本地验证通过：
+  - `python -m py_compile scripts/collect_gps_route.py`
+  - 脱 ROS stub import smoke test
+- Jetson 已从 `a7dc2fd` 快进到 `41f88d9`
+- 该改动是独立脚本级变更，不触发 ROS 包重编译
+- 当前剩余验证：
+  1. 用户在 Jetson 现场运行 `python3 scripts/collect_gps_route.py`
+  2. 确认 `wp1/wp2` 默认命名、`Accept/Retry`、ENU 预览、路线摘要都按预期工作
+
+### 可复用的现有代码
+
+- `scene_runtime.py:FixedENUProjector` — lat/lon -> ENU x,y 投影
+- 脚本内已有 `haversine_m`、`bearing_deg`、`load_fixed_origin`
+
+### 改动 1：修复 waypoint 默认命名
+
+**位置**: `main()` 第 312 行
+
+当前第一个 waypoint 默认叫 `goal`，多点路线时语义反了。
+
+改为：采集中统一默认 `wp1, wp2, ...`，保存前询问用户是否把最后一个重命名为 `goal`。
+
+### 改动 2：单点重采选项
+
+**位置**: `main()` 第 316 行之后
+
+- 每个 waypoint 采完后显示 spread
+- spread > 1.0m 时提示建议重采
+- 无论 spread 多少，询问 `Accept / Retry? [A/r]:`
+- 选 r 重新 `collect_fix_samples()`
+
+### 改动 3：高度异常告警
+
+**位置**: 紧接改动 2
+
+- 当前点与上一个点高度差 > 10m 时打印警告
+- `WARNING: altitude jumped {delta:.1f}m from previous point (GPS altitude unreliable, 2D nav not affected)`
+- 仅告警不阻塞
+
+### 改动 4：ENU 坐标预览
+
+**位置**: 每个点采完后立即显示
+
+- 在 `main()` 开头用 `load_fixed_origin()` + `FixedENUProjector` 创建投影器
+- 新增 `from gps_waypoint_dispatcher.scene_runtime import FixedENUProjector`
+  - 依赖 `pyproj`，Jetson 已安装
+  - import 失败则 fallback 跳过预览
+- 每采完一个点打印 `ENU: x={x:.1f}m, y={y:.1f}m (relative to origin)`
+
+### 改动 5：保存前路线摘要
+
+**位置**: `yaml.safe_dump()` 之前
+
+```
+=== Route Summary ===
+Route: {route_name}
+ENU Origin: {lat}, {lon}
+
+  #  Name               Lat          Lon        ENU_X    ENU_Y   Leg(m)  Bearing
+  S  start_ref      31.2781712  120.7327402     12.3     -5.6      -        -
+  1  wp1            31.2777963  120.7327782      8.1    -47.2    42.1    172.4
+  2  goal           31.2777800  120.7322618    -40.5    -49.0    48.6    268.3
+
+Total distance: 90.7m
+launch_yaw_deg: 172.4
+
+Save? [Y/n]:
+```
+
+### 不改的部分
+
+- 采样逻辑（10 samples, spread < 2m）
+- GNSS driver 自动启停
+- launch_yaw_deg 确认流程
+- 输出文件格式（不破坏 runner/aligner 兼容性）
+
+### 构建与部署
+
+```bash
+# 脚本不是 ROS 包，不需要 colcon build，git pull 即可
+ssh jetson@100.97.227.24
+cd ~/fyp_autonomous_vehicle && git pull --ff-only origin gps
+```
+
+### 验证
+
+1. Jetson 运行 `python3 scripts/collect_gps_route.py`
+2. 第一个 waypoint 默认名是 `wp1` 不是 `goal`
+3. 采完后显示 ENU 坐标和 Accept/Retry 选项
+4. 保存前显示路线摘要表格
+5. 生成的 `current_route.yaml` 格式不变
+
+---
+
+## Corridor v2 运行期微调（已部署，等待 GPS fix 后实车验证）
+
+### 当前状态
 
 **已完成**:
 - 独立 global aligner 架构已部署（commit `e51a46a`~`2bb6fbf`）

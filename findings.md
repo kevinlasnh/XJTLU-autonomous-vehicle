@@ -1,6 +1,40 @@
 # FYP Autonomous Vehicle - Findings
 
-**最后更新**: 2026-03-24
+**最后更新**: 2026-03-25
+
+---
+
+## 2026-03-25 collect_gps_route.py 部署发现
+
+### 1. 本轮改动是独立脚本级变更，不需要触发 Jetson `colcon build`
+
+- 本轮唯一代码修改文件是 `scripts/collect_gps_route.py`
+- 该文件不属于工作区内需要重新编译的 ROS 包源码
+- Jetson 上执行 `python3 -m py_compile scripts/collect_gps_route.py` 已通过
+
+结论：
+- 本轮部署链以 `git pull` + 脚本静态 smoke test 为主
+- 不需要为了这次采集脚本交互改动重跑 `colcon build`
+
+### 2. 采集脚本现在对 ENU 预览依赖做了降级保护，避免现场因为 Python 路径问题直接失效
+
+- 脚本会优先尝试导入 `gps_waypoint_dispatcher.scene_runtime.FixedENUProjector`
+- 同时把仓库内 `src/navigation/gps_waypoint_dispatcher` 加入 `sys.path`
+- 若导入或创建投影器失败，脚本会打印 `ENU preview unavailable ...` 并继续采样流程
+
+结论：
+- ENU 预览现在是“增强项”，不是新的启动阻塞项
+- 即使现场 Python 环境没有把工作区包路径注入完整，采集脚本也仍可完成路线保存
+
+### 3. Jetson 远端仍有无关脏文件，但没有阻塞本轮 pull
+
+- Jetson `~/fyp_autonomous_vehicle` 仍有：
+  - `src/perception/pgo_gps_fusion/rviz/pgo.rviz`
+- 本轮 `git pull --ff-only origin gps` 仍成功快进到 `41f88d9`
+
+结论：
+- 该脏文件目前仍属无关项
+- 只要后续提交不触碰同一路径，它不会阻塞当前 GPS 分支的脚本类部署
 
 ---
 

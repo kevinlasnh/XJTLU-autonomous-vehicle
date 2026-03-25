@@ -1,22 +1,73 @@
 # FYP Autonomous Vehicle - Progress Log
 
-**最后更新**: 2026-03-24
+**最后更新**: 2026-03-25
 
 ---
 
 ## 当前状态
 
-**修正 v2 已部署到 Jetson；docs 全量同步完成（9 个文件）；当前等待现场 GPS fix 后继续实车测试。**
+**collect_gps_route.py 改进已推送并部署到 Jetson，等待用户现场交互验证；修正 v2 已部署到 Jetson；等待现场 GPS fix 后实车测试。**
 
 | 项目 | 状态 |
 |------|------|
+| collect_gps_route.py 改进 | **已部署到 GitHub + Jetson；等待现场交互验证** |
 | Corridor v2 独立 aligner 架构 | **已部署** |
 | Waypoint 1 到达 | **已验证** |
-| 运行期微调 v1 | **已部署，发现问题** |
-| 运行期微调 v2（修正） | **已部署到 Jetson；启动级 smoke test 再次被 GPS NO_FIX 阻塞** |
+| 运行期微调 v2（修正） | **已部署到 Jetson；等待 GPS fix** |
 | 当前分支 | `gps` |
 
 ---
+
+## 最近完成 (2026-03-25)
+
+### Codex 采集脚本部署（Step 17-25）
+
+- [x] 读取 `task_plan.md` / `progress.md` / `findings.md` / `WORKFLOW.md`
+- [x] session catchup：确认真实断点是 `collect_gps_route.py` 的 Codex Step 17-25
+- [x] 审查计划可部署：未发现需要回退给 CC 的新 blocker
+- [x] 修改 `scripts/collect_gps_route.py`
+  - 默认 waypoint 命名改为 `wp1/wp2/...`
+  - 单点采样后新增 `Accept / Retry`
+  - 新增高度异常告警
+  - 新增 ENU 预览（导入失败时自动降级）
+  - 新增保存前路线摘要 + 最后一个 waypoint 可重命名为 `goal`
+- [x] 本地验证通过
+  - `python -m py_compile scripts/collect_gps_route.py`
+  - 脱 ROS stub import smoke test
+- [x] 提交并推送
+  - commit `41f88d9` `Improve GPS route collection review and preview for safer capture`
+- [x] Jetson `git pull --ff-only origin gps`
+  - 成功快进：`a7dc2fd -> 41f88d9`
+  - 远端无关脏文件 `src/perception/pgo_gps_fusion/rviz/pgo.rviz` 未阻塞 pull
+- [x] Jetson 静态 smoke test
+  - `python3 -m py_compile scripts/collect_gps_route.py` 通过
+  - 本轮为独立脚本改动，不需要 `colcon build`
+- [ ] 待用户现场验证
+  - 在 Jetson 运行 `python3 scripts/collect_gps_route.py`
+  - 确认新的交互流程与路线摘要符合预期
+
+### CC 采集脚本改进计划（Step 8-16）
+
+- [x] SSH 到 Jetson 确认现有路线文件：`~/fyp_runtime_data/gnss/current_route.yaml`
+  - 路线 `v1`，采集于 2026-03-22
+  - 2 个 waypoint：`right-top-corner` → `right-bottom-corner`
+  - start_ref spread 0.14m，GPS 坐标质量好
+- [x] 读取 `collect_gps_route.py` 全文（374 行）
+- [x] 读取 runner `_load_route()` 校验逻辑（验证 enu_origin 匹配 + 必填字段）
+- [x] 读取 `scene_runtime.py`：确认 `FixedENUProjector` 可复用
+- [x] 识别 5 个改进点：
+  1. waypoint 默认命名逻辑反了
+  2. 无单点重采选项
+  3. 高度异常无告警
+  4. 无 ENU 坐标预览
+  5. 无保存前路线摘要
+- [x] 输出完整改进计划
+- [x] 用户确认（Step 15）
+- [x] planning-with-files 记录（Step 16）
+
+---
+
+## 最近完成 (2026-03-24)
 
 ## 最近完成 (2026-03-24)
 
