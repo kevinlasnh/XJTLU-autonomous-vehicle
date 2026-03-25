@@ -374,13 +374,24 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 
 ## 14. Fixed-Launch GPS Corridor
 
-多点 GPS route 采集：
+### GPS 路线采集（踩点）
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
 ```
 
-自动 corridor 导航：
+交互流程：
+1. 输入路线名称
+2. 把车放在起点，按 Enter 采 `start_ref`（10 次采样，spread < 2m）
+3. 依次移动到各 waypoint，按 Enter 采点
+   - 每个点采完显示 ENU 坐标预览和 spread
+   - `Accept / Retry? [A/r]` — 信号不好可以当场重采
+   - 高度异常（> 10m 跳变）会自动告警
+4. 确认 `launch_yaw_deg`（首段 > 5m 自动建议，否则手动输入）
+5. 保存前显示路线摘要表格（各段距离、方位角、ENU 坐标）
+6. 确认保存 → `~/fyp_runtime_data/gnss/current_route.yaml`
+
+### 自动 corridor 导航
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor

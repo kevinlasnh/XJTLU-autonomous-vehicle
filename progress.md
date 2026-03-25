@@ -20,6 +20,18 @@
 
 ## 最近完成 (2026-03-25)
 
+### CC 文档阶段（Step 33-38）
+
+- [x] 读 L2 文件 + `git diff --stat a7dc2fd..HEAD`
+- [x] 读 `docs/index.md`
+- [x] 判断文档类型：无需新增，更新 3 个现有文件
+- [x] 更新文档：
+  - `docs/commands.md`: Section 14 重写 — GPS 采集命令突出显示 + 交互流程说明
+  - `docs/devlog/2026-03.md`: 新增 03-25 条目（采集脚本改进）
+  - `docs/index.md`: 日期更新到 2026-03-25
+- [x] planning-with-files 记录
+- [ ] git commit + push
+
 ### Codex 采集脚本部署（Step 17-25）
 
 - [x] 读取 `task_plan.md` / `progress.md` / `findings.md` / `WORKFLOW.md`
