@@ -1,12 +1,139 @@
-# GPS 采集脚本改进 + Corridor v2 运行期微调
+# 系统优化批次 + 采集脚本改进 + Corridor v2 运行期微调
 
-**Status**: `collect_gps_route.py 已部署到 GitHub / Jetson，等待现场交互验证`
+**Status**: `系统优化批次已部署到 GitHub / Jetson，等待现场验证`
 **当前分支**: `gps`
 **最后更新**: 2026-03-25
 
 ---
 
-## 当前活跃任务：collect_gps_route.py 改进
+## 当前活跃任务：系统优化批次（4 项）
+
+**工作流位置**: Step 25 已完成启动级 smoke test，等待用户现场验证
+**最新提交**: `9a1420d` `Trim corridor overhead and harden runtime cleanup`
+**Jetson 状态**: 已 `git pull` 到 `9a1420d`；`gps_waypoint_dispatcher + bringup + fastlio2` build 通过
+
+### 2026-03-25 Codex 部署结果
+
+- 已实现 4 个锁定改动：
+  1. 新采集路线默认 `segment_length_m=30.0`
+  2. 删除 runner / `master_params.yaml` 中 7 个 legacy PGO handoff 参数
+  3. `launch_with_logs.sh` + `make kill-runtime` 补齐 cleanup 链
+  4. FAST-LIO2 `body_cloud/world_cloud` publisher depth `10000 -> 500`
+- 本地静态验证通过：
+  - `python -m py_compile scripts/collect_gps_route.py`
+  - `python -m py_compile gps_route_runner_node.py`
+  - `yaml.safe_load(master_params.yaml)`
+  - `bash -n scripts/launch_with_logs.sh`
+- Jetson 部署结果：
+  - `colcon build --packages-select gps_waypoint_dispatcher bringup fastlio2 --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+  - `ros2 pkg prefix gps_waypoint_dispatcher bringup fastlio2` 正常
+- Jetson 启动级 smoke test：
+  - 命令：`timeout -s INT 8s bash scripts/launch_with_logs.sh corridor`
+  - 启动链已拉起：`livox_ros_driver2_node` / `lio_node` / `pgo_node` / 串口 / GNSS / rosbag
+  - Ctrl+C 后验证通过：
+    - `ros2 daemon` 已停止
+    - `/dev/serial_twistctl` 无占用
+    - `/dev/wheeltec_gps` 无占用
+    - 无 `lio/pgo/gps_route_runner/gps_global_aligner/pointcloud_to_laserscan/ros2 bag` 残留进程
+- 当前剩余验证：
+  1. 现场确认 30m subgoal 对 corridor 平顺性是否改善
+  2. 现场观察 FAST-LIO2 内存是否不再异常增长
+  3. 如需要，后续单独处理 `gps_global_aligner_node` 在 `SIGINT` 下的 traceback 噪声
+
+### 改动 1：subgoal 间距 8m → 30m
+
+**依据**: global costmap 70×70m, 半径 35m, 减 5m buffer = 30m
+
+| 文件 | 改动 |
+|------|------|
+| `scripts/collect_gps_route.py` 第 43 行 | `SEGMENT_LENGTH_M = 8.0` → `30.0` |
+| `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py` 第 389 行 | 默认 fallback `8.0` → `30.0` |
+
+注意: runner 第 570、478 行也读 `segment_length_m`，但都是从 route YAML 读取（`self._route.get("segment_length_m", ...)`），改默认 fallback 即可。
+
+### 改动 2：清理 legacy PGO handoff 参数
+
+独立 global aligner 架构已淘汰 PGO live handoff，这些参数不再被任何代码路径使用。
+
+| 文件 | 改动 |
+|------|------|
+| `gps_route_runner_node.py` 第 87-94 行 | 删除 7 个 `declare_parameter`（`bootstrap_switch_distance_m` 到 `pgo_switch_warn_deg`）|
+| `src/bringup/config/master_params.yaml` 第 177-190 行 | 删除对应 7 个参数及注释 |
+
+### 改动 3：Ctrl+C 完整清理
+
+**用户需求**: Ctrl+C 后系统恢复到启动前状态，不留残留进程、不占串口。
+
+**文件**: `scripts/launch_with_logs.sh` 的 `cleanup_runtime_nodes()` 函数
+
+补充项：
+
+1. **pkill 列表补齐**（在现有列表末尾追加）:
+   - `[p]ointcloud_to_laserscan`
+   - `[m]onitor_corridor_status`
+
+2. **在 `cleanup_runtime_nodes` 末尾追加 `ros2 daemon stop`**:
+   ```bash
+   ros2 daemon stop 2>/dev/null || true
+   ```
+
+3. **在 cleanup 末尾验证串口释放**:
+   ```bash
+   # 检查关键设备是否仍被占用，如被占用则 fuser -k
+   for dev in /dev/serial_twistctl /dev/wheeltec_gps; do
+     if [ -e "$dev" ] && fuser "$dev" >/dev/null 2>&1; then
+       fuser -k "$dev" 2>/dev/null || true
+     fi
+   done
+   ```
+
+4. **Makefile `kill-runtime` 也需要同步更新 pkill 列表**（如有遗漏）
+
+### 改动 4：FAST-LIO2 QoS 队列 10000 → 500
+
+**文件**: `src/perception/fastlio2/src/lio_node.cpp` 第 151-152 行
+
+```cpp
+// 当前:
+m_body_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("body_cloud", 10000);
+m_world_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("world_cloud", 10000);
+
+// 改为:
+m_body_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("body_cloud", 500);
+m_world_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("world_cloud", 500);
+```
+
+**理由**: 10000 帧队列在订阅端处理慢时会吃数 GB 内存。500 足以吸收短暂处理延迟，同时避免内存爆炸。
+
+**注意**: 这是 C++ 代码，需要 `colcon build --packages-select fastlio2`。
+
+### 构建与部署
+
+```bash
+# 改动 1+2: Python 包
+colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1
+
+# 改动 4: C++ 包
+colcon build --packages-select fastlio2 --symlink-install --parallel-workers 1
+
+# 改动 3: 脚本级，不需要 build
+
+source install/setup.bash
+```
+
+### 验证
+
+1. `segment_length_m` 默认值检查: 新采集路线写入 `30.0`
+2. runner 启动时不再报 legacy 参数未设置的 warning
+3. Ctrl+C 后 `ps aux | grep -E "ros2|lio|pgo|serial|nmea|rviz|bag|pointcloud|monitor" | grep -v grep` 应为空
+4. Ctrl+C 后 `lsof /dev/serial_twistctl /dev/wheeltec_gps 2>/dev/null` 应为空
+5. `ros2 daemon status` 应显示 daemon 未运行
+6. FAST-LIO2 启动后 `htop` 内存不再异常增长
+
+---
+
+## 已完成：collect_gps_route.py 改进
 
 **工作流位置**: Step 25 已完成静态部署验证，等待用户现场运行脚本
 **修改文件**: `scripts/collect_gps_route.py`（唯一目标）

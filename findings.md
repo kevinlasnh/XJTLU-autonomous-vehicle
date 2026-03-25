@@ -4,6 +4,46 @@
 
 ---
 
+## 2026-03-25 系统优化批次部署发现
+
+### 1. 本轮 4 项改动已在 Jetson 真正落地，并通过 build
+
+- Jetson 已成功快进到 `9a1420d`
+- 已执行：
+  - `colcon build --packages-select gps_waypoint_dispatcher bringup fastlio2 --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+- `ros2 pkg prefix gps_waypoint_dispatcher` / `bringup` / `fastlio2` 都正常
+
+结论：
+- 本轮系统优化批次没有引入新的构建级断裂
+- `fastlio2` 的 C++ publisher queue 改动已真实进入车端工作区
+
+### 2. `launch_with_logs.sh` 的 cleanup 目标基本达成：打断后无残留进程、无串口占用、daemon 已停
+
+- 启动级 smoke 使用：
+  - `timeout -s INT 8s bash scripts/launch_with_logs.sh corridor`
+- 打断后验证：
+  - `ros2 daemon status` → `The daemon is not running`
+  - `fuser /dev/serial_twistctl` → 空
+  - `fuser /dev/wheeltec_gps` → 空
+  - `pgrep -af '[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[r]viz2|[p]ointcloud_to_laserscan|[m]onitor_corridor_status|[g]ps_route_runner|[g]ps_global_aligner|[r]os2 bag'` → 空
+
+结论：
+- 本轮补的 cleanup 链已经满足“无关键残留进程 / 无关键串口占用 / daemon 关闭”的核心目标
+
+### 3. 启动级 smoke 暴露一个既有收尾问题：`gps_global_aligner_node` 在 `SIGINT` 下会打印 traceback
+
+- 在 `SIGINT` 打断时，`gps_global_aligner_node` 试图在 `rclpy` context 失效后继续 publish status
+- 日志表现为：
+  - `Failed to publish: publisher's context is invalid`
+  - 节点以 `KeyboardInterrupt / RCLError` traceback 结束
+
+结论：
+- 这不是本轮 cleanup 链的残留问题，因为进程、串口、daemon 最终都已清理干净
+- 但它属于一个真实的收尾噪声问题，后续若要把 Ctrl+C 体验继续打磨，需要单独修 `gps_global_aligner_node` 的中断处理顺序
+
+---
+
 ## 2026-03-25 collect_gps_route.py 部署发现
 
 ### 1. 本轮改动是独立脚本级变更，不需要触发 Jetson `colcon build`

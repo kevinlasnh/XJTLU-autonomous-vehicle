@@ -6,19 +6,74 @@
 
 ## 当前状态
 
-**collect_gps_route.py 改进已推送并部署到 Jetson，等待用户现场交互验证；修正 v2 已部署到 Jetson；等待现场 GPS fix 后实车测试。**
+**系统优化批次（4 项）已部署到 GitHub + Jetson，并通过启动级 smoke test；采集脚本已部署等待现场验证；修正 v2 已部署等待 GPS fix。**
 
 | 项目 | 状态 |
 |------|------|
+| 系统优化批次（subgoal/legacy/cleanup/QoS） | **已部署到 GitHub + Jetson；等待现场验证** |
 | collect_gps_route.py 改进 | **已部署到 GitHub + Jetson；等待现场交互验证** |
 | Corridor v2 独立 aligner 架构 | **已部署** |
-| Waypoint 1 到达 | **已验证** |
 | 运行期微调 v2（修正） | **已部署到 Jetson；等待 GPS fix** |
 | 当前分支 | `gps` |
 
 ---
 
 ## 最近完成 (2026-03-25)
+
+### Codex 系统优化部署（Step 17-25）
+
+- [x] 读取 `task_plan.md` / `progress.md` / `docs/index.md` / `docs/workflow.md`
+- [x] 确认真实活跃任务已切换为“系统优化批次（4 项）”
+- [x] 审查部署性：
+  - legacy PGO handoff 参数只剩 runner 声明 + `master_params.yaml` 残留
+  - `segment_length_m` fallback 只需修改 `collect_gps_route.py` 与 `gps_route_runner_node.py`
+  - 未发现需要回退给 CC 的新 blocker
+- [x] 本地修改：
+  - `scripts/collect_gps_route.py`: `SEGMENT_LENGTH_M 8.0 -> 30.0`
+  - `gps_route_runner_node.py`: 删除 7 个 legacy 参数声明，3 处 fallback `8.0 -> 30.0`
+  - `master_params.yaml`: 删除 `/gps_route_runner` 下 7 个 legacy 参数
+  - `scripts/launch_with_logs.sh`: cleanup 补 `pointcloud_to_laserscan`、`monitor_corridor_status`、`ros2 daemon stop`、串口释放
+  - `Makefile`: `kill-runtime` 同步补 pkill 列表与串口释放
+  - `fastlio2/src/lio_node.cpp`: `body_cloud/world_cloud` publisher depth `10000 -> 500`
+- [x] 本地静态验证通过：
+  - `python -m py_compile scripts/collect_gps_route.py src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+  - `yaml.safe_load(src/bringup/config/master_params.yaml)`
+  - `bash -n scripts/launch_with_logs.sh`
+- [x] 提交并推送：
+  - commit `9a1420d` `Trim corridor overhead and harden runtime cleanup`
+- [x] Jetson `git pull --ff-only origin gps`
+  - 成功快进：`75541a3 -> 9a1420d`
+  - 无关脏文件 `src/perception/pgo_gps_fusion/rviz/pgo.rviz` 未阻塞 pull
+- [x] Jetson build + source：
+  - `colcon build --packages-select gps_waypoint_dispatcher bringup fastlio2 --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+  - `ros2 pkg prefix gps_waypoint_dispatcher bringup fastlio2` 正常
+- [x] Jetson 启动级 smoke test：
+  - `timeout -s INT 8s bash scripts/launch_with_logs.sh corridor`
+  - 系统启动链正常拉起
+  - cleanup 后 `ros2 daemon` 已停止
+  - cleanup 后 `/dev/serial_twistctl`、`/dev/wheeltec_gps` 无占用
+  - cleanup 后无关键残留进程
+- [ ] 待用户现场验证：
+  - 30m subgoal 是否减少频繁小段切换
+  - FAST-LIO2 内存占用是否明显收敛
+  - `gps_global_aligner_node` 的 `SIGINT` traceback 是否需要单独修
+
+### CC 系统优化调研（Step 8-16）
+
+- [x] SSH 确认 Jetson 仓库状态
+- [x] 读取 `gps_route_runner_node.py` 全文（707 行）— subgoal 分段逻辑
+- [x] 读取 `gps_global_aligner_node.py` 全文（605 行）
+- [x] 读取 `nav2_explore.yaml` — global costmap 70×70m → 半径 35m
+- [x] 确认 subgoal 间距公式：35m - 5m buffer = 30m（合理）
+- [x] 识别 legacy PGO 参数：runner 87-94 行 + master_params 177-190 行
+- [x] 派子代理调研启动链和清理机制
+  - 发现：cleanup 缺 `ros2 daemon stop`、缺 `pointcloud_to_laserscan` 和 `monitor` 在 pkill 列表、缺串口释放验证
+- [x] 派子代理调研内存占用
+  - 发现：FAST-LIO2 QoS 队列深度 10000（lio_node.cpp:151-152），严重过大
+- [x] 用户确认本轮 4 项改动：subgoal 30m / legacy 清理 / Ctrl+C 完整清理 / QoS 500
+- [x] 输出计划到 task_plan.md
+- [x] planning-with-files 记录
 
 ### CC 文档阶段（Step 33-38）
 
@@ -30,7 +85,8 @@
   - `docs/devlog/2026-03.md`: 新增 03-25 条目（采集脚本改进）
   - `docs/index.md`: 日期更新到 2026-03-25
 - [x] planning-with-files 记录
-- [ ] git commit + push
+- [x] git commit + push
+  - commit `cfc4b94` `Sync docs for GPS route collector improvements`
 
 ### Codex 采集脚本部署（Step 17-25）
 
