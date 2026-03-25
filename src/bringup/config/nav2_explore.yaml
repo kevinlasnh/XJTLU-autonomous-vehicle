@@ -368,7 +368,7 @@ local_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        cost_scaling_factor: 2.0
+        cost_scaling_factor: 1.5
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
         inflation_radius: 0.65
@@ -402,7 +402,7 @@ local_costmap:
           inf_is_valid: false
           filter: "voxel"
           voxel_min_points: 0
-          clear_after_reading: true
+          clear_after_reading: false
         pointcloud_clear:
           enabled: true
           data_type: "PointCloud2"
@@ -472,7 +472,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        cost_scaling_factor: 2.0
+        cost_scaling_factor: 1.5
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
         inflation_radius: 0.75
@@ -506,7 +506,7 @@ global_costmap:
           inf_is_valid: false
           filter: "voxel"
           voxel_min_points: 0
-          clear_after_reading: true
+          clear_after_reading: false
         pointcloud_clear:
           enabled: true
           data_type: "PointCloud2"
@@ -633,13 +633,7 @@ behavior_server:
     cycle_frequency: 10.0
     # 恢复行为列表；决定 behavior server 可提供哪些动作。
     # 增删行为：会直接改变恢复和辅助动作集合。
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
-    # Spin 恢复行为参数块；负责原地转向动作。
-    # 改错结构或参数：原地转向行为可能不可用。
-    spin:
-      # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
-      # 改成不存在或不兼容的插件：对应功能块会加载失败。
-      plugin: "nav2_behaviors/Spin"
+    behavior_plugins: ["backup", "drive_on_heading", "assisted_teleop", "wait"]
     # BackUp 恢复行为参数块；负责后退脱困动作。
     # 改错结构或参数：后退行为可能不可用。
     backup:
