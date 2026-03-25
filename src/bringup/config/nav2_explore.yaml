@@ -395,8 +395,8 @@ local_costmap:
           marking: true
           clearing: false
           obstacle_range: 5.0
-          min_obstacle_height: 0.05
-          max_obstacle_height: 1.5
+          min_obstacle_height: 0.0
+          max_obstacle_height: 2.0
           expected_update_rate: 0.0
           observation_persistence: 0.0
           inf_is_valid: false
@@ -410,7 +410,7 @@ local_costmap:
           marking: false
           clearing: true
           max_z: 6.0
-          min_z: 0.05
+          min_z: 0.0
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
@@ -499,8 +499,8 @@ global_costmap:
           marking: true
           clearing: false
           obstacle_range: 4.0
-          min_obstacle_height: 0.05
-          max_obstacle_height: 1.5
+          min_obstacle_height: 0.0
+          max_obstacle_height: 2.0
           expected_update_rate: 0.0
           observation_persistence: 0.0
           inf_is_valid: false
@@ -514,7 +514,7 @@ global_costmap:
           marking: false
           clearing: true
           max_z: 5.0
-          min_z: 0.05
+          min_z: 0.0
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
