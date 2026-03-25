@@ -119,10 +119,10 @@
    - 描述: v1 使用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m。
    - 状态: 已升级到 corridor v2（独立 global aligner 架构），v1 作为 baseline 保留
    - v2 当前状态:
-     - waypoint 1 已稳定到达（session `2026-03-22-21-05-17`）
-     - 独立 global aligner 替代了 PGO live handoff
-     - 运行期微调修正 v2 已部署（commit `a7dc2fd`）
-     - 当前等待现场 GPS fix 后继续实车验证
+     - waypoint 1 已稳定到达
+     - 第二段已能完成直角转弯并推进较长距离（best session `2026-03-25-17-46-15`）
+     - 后段失稳链条：`collision ahead` → `recovery` → `lio_odom` 发散
+     - 主问题已收敛为"绿色路径贴膨胀层边缘 + 后段 recovery/odom 失稳"
 
 21. **[已解决] Corridor v2 PGO handoff 门槛与现场频率不匹配**
    - 描述: v2 初版使用 PGO live handoff，但 PGO ~1Hz 更新频率达不到切换门槛。
@@ -134,3 +134,15 @@
    - 状态: 修正 v2 已将 controller 目标频率从 20Hz 降至 15Hz，减轻 CPU 压力
    - 根因: 当前 Jetson 上 costmap 更新 + TF 查询 + 点云处理的总计算量已接近瓶颈
    - 影响: TF extrapolation warnings、collision ahead 误报概率增加（但已通过降频缓解）
+
+23. **[待查] Corridor BT 文件已移除 Spin 但 runtime 仍执行 spin**
+   - 描述: 本地和 Jetson 的 corridor BT XML 都不含 `Spin`，但 `behavior_server` 日志仍打印 `Running spin`
+   - 可能原因: 运行时未真正加载 corridor BT rewrite，仍走 Nav2 默认 BT
+   - 影响: 不必要的原地旋转会在狭窄环境恶化局势
+   - 下一步: 查 `default_nav_to_pose_bt_xml` 的 rewrite 是否真正生效
+
+24. **[已知] 后段 `lio_odom` 发散**
+   - 描述: 最新 best session 中，第二段后半 `lio_odom` 开始连续大跳（最大 13m），导致位姿发散、导航失败
+   - 触发条件: 长时间 `collision ahead` + 多次 costmap clear + recovery 后
+   - 根因: 待查，可能与 FAST-LIO2 在持续 recovery/backup 中的退化特征有关
+   - 影响: 直接导致第二段后半无法完成

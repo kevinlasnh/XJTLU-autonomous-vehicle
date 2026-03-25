@@ -82,15 +82,20 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - `raytrace_min_range: 0.5`
 - 使用 rolling window, width/height: 50
 
-### 实车发现（2026-03-22~24）
+### 实车发现（2026-03-22~25）
 
-- `cost_scaling_factor: 2.5`, `inflation_radius: 0.4`
-- `max obstacle height: 1.5m`
-- Global costmap 陈旧障碍仍是主要问题来源: 启动前人站在车前、绕过后的静态障碍未清除
+- **2026-03-25 最新参数（best session `2026-03-25-17-46-15`）**:
+  - Local: `inflation_radius: 0.65`, `cost_scaling_factor: 2.0`
+  - Global: `inflation_radius: 0.75`, `cost_scaling_factor: 2.0`
+  - STVL 高度窗口: `min_obstacle_height: 0.0`, `max_obstacle_height: 2.0`（local/global 一致）
+  - subgoal 间距 30m（global costmap 半径 35m - 5m buffer）
+- 绿色 `/plan` 仍贴膨胀层外边界，控制余量不够
+- 后段 `collision ahead` + `recovery` 叠加 → `lio_odom` 发散（最大单跳 13m）
+- BT 文件已移除 Spin 但 runtime 仍执行 spin — 待查 BT rewrite 是否生效
+- Global costmap 陈旧障碍仍是问题来源
 - Local costmap collision ahead 判定在 controller 掉频时更容易误触发
 - Controller 已 miss 20Hz，Planner 降至 ~2Hz — 继续提高刷新率会加剧掉频
-- 下一步应优先修 obstacle layer 清障策略而非继续调频率
-- **2026-03-23 修正 v2**: local `denoise_layer.minimal_group_size` 从 3 提到 4（抑制孤立噪声点），global STVL `transform_tolerance` 从 0.35 对齐到 0.5
+- **2026-03-23 修正 v2**: local `denoise_layer.minimal_group_size` 从 3 提到 4，global STVL `transform_tolerance` 从 0.35 对齐到 0.5
 
 ## 6. GPS 专用配置（`nav2_gps.yaml`）
 

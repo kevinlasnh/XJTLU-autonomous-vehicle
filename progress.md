@@ -57,9 +57,11 @@
 - [x] Step 29：最新 session 全量日志分析完成
 - [x] Step 30：问题性质已判断，当前不再继续现场迭代
 - [x] Step 31：L2 文件已更新，可直接交给 CC 写文档
-- [ ] 下一位执行者（CC）如果要继续：
-  - 先以 `2026-03-25-17-46-15` 作为当前最佳基线
-  - 文档里把主问题表述为“绿色路径贴边 + recovery/odom 后段失稳”，而不是“GPS 目标随机跳变”
+- [x] CC 文档阶段（Step 33-38）：
+  - `docs/devlog/2026-03.md`: 新增运行期微调与实车验证条目
+  - `docs/known_issues.md`: 更新 #20 v2 状态 + 新增 #23 BT spin + #24 lio_odom 发散
+  - `docs/knowledge/nav2_tuning.md`: 更新实车参数与发现到 2026-03-25
+  - git commit + push
 
 ### Codex 系统优化部署（Step 17-25）
 
