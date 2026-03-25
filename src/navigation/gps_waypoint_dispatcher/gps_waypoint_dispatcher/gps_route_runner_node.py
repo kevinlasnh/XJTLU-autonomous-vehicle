@@ -84,15 +84,6 @@ class GPSRouteRunner(Node):
         self.declare_parameter("waypoint_start_progress_guard_m", 5.0)
         self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)
 
-        # Legacy parameters kept declared for backward compatibility with existing YAML.
-        self.declare_parameter("bootstrap_switch_distance_m", 6.0)
-        self.declare_parameter("pgo_switch_min_stable_updates", 4)
-        self.declare_parameter("pgo_switch_stable_window_s", 3.0)
-        self.declare_parameter("pgo_switch_max_theta_spread_deg", 2.5)
-        self.declare_parameter("pgo_switch_max_translation_spread_m", 2.0)
-        self.declare_parameter("pgo_switch_max_bootstrap_delta_deg", 5.0)
-        self.declare_parameter("pgo_switch_warn_deg", 10.0)
-
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
         self._route_frame = str(self.get_parameter("route_frame").value)
         self._base_frame = str(self.get_parameter("base_frame").value)
@@ -386,7 +377,7 @@ class GPSRouteRunner(Node):
                 dir_x=1.0,
                 dir_y=0.0,
             )
-        segment_length_m = float(self._route.get("segment_length_m", 8.0))
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
         total_subgoals = max(1, int(math.ceil(total_length_m / max(0.5, segment_length_m))))
         return SegmentPlan(
             waypoint=waypoint,
@@ -475,7 +466,7 @@ class GPSRouteRunner(Node):
         path = NavPath()
         path.header.frame_id = self._route_frame
         path.header.stamp = self.get_clock().now().to_msg()
-        segment_length_m = float(self._route.get("segment_length_m", 8.0))
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
 
         segment = self._segment_plan(waypoint_index)
         current_enu = self._point_on_segment(segment, current_progress_m)
@@ -567,7 +558,7 @@ class GPSRouteRunner(Node):
     ) -> tuple[bool, tuple[float, float], Alignment2D]:
         segment = self._segment_plan(waypoint_index)
         waypoint = segment.waypoint
-        segment_length_m = float(self._route.get("segment_length_m", 8.0))
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
         waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
         current_xy = self._current_xy()
         frozen_alignment, current_progress_m = self._choose_waypoint_alignment(
