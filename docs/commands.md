@@ -423,9 +423,11 @@ ros2 topic echo /gps_corridor/enu_to_map
 - `collect_gps_route.py` 会采 `start_ref + 多个关键 waypoint`，并生成 `~/fyp_runtime_data/gnss/current_route.yaml`
 - `collect_gps_route.py` 若未检测到 `/fix`，会自动后台拉起 `nmea_navsat_driver`，采完后自动收掉
 - 采集时会显式确认 `launch_yaw_deg`；如果起点到第一个 waypoint 太近，会要求手工输入
+- 子目标间距默认 30m（基于 global costmap 半径 35m - 5m buffer），采集时自动写入路线文件
 - 运行时不会再弹出 menu，也不会等待额外命令
 - wrapper 会把日志和 bag 写入 `~/fyp_runtime_data/logs/<session>/`
 - 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_route_runner` 会直接 abort，不动车
+- **Ctrl+C 会自动清理全部节点、ros2 daemon、串口占用**，无需手动 `make kill-runtime`
 
 **Quiet 模式**（默认）:
 - 前台只显示简化中文状态

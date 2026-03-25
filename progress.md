@@ -75,7 +75,17 @@
 - [x] 输出计划到 task_plan.md
 - [x] planning-with-files 记录
 
-### CC 文档阶段（Step 33-38）
+### CC 文档阶段 — 系统优化批次（Step 33-38）
+
+- [x] `git diff --stat cfc4b94..HEAD` — 9 个文件变更
+- [x] 更新文档：
+  - `docs/devlog/2026-03.md`: 新增系统优化批次条目
+  - `docs/commands.md`: Section 14 补 subgoal 间距说明 + Ctrl+C 自动清理说明
+  - `docs/knowledge/gps_planning.md`: 更新 segment_length_m 默认值说明
+- [x] planning-with-files 记录
+- [ ] git commit + push
+
+### CC 文档阶段 — 采集脚本改进（Step 33-38）
 
 - [x] 读 L2 文件 + `git diff --stat a7dc2fd..HEAD`
 - [x] 读 `docs/index.md`

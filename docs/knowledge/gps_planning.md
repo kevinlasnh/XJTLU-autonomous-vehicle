@@ -282,7 +282,7 @@ source install/setup.bash
    - 检查当前启动点是否在 `startup_gps_tolerance_m` 内
    - 读取当前 `map -> base_link`
    - 用 `body_vector_m` 生成 `goal_map`
-   - 将 corridor 按 `segment_length_m` 切成多个 subgoals
+   - 将 corridor 按 `segment_length_m`（默认 30m，基于 global costmap 半径 35m - 5m buffer）切成多个 subgoals
    - 串行执行 `NavigateToPose`
 
 ### 11.4 当前 v1 约束
