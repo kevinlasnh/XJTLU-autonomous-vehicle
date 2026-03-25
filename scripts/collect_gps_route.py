@@ -6,6 +6,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import time
 from collections import deque
 from datetime import datetime
@@ -16,6 +17,20 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import NavSatFix
 import yaml
+
+GPS_DISPATCHER_SRC = (
+    Path(__file__).resolve().parents[1]
+    / "src"
+    / "navigation"
+    / "gps_waypoint_dispatcher"
+)
+if GPS_DISPATCHER_SRC.exists():
+    sys.path.append(str(GPS_DISPATCHER_SRC))
+
+try:
+    from gps_waypoint_dispatcher.scene_runtime import FixedENUProjector
+except Exception:
+    FixedENUProjector = None  # type: ignore[assignment]
 
 OUTPUT_DIR = Path.home() / "fyp_runtime_data" / "gnss"
 OUTPUT_FILE = OUTPUT_DIR / "current_route.yaml"
@@ -219,6 +234,79 @@ def load_fixed_origin() -> dict:
     raise RuntimeError(f"failed to find fixed ENU origin in {MASTER_PARAMS_FILE}")
 
 
+def create_projector(fixed_origin: dict):
+    if FixedENUProjector is None:
+        print(
+            "ENU preview unavailable: failed to import gps_waypoint_dispatcher.scene_runtime.FixedENUProjector"
+        )
+        return None
+    try:
+        return FixedENUProjector(
+            fixed_origin["lat"],
+            fixed_origin["lon"],
+            fixed_origin.get("alt", 0.0),
+        )
+    except Exception as exc:
+        print(f"ENU preview unavailable: {exc}")
+        return None
+
+
+def point_to_enu(point: dict, projector) -> tuple[float, float] | None:
+    if projector is None:
+        return None
+    try:
+        return projector.forward(point["lat"], point["lon"])
+    except Exception as exc:
+        print(f"ENU preview unavailable for {point.get('name', 'point')}: {exc}")
+        return None
+
+
+def print_point_preview(label: str, point: dict, projector) -> None:
+    enu_xy = point_to_enu(point, projector)
+    if enu_xy is None:
+        return
+    print(f"[{label}] ENU: x={enu_xy[0]:.1f}m, y={enu_xy[1]:.1f}m (relative to origin)")
+
+
+def maybe_warn_altitude_jump(label: str, point: dict, previous_point: dict | None) -> None:
+    if previous_point is None:
+        return
+    delta_alt_m = abs(float(point["alt"]) - float(previous_point["alt"]))
+    if delta_alt_m <= 10.0:
+        return
+    print(
+        f"[{label}] WARNING: altitude jumped {delta_alt_m:.1f}m from previous point "
+        "(GPS altitude unreliable, 2D nav not affected)"
+    )
+
+
+def accept_point_sample(label: str, point: dict) -> bool:
+    spread_m = float(point["spread_m"])
+    if spread_m > 1.0:
+        print(f"[{label}] spread {spread_m:.2f}m is usable but retry is recommended.")
+    while True:
+        raw = input(f"[{label}] Accept / Retry? [A/r]: ").strip().lower()
+        if raw in ("", "a", "accept", "y", "yes"):
+            return True
+        if raw in ("r", "retry"):
+            return False
+        print("Please enter A to accept or r to retry.")
+
+
+def collect_reviewed_point(
+    node: FixCollector,
+    label: str,
+    previous_point: dict | None,
+    projector,
+) -> dict:
+    while True:
+        point = collect_fix_samples(node, label)
+        print_point_preview(label, point, projector)
+        maybe_warn_altitude_jump(label, point, previous_point)
+        if accept_point_sample(label, point):
+            return point
+
+
 def backup_existing_file() -> None:
     if not OUTPUT_FILE.exists():
         return
@@ -286,6 +374,97 @@ def maybe_override_launch_yaw(current_value: float) -> float:
         return current_value
 
 
+def maybe_rename_last_waypoint_to_goal(waypoints: list[dict]) -> None:
+    if not waypoints:
+        return
+    last_waypoint = waypoints[-1]
+    current_name = str(last_waypoint["name"])
+    if current_name == "goal":
+        return
+    raw = input(f"Rename last waypoint '{current_name}' to goal? [Y/n]: ").strip().lower()
+    if raw not in ("n", "no"):
+        last_waypoint["name"] = "goal"
+
+
+def format_enu_value(value: float | None) -> str:
+    if value is None:
+        return "   n/a"
+    return f"{value:7.1f}"
+
+
+def format_distance_value(value: float | None) -> str:
+    if value is None:
+        return "    -"
+    return f"{value:6.1f}"
+
+
+def format_bearing_value(value: float | None) -> str:
+    if value is None:
+        return "   -"
+    return f"{value:7.1f}"
+
+
+def print_route_summary(
+    route_name: str,
+    fixed_origin: dict,
+    start_ref: dict,
+    waypoints: list[dict],
+    launch_yaw_deg: float,
+    projector,
+) -> None:
+    print("\n=== Route Summary ===")
+    print(f"Route: {route_name}")
+    print(f"ENU Origin: {fixed_origin['lat']:.7f}, {fixed_origin['lon']:.7f}")
+    print("")
+    print("  #  Name               Lat          Lon        ENU_X    ENU_Y   Leg(m)  Bearing")
+
+    route_points = [{"marker": "S", "name": "start_ref", **start_ref}]
+    for index, waypoint in enumerate(waypoints, start=1):
+        route_points.append({"marker": str(index), **waypoint})
+
+    total_distance_m = 0.0
+    previous_point: dict | None = None
+    for point in route_points:
+        enu_xy = point_to_enu(point, projector)
+        leg_m = None
+        bearing = None
+        if previous_point is not None:
+            leg_m = haversine_m(
+                previous_point["lat"],
+                previous_point["lon"],
+                point["lat"],
+                point["lon"],
+            )
+            bearing = bearing_deg(
+                previous_point["lat"],
+                previous_point["lon"],
+                point["lat"],
+                point["lon"],
+            )
+            total_distance_m += leg_m
+
+        print(
+            f"  {point['marker']:<2} "
+            f"{str(point['name'])[:16]:<16} "
+            f"{point['lat']:11.7f} "
+            f"{point['lon']:11.7f} "
+            f"{format_enu_value(None if enu_xy is None else enu_xy[0])} "
+            f"{format_enu_value(None if enu_xy is None else enu_xy[1])} "
+            f"{format_distance_value(leg_m)} "
+            f"{format_bearing_value(bearing)}"
+        )
+        previous_point = point
+
+    print("")
+    print(f"Total distance: {total_distance_m:.1f}m")
+    print(f"launch_yaw_deg: {launch_yaw_deg:.1f}")
+
+
+def confirm_save() -> bool:
+    raw = input("\nSave? [Y/n]: ").strip().lower()
+    return raw not in ("n", "no")
+
+
 def main(args=None) -> None:
     route_name = input("Route name [gps_route]: ").strip() or "gps_route"
     print("\nThis collector assumes:")
@@ -295,6 +474,7 @@ def main(args=None) -> None:
     input("\nPlace vehicle at the fixed launch pose, then press Enter to sample START_REF ...")
 
     fixed_origin = load_fixed_origin()
+    projector = create_projector(fixed_origin)
 
     rclpy.init(args=args)
     node = FixCollector()
@@ -303,16 +483,18 @@ def main(args=None) -> None:
     try:
         gnss_process, gnss_log_handle = ensure_fix_stream(node)
         start_ref = collect_fix_samples(node, "START_REF")
+        print_point_preview("START_REF", start_ref, projector)
 
         waypoints: list[dict] = []
         launch_yaw_deg: float | None = None
         waypoint_index = 1
 
         while True:
-            default_name = "goal" if waypoint_index == 1 else f"wp{waypoint_index}"
+            default_name = f"wp{waypoint_index}"
             name = input(f"\nWaypoint name [{default_name}]: ").strip() or default_name
             input(f"Move vehicle to {name}, then press Enter to sample ...")
-            waypoint = collect_fix_samples(node, name)
+            previous_point = start_ref if not waypoints else waypoints[-1]
+            waypoint = collect_reviewed_point(node, name, previous_point, projector)
             waypoint["name"] = name
             waypoints.append(waypoint)
 
@@ -332,6 +514,11 @@ def main(args=None) -> None:
         raise RuntimeError("at least one waypoint is required")
 
     launch_yaw_deg = maybe_override_launch_yaw(launch_yaw_deg)
+    maybe_rename_last_waypoint_to_goal(waypoints)
+    print_route_summary(route_name, fixed_origin, start_ref, waypoints, launch_yaw_deg, projector)
+    if not confirm_save():
+        print("Route not saved.")
+        return
 
     route = {
         "route_name": route_name,
