@@ -4,6 +4,139 @@
 
 ---
 
+## 2026-03-25 Corridor 最新 best-so-far session 发现
+
+### 1. 当前最好的实车 session 是 `2026-03-25-17-46-15`
+
+- session 目录：`/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/`
+- Jetson 代码版本：`abf05a4`
+- 已在 session 根目录加标记文件：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/BEST_SO_FAR_NOTE.txt`
+
+结论：
+- 这是截至 2026-03-25 晚上 corridor 效果最好的一版
+- waypoint 1 稳定完成，车辆已能正常进入第二段并完成直角转弯
+
+### 2. 最新这次“目标点又飘了”并不等于 GPS goal 随机跳变
+
+来自 `gps_route_runner` + bag 的关键事实：
+
+- `1774432105.055`：
+  - 第二段开始，发出第一段子目标 `(46.18, -30.03)`
+- `1774432186.672`：
+  - 第二段切到最终子目标 `(47.48, -52.41)`
+- `/gps_corridor/goal_map` 一共只出现了 8 次消息，其中第二段只有这两次预期切换
+- `/gps_corridor/path_map` 也只是随着子目标推进正常缩短：
+  - 2 段 path
+  - 1 段 path
+
+结论：
+- 这次存在 **正常的 subgoal 切换**
+- 但没有发现“无原因重发一个偏到建筑里的新 GPS 目标点”
+- 用户看到的“绿色目标突然变了”，更准确是 planner 在新子目标或当前位姿变化下重规划，而不是 GPS route 文件自己乱跳
+
+### 3. `gps_global_aligner` 在本轮没有发生 live handoff 漂移
+
+- `gps_global_aligner` 启动后固定在：
+  - `theta=86.50deg tx=387.29 ty=435.39`
+- `gps_route_runner` 在 waypoint 1 和 waypoint 2 都冻结到同一个 `rev=1`
+- 同时 aligner 大量打印：
+  - `Rejecting raw GPS alignment: bootstrap translation delta 72.76m ~ 182.39m > 15.00m`
+
+结论：
+- 本轮后半程异常不是“aligner 突然接管把目标点拖跑了”
+- 相反，aligner 一直停留在 bootstrap 对齐，并主动拒绝了不可信的 raw GPS 对齐
+
+### 4. 后半程真正的失稳链是 `collision ahead -> recovery -> odom 发散`
+
+- `controller_server` 在第二段持续大量报：
+  - `RegulatedPurePursuitController detected collision ahead!`
+- `local_costmap` / `global_costmap` 被多次 clear
+- `behavior_server` 实际执行了：
+  - `spin`
+  - `wait`
+  - `backup`
+- `lio_odom` 在 `1774432260s` 左右开始明显发散
+  - 先有 `0.5m ~ 0.8m` 级小跳
+  - 随后出现连续多米级跳变
+  - 最大单跳约 `13.17m`
+
+结论：
+- 本轮真正把车带崩的是后段恢复/位姿链，不是 GPS goal 本体
+- 这与用户现场观察“最后快到终点前又开始飘”一致
+
+### 5. corridor BT 文件本身已去掉 `Spin`，但 runtime 里依然触发了 `spin`
+
+已确认：
+
+- 本地文件：
+  - `src/bringup/behavior_trees/navigate_to_pose_w_replanning_3hz_and_recovery.xml`
+  - **不含 `Spin`**
+- Jetson 源文件与 install 后文件：
+  - `~/fyp_autonomous_vehicle/src/bringup/behavior_trees/navigate_to_pose_w_replanning_3hz_and_recovery.xml`
+  - `~/fyp_autonomous_vehicle/install/bringup/share/bringup/behavior_trees/navigate_to_pose_w_replanning_3hz_and_recovery.xml`
+  - **都不含 `Spin`**
+- 但最新 `behavior_server` 日志明确记录：
+  - `Running spin`
+  - `Turning 1.57 for spin behavior.`
+
+结论：
+- “移除 Spin 恢复”这件事在文件层已经完成
+- 但 runtime 结果表明 corridor 启动时**很可能没有真正使用到这份 BT**
+- 下一轮应优先查：
+  - `default_nav_to_pose_bt_xml` 的 rewrite 是否真正生效
+  - 运行时是否仍在走 Nav2 默认 BT
+
+### 6. 最新 corridor 代价地图障碍过滤机制（Jetson 当前实跑版本）
+
+当前 corridor Nav2 读的是：
+- `src/bringup/config/nav2_explore.yaml`
+- 通过 `system_explore.launch.py` 注入到 `navigation_launch.py`
+
+当前主障碍源：
+- **不是** `/scan`
+- 而是 `/fastlio2/body_cloud`
+
+当前已部署到 Jetson 的高度窗口（提交 `abf05a4`）：
+
+- local `pointcloud_mark`：
+  - `min_obstacle_height: 0.0`
+  - `max_obstacle_height: 2.0`
+  - `obstacle_range: 5.0`
+- local `pointcloud_clear`：
+  - `min_z: 0.0`
+  - `max_z: 6.0`
+- global `pointcloud_mark`：
+  - `min_obstacle_height: 0.0`
+  - `max_obstacle_height: 2.0`
+  - `obstacle_range: 4.0`
+- global `pointcloud_clear`：
+  - `min_z: 0.0`
+  - `max_z: 5.0`
+- local 还叠加：
+  - `DenoiseLayer minimal_group_size: 4`
+- local/global inflation 已放大到：
+  - local `inflation_radius: 0.65`, `cost_scaling_factor: 2.0`
+  - global `inflation_radius: 0.75`, `cost_scaling_factor: 2.0`
+
+结论：
+- 当前“点云看起来很多，但代价地图障碍较少”的主因不是 `pointcloud_to_laserscan`
+- 而是 `body_cloud + STVL + local Denoise + clear_after_reading + voxel_decay + obstacle_range` 这一整条链共同决定的
+
+### 7. 最新 route runner 还留有一个观测层编号 bug
+
+- 第一段起步误报 `2/2` 的 bug 已修掉
+- 但最新 session 里第二段切到最终子目标时，状态串仍打印：
+  - `NAVIGATING_SUBGOAL|goal|1|2|47.48|-52.41|aligner`
+- 同时它又打印：
+  - `progress=52.50/52.50`
+
+结论：
+- 最终子目标的编号文案仍然不准
+- 这是日志可观测性问题，不是实际控制目标错了
+
+---
+
 ## 2026-03-25 系统优化批次部署发现
 
 ### 1. 本轮 4 项改动已在 Jetson 真正落地，并通过 build

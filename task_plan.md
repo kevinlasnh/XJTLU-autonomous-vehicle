@@ -1,8 +1,64 @@
 # 系统优化批次 + 采集脚本改进 + Corridor v2 运行期微调
 
-**Status**: `系统优化批次已部署到 GitHub / Jetson，等待现场验证`
+**Status**: `Corridor 最新 best-so-far 版本已部署到 GitHub / Jetson，L2 已收口，等待 CC 文档阶段`
 **当前分支**: `gps`
 **最后更新**: 2026-03-25
+
+---
+
+## 当前活跃任务：2026-03-25 Corridor 运行期收口
+
+**工作流位置**: Step 31 已完成日志分析与 L2 记录，待 CC 接手文档阶段
+**车端最新提交**: `abf05a4` `Relax corridor point cloud height filters`
+**最佳 session**: `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/`
+
+### 本轮已确认
+
+- 本轮最佳版本链路已完整部署到 Jetson：
+  - `f98fa81` `Fix corridor subgoal numbering and disable spin recovery`
+  - `3f21d16` `Increase corridor costmap inflation for safer obstacle clearance`
+  - `abf05a4` `Relax corridor point cloud height filters`
+- 最新最佳 session 已单独标记：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/BEST_SO_FAR_NOTE.txt`
+- 用户现场反馈与日志一致：
+  - waypoint 1 已稳定到达
+  - 第一个直角转弯已基本成功
+  - 第二段已能推进很长距离，接近最终 waypoint
+
+### 本轮核心结论
+
+- “目标点突然跳变”需要拆开看：
+  1. `1774432105.055`：第二段切到 `goal` 的第一段子目标 `(46.18, -30.03)`，正常
+  2. `1774432186.672`：第二段切到最终子目标 `(47.48, -52.41)`，这是 **正常的 30m 分段推进**，不是随机 GPS 跳点
+- bag 已确认 `/gps_corridor/goal_map` 与 `/gps_corridor/path_map` 只有上述预期切换，没有“无原因重新发一个偏到建筑里的新 GPS 目标点”
+- `gps_global_aligner` 在本轮一直冻结在 `theta=86.50deg tx=387.29 ty=435.39 rev=1`，并持续拒绝大幅 raw GPS 对齐（`72m~182m` delta），说明本轮后段异常**不是 live alignment 接管**
+- 第二段后半真正的失稳链条是：
+  1. `controller_server` 长时间反复 `collision ahead`
+  2. Nav2 多次 clear local/global costmap 与 recovery
+  3. 后段 `lio_odom` 在 `1774432260s` 左右开始连续大跳，最大单跳约 `13.17m`
+  4. 之后轨迹与位姿快速发散，最终 `FAILED_WAYPOINT_goal_SUBGOAL_1_STATUS_6`
+
+### 当前剩余问题
+
+1. 绿色 `/plan` 仍过于贴近膨胀层外边界，控制余量不够，车体稍有横向误差就容易再次触发 `collision ahead`
+2. 代价地图的障碍表达仍偏稀疏，需要继续围绕 `body_cloud -> STVL -> Denoise -> Inflation` 链核实表达强度
+3. route runner 的 **最终子目标编号日志仍有残余显示 bug**
+   - 第二段最终子目标已切到 `(47.48, -52.41)`，但状态串仍显示 `goal|1|2`
+   - 这是观测层问题，不是 GPS goal 真跳
+4. 最新 session 中 `behavior_server` 仍执行了 `spin`
+   - 但本地与 Jetson 上的 corridor BT 文件都已确认**不含 `Spin`**
+   - 需要下一轮专查：运行时是否没有真正使用 corridor BT rewrite，或仍有其它 BT 路径在触发默认 spin recovery
+
+### 给 CC 的收口入口
+
+- 文档主线应以 session `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/` 为“当前最成功版本”
+- 文档里不要再把“GPS 目标随机跳变”当主因；更准确的说法是：
+  - 正常的 route subgoal 切换存在
+  - 后段主要问题是 local planning / recovery / odom 漂移叠加
+- 下一轮若继续工程推进，优先级建议：
+  1. 查清 corridor BT rewrite 为何未阻止 runtime `spin`
+  2. 继续把绿色 `/plan` 从膨胀层边缘往外推
+  3. 结合最新 STVL 高度窗口，继续审视代价地图点云过滤强度
 
 ---
 

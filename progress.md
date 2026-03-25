@@ -6,10 +6,12 @@
 
 ## 当前状态
 
-**系统优化批次（4 项）已部署到 GitHub + Jetson，并通过启动级 smoke test；采集脚本已部署等待现场验证；修正 v2 已部署等待 GPS fix。**
+**Corridor 最新 best-so-far 版本已部署到 GitHub + Jetson，最新实车日志已分析并写入 L2；等待 CC 文档阶段。**
 
 | 项目 | 状态 |
 |------|------|
+| Corridor 最新实车收口（2026-03-25 晚） | **Step 29-31 已完成，L2 已更新** |
+| Corridor 最新车端提交 | **`abf05a4` 已部署到 Jetson** |
 | 系统优化批次（subgoal/legacy/cleanup/QoS） | **已部署到 GitHub + Jetson；等待现场验证** |
 | collect_gps_route.py 改进 | **已部署到 GitHub + Jetson；等待现场交互验证** |
 | Corridor v2 独立 aligner 架构 | **已部署** |
@@ -19,6 +21,45 @@
 ---
 
 ## 最近完成 (2026-03-25)
+
+### Codex Corridor 实车收口（Step 29-31，2026-03-25 晚）
+
+- [x] 继续部署并推送 3 个 corridor 运行期微调提交：
+  - `f98fa81` `Fix corridor subgoal numbering and disable spin recovery`
+  - `3f21d16` `Increase corridor costmap inflation for safer obstacle clearance`
+  - `abf05a4` `Relax corridor point cloud height filters`
+- [x] Jetson 完成：
+  - `git pull --ff-only origin gps`
+  - `colcon build --packages-select bringup --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+- [x] Jetson 启动级 smoke test 通过：
+  - `timeout -s INT 8s bash scripts/launch_with_logs.sh corridor`
+  - 启动后退出正常
+  - `ros2 daemon` 无残留
+  - `/dev/serial_twistctl` 与 `/dev/wheeltec_gps` 无占用
+- [x] 用户完成最新一轮实车测试，最佳 session：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/`
+- [x] 已在该 session 根目录写入显式标记文件：
+  - `BEST_SO_FAR_NOTE.txt`
+- [x] 最新日志分析结论已收敛：
+  - waypoint 1 已稳定到达
+  - 第二段能完成直角转弯并推进较长距离
+  - 第二段中途切到最终子目标 `(47.48, -52.41)` 是**正常分段推进**，不是随机 GPS goal 跳变
+  - 真正的后段失稳发生在大量 `collision ahead` / recovery 之后，随后 `lio_odom` 明显发散
+- [x] 最新异常点已明确记录给下一轮：
+  - route runner 最终子目标编号日志仍显示 `1/2`
+  - runtime 里 `behavior_server` 仍执行 `spin`，与 corridor BT 文件内容不一致
+  - 障碍物表达主链确认是 `/fastlio2/body_cloud -> STVL -> Denoise -> Inflation`
+- [x] 按用户要求，不再继续新增代码修改，转入 L2 收口
+
+### 当前收口断点（交给 CC）
+
+- [x] Step 29：最新 session 全量日志分析完成
+- [x] Step 30：问题性质已判断，当前不再继续现场迭代
+- [x] Step 31：L2 文件已更新，可直接交给 CC 写文档
+- [ ] 下一位执行者（CC）如果要继续：
+  - 先以 `2026-03-25-17-46-15` 作为当前最佳基线
+  - 文档里把主问题表述为“绿色路径贴边 + recovery/odom 后段失稳”，而不是“GPS 目标随机跳变”
 
 ### Codex 系统优化部署（Step 17-25）
 
@@ -83,7 +124,8 @@
   - `docs/commands.md`: Section 14 补 subgoal 间距说明 + Ctrl+C 自动清理说明
   - `docs/knowledge/gps_planning.md`: 更新 segment_length_m 默认值说明
 - [x] planning-with-files 记录
-- [ ] git commit + push
+- [x] git commit + push
+  - commit `c870814` `Sync docs for system optimization batch deployment`
 
 ### CC 文档阶段 — 采集脚本改进（Step 33-38）
 
