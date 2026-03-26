@@ -68,10 +68,10 @@ class GPSGlobalAligner(Node):
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
         self.declare_parameter("enu_origin_alt", 0.0)
-        self.declare_parameter("pair_window_s", 30.0)
-        self.declare_parameter("pair_min_spacing_m", 1.0)
+        self.declare_parameter("pair_window_s", 90.0)
+        self.declare_parameter("pair_min_spacing_m", 2.0)
         self.declare_parameter("alignment_min_pairs", 5)
-        self.declare_parameter("alignment_min_spread_m", 5.0)
+        self.declare_parameter("alignment_min_spread_m", 20.0)
         self.declare_parameter("max_theta_step_deg", 0.5)
         self.declare_parameter("max_translation_step_m", 0.30)
         self.declare_parameter("max_bootstrap_delta_deg", 25.0)
@@ -374,37 +374,24 @@ class GPSGlobalAligner(Node):
         return max_spread
 
     def _solve_alignment(self, pairs: list[AlignmentPair]) -> Alignment2D | None:
+        if self._bootstrap_alignment is None:
+            return None
         if len(pairs) < self._alignment_min_pairs:
             return None
         spread_m = self._compute_pair_spread_m(pairs)
         if spread_m < self._alignment_min_spread_m:
             return None
 
-        enu_cx = sum(pair.enu_x for pair in pairs) / len(pairs)
-        enu_cy = sum(pair.enu_y for pair in pairs) / len(pairs)
-        map_cx = sum(pair.map_x for pair in pairs) / len(pairs)
-        map_cy = sum(pair.map_y for pair in pairs) / len(pairs)
-
-        sum_dot = 0.0
-        sum_cross = 0.0
-        for pair in pairs:
-            enu_dx = pair.enu_x - enu_cx
-            enu_dy = pair.enu_y - enu_cy
-            map_dx = pair.map_x - map_cx
-            map_dy = pair.map_y - map_cy
-            sum_dot += enu_dx * map_dx + enu_dy * map_dy
-            sum_cross += enu_dx * map_dy - enu_dy * map_dx
-
-        if not math.isfinite(sum_dot) or not math.isfinite(sum_cross):
-            return None
-        if abs(sum_dot) < 1e-9 and abs(sum_cross) < 1e-9:
-            return None
-
-        theta = math.atan2(sum_cross, sum_dot)
+        theta = self._bootstrap_alignment.theta
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
-        tx = map_cx - (cos_theta * enu_cx - sin_theta * enu_cy)
-        ty = map_cy - (sin_theta * enu_cx + cos_theta * enu_cy)
+        tx_sum = 0.0
+        ty_sum = 0.0
+        for pair in pairs:
+            tx_sum += pair.map_x - (cos_theta * pair.enu_x - sin_theta * pair.enu_y)
+            ty_sum += pair.map_y - (sin_theta * pair.enu_x + cos_theta * pair.enu_y)
+        tx = tx_sum / len(pairs)
+        ty = ty_sum / len(pairs)
         if not (math.isfinite(theta) and math.isfinite(tx) and math.isfinite(ty)):
             return None
 
@@ -414,6 +401,13 @@ class GPSGlobalAligner(Node):
     def _trim_pairs(self, now_mono: float) -> None:
         while self._pair_buffer and now_mono - self._pair_buffer[0].stamp_mono > self._pair_window_s:
             self._pair_buffer.popleft()
+        if self._pair_buffer:
+            tail = self._pair_buffer[-1]
+            self._last_pair_enu = (tail.enu_x, tail.enu_y)
+            self._last_pair_map = (tail.map_x, tail.map_y)
+        else:
+            self._last_pair_enu = None
+            self._last_pair_map = None
 
     def _ingest_latest_fix_pair(self) -> bool:
         msg = self._latest_fix
@@ -430,6 +424,17 @@ class GPSGlobalAligner(Node):
             return False
 
         enu_x, enu_y = self._projector.forward(msg.latitude, msg.longitude)
+        now_mono = time.monotonic()
+        self._trim_pairs(now_mono)
+        if self._pair_buffer:
+            last_pair = self._pair_buffer[-1]
+            dt_s = now_mono - last_pair.stamp_mono
+            gps_jump_m = math.hypot(enu_x - last_pair.enu_x, enu_y - last_pair.enu_y)
+            if dt_s <= 0.5 and gps_jump_m > 10.0:
+                self.get_logger().warn(
+                    "Dropping GPS jump sample: %.2fm over %.2fs" % (gps_jump_m, dt_s)
+                )
+                return False
         if self._last_pair_enu is not None and self._last_pair_map is not None:
             enu_step = math.hypot(enu_x - self._last_pair_enu[0], enu_y - self._last_pair_enu[1])
             map_step = math.hypot(
@@ -439,7 +444,6 @@ class GPSGlobalAligner(Node):
             if enu_step < self._pair_min_spacing_m and map_step < self._pair_min_spacing_m:
                 return False
 
-        now_mono = time.monotonic()
         self._pair_buffer.append(
             AlignmentPair(
                 stamp_mono=now_mono,

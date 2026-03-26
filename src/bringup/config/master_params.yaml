@@ -145,14 +145,14 @@
     enu_origin_lon: 120.737548
     # 独立 global aligner 使用的固定 ENU 原点海拔。
     enu_origin_alt: 0.0
-    # 在线保留 GPS/map 配对的时间窗口；更大更稳，但全局修正更慢。
-    pair_window_s: 15.0
-    # 采纳新配对前要求的最小位移；调大更稳，调小更敏感。
-    pair_min_spacing_m: 1.5
+    # 在线保留 GPS/map 配对的时间窗口；增大窗口，保留更多历史对齐证据。
+    pair_window_s: 90.0
+    # 采纳新配对前要求的最小位移；增大间距，减少高噪声冗余点对。
+    pair_min_spacing_m: 2.0
     # 至少多少个最近配对后才尝试解算对齐。
     alignment_min_pairs: 5
-    # 至少累计多少 ENU 展幅后才允许在线修正。
-    alignment_min_spread_m: 5.0
+    # 至少累计多少 ENU 展幅后才允许在线修正；避免小展幅下被 GPS 噪声误导。
+    alignment_min_spread_m: 20.0
     # 单次允许的最大角度更新步长；限制运行中参考系转动速度。
     max_theta_step_deg: 0.5
     # 单次允许的最大平移更新步长；限制运行中参考系平移速度。
