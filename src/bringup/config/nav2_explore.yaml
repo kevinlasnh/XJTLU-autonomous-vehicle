@@ -295,7 +295,7 @@ controller_server:
       simulate_ahead_time: 1.0
       rotate_to_goal_heading: false
       primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.45
+      desired_linear_vel: 0.90
       lookahead_dist: 1.25
       min_lookahead_dist: 0.60
       max_lookahead_dist: 1.80
@@ -307,7 +307,9 @@ controller_server:
       use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 0.30
       use_regulated_linear_velocity_scaling: true
-      use_cost_regulated_linear_velocity_scaling: false
+      use_cost_regulated_linear_velocity_scaling: true
+      cost_scaling_dist: 0.55
+      cost_scaling_gain: 0.70
       regulated_linear_scaling_min_radius: 1.2
       regulated_linear_scaling_min_speed: 0.20
       use_rotate_to_heading: false
@@ -747,7 +749,7 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_velocity: [0.5, 0.0, 1.0]
+    max_velocity: [0.9, 0.0, 1.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     min_velocity: [0.0, 0.0, -1.0]
