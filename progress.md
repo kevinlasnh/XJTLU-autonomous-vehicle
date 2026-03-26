@@ -6,11 +6,11 @@
 
 ## 当前状态
 
-**Corridor 2026-03-26 实车分析已收口，当前等待 CC 接手“GPS 路线采集/锚定方法”架构问题。**
+**GPS Aligner Translation-Only 已部署到 GitHub + Jetson；当前等待现场 stable GPS 继续 Step 25/26。**
 
 | 项目 | 状态 |
 |------|------|
-| Corridor GPS 路线锚定问题 | **Step 29-31 已完成；需回 CC 重设计采图/锚定方法** |
+| GPS Aligner Translation-Only 修正 | **Step 21-25 已完成启动级 smoke test；等待现场 stable GPS 继续验证** |
 | 小修 `5eb5fd1` waypoint 边界 alignment 守卫 | **已部署到 Jetson；已验证不再在第二段切换坏 alignment** |
 | 后续独立探索：`gps-mppi` | **仅记录为后续方向，未开始** |
 | Nav2 避障修正（spin/costmap/inflation） | **方案锁定，等待 Codex 部署** |
@@ -20,11 +20,81 @@
 | collect_gps_route.py 改进 | **已部署到 GitHub + Jetson；等待现场交互验证** |
 | Corridor v2 独立 aligner 架构 | **已部署** |
 | 运行期微调 v2（修正） | **已部署到 Jetson；等待 GPS fix** |
-| 当前分支 | `gps` |
+| 当前分支 | `gps-rpp` |
 
 ---
 
 ## 最近完成 (2026-03-26)
+
+### Codex GPS Aligner Translation-Only 部署（Step 21-25）
+
+- [x] 本地实现锁定方案：
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_global_aligner_node.py`
+  - `src/bringup/config/master_params.yaml`
+- [x] 改动内容：
+  - `_solve_alignment()` 改为固定 bootstrap 旋转，只估计平移
+  - `_trim_pairs()` 修正为与当前保留窗口队尾同步 `_last_pair_enu/_last_pair_map`
+  - `_ingest_latest_fix_pair()` 增加 GPS 跳变过滤（`>10m / 0.5s` 丢弃）
+  - `/gps_global_aligner` 参数改为：
+    - `pair_window_s: 90.0`
+    - `pair_min_spacing_m: 2.0`
+    - `alignment_min_spread_m: 20.0`
+- [x] 本地静态验证通过：
+  - `python -m py_compile src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_global_aligner_node.py`
+  - `yaml.safe_load(src/bringup/config/master_params.yaml)`
+- [x] 提交并推送：
+  - `94862d7` `Fix aligner translation-only runtime correction`
+- [x] Jetson 部署完成：
+  - Jetson 工作区安全切到 `gps-rpp`
+  - 保留既有本地改动：`src/perception/pgo_gps_fusion/rviz/pgo.rviz`
+  - `git pull --ff-only origin gps-rpp`
+  - `colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+- [x] 启动级 smoke test：
+  - session `/home/jetson/fyp_runtime_data/logs/2026-03-26-20-45-58/`
+  - `gps_global_aligner` 进入 `ALIGNER_WAITING_FOR_STABLE_FIX`
+  - `gps_route_runner` 进入 `WAITING_FOR_STABLE_FIX`
+  - Nav2 启动链正常拉起
+  - 12 秒内未等到 stable GPS，因此 monitor 主动退出
+  - 退出后无关键残留进程，`/dev/serial_twistctl` 与 `/dev/wheeltec_gps` 无占用
+- [x] 当前结论：
+  - 本次 Translation-Only 改动已真实进入 Jetson 工作区
+  - build 通过，corridor 启动链正常
+  - 当前未完成项只剩现场 stable GPS 条件下的完整 Step 25/26 验证
+- [x] 已观察到的既有收尾噪声：
+  - `gps_global_aligner_node` 在外部中断时仍会触发 `publisher's context is invalid` / `rcl_shutdown already called`
+  - `gps_route_runner_node` 在外部中断时也有同类 traceback
+  - 这属于 shutdown 清理噪声，不是本次 Translation-Only 改动的新增 blocker
+
+---
+
+### Codex GPS Aligner Translation-Only 部署性审查（Step 17-19）
+
+- [x] 按 session 恢复流程读取 L2：
+  - `task_plan.md`
+  - `progress.md`
+  - `findings.md`
+  - `WORKFLOW.md`
+- [x] 核对当前实施对象与入口链：
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_global_aligner_node.py`
+  - `src/bringup/config/master_params.yaml`
+  - `src/bringup/launch/system_gps_corridor.launch.py`
+  - `src/bringup/config/pgo_corridor_no_gps.yaml`
+- [x] 确认当前代码状态：
+  - `_solve_alignment()` 仍使用 Procrustes 同时估计旋转和平移
+  - `/gps_global_aligner` 运行参数仍是旧值：`pair_window_s=15.0`、`pair_min_spacing_m=1.5`、`alignment_min_spread_m=5.0`
+  - corridor 模式下 PGO 的 `"gps.enable"` 已被 override 成 `false`
+- [x] 部署性结论：
+  - 该方案与现有代码和启动链匹配，**可部署**
+  - 当前唯一核心 blocker 正是计划要修的旋转估计放大问题，不存在额外入口级断裂
+- [x] 实施注意点：
+  - `_trim_pairs()` 修复时不能只无脑清 `_last_pair_enu/_last_pair_map`
+  - 正确口径是和保留窗口的队尾同步；若窗口已空再清空，避免 stale pair 把后续配对卡死
+- [ ] 下一步：
+  - 向用户汇报“计划可部署”
+  - 等用户回复“去部署”后进入 Step 21-25
+
+---
 
 ### Codex Corridor 小修 + 收口（Step 21-31）
 

@@ -1,14 +1,91 @@
-# Nav2 避障修正 + 系统优化批次 + Corridor v2 运行期微调
+# GPS Aligner Translation-Only 修正 + Corridor v2 运行期微调
 
-**Status**: `Corridor GPS 路线锚定问题已收敛，等待 CC 接手架构方案`
-**当前分支**: `gps`
+**Status**: `GPS Aligner Translation-Only 已部署，等待现场 stable GPS 验证`
+**当前分支**: `gps-rpp`
 **最后更新**: 2026-03-26
 
 ---
 
-## 当前活跃任务：Corridor GPS 路线锚定问题收口（2026-03-26）
+## 当前活跃任务：GPS Aligner Translation-Only 修正（2026-03-26）
 
-**工作流位置**: Step 29-31 已完成，等待 CC Step 33-38  
+**工作流位置**: Step 21-25 已完成启动级 smoke test，等待现场 stable GPS 继续验证
+**修改文件**:
+- `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_global_aligner_node.py`
+- `src/bringup/config/master_params.yaml`
+
+**构建**:
+```bash
+colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1
+```
+
+### 问题根因
+
+当前 `gps_global_aligner` 使用 Procrustes 从 GPS+TF 点对同时估计旋转和平移。GPS 2.5m 噪声导致旋转估计误差 ~3-5°，该误差被 ENU 坐标量级（~581m）放大成 56m 的平移偏差，超过 `max_bootstrap_translation_delta_m: 8.0` 阈值被拒绝。结果：runtime 修正全程无效，bootstrap 误差从头用到尾。
+
+### 解决方案
+
+**Phase 1：Translation-Only Alignment**（核心修复）
+
+改 `_solve_alignment()` 方法：
+- 不再从 GPS 点对估计旋转
+- 固定使用 `bootstrap_alignment.theta`（来自 IMU，亚度精度）
+- 只估计平移修正：对每个点对计算残差，取均值
+
+效果：GPS 噪声直接映射到 ~2.5m 平移修正（不再被旋转放大），guard 检查 delta 从 56m 降到 ~2.5m。
+
+**Phase 2：Bug 修复**
+
+1. `_trim_pairs()` 后重置 `_last_pair_enu/map`（防竞态）
+2. `_ingest_latest_fix_pair()` 新增 GPS 跳变过滤（> 10m/0.5s → 丢弃）
+
+**Phase 3：参数调优**
+
+| 参数 | 当前值 | 改为 | 理由 |
+|------|--------|------|------|
+| `alignment_min_spread_m` | 5.0 | **20.0** | 增大展幅要求 |
+| `pair_window_s` | 30.0 | **90.0** | 保留更多历史数据 |
+| `pair_min_spacing_m` | 1.0 | **2.0** | 减少冗余点对 |
+
+### Codex Step 19 审查结论（2026-03-26）
+
+- 计划与当前代码、launch、参数注入链一致，可直接进入部署阶段
+- corridor 模式下 PGO 的 GPS 因子已通过 `pgo_corridor_no_gps.yaml` 关闭，不会与 `gps_global_aligner` 并行打架
+- 当前真实 blocker 确认就是 `gps_global_aligner` 仍在 `_solve_alignment()` 里用 Procrustes 同时估旋转和平移；本计划正对该点修复
+- 实施时 `_trim_pairs()` 的修复口径应为：修剪窗口后把 `_last_pair_enu/_last_pair_map` 与“当前保留队尾”同步；若窗口已空则清空，避免 stale pair 把后续配对卡死
+
+### 预期效果
+
+| | 当前 | 修复后 |
+|--|------|--------|
+| Runtime 修正 | 全程被拒绝 | 展幅 > 20m 后生效 |
+| 第一段结束时精度 | ~2.5m | ~1-1.5m |
+| 第二段右偏 | 1.8m | 应明显减小 |
+
+### 2026-03-26 Codex 部署结果
+
+- 本地已提交并推送：
+  - `94862d7` `Fix aligner translation-only runtime correction`
+- Jetson 已切到 `gps-rpp` 并拉取最新提交
+- Jetson 已执行构建：
+  ```bash
+  colcon build --packages-select gps_waypoint_dispatcher bringup --symlink-install --parallel-workers 1
+  source install/setup.bash
+  ```
+- 启动级 smoke test session：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-26-20-45-58/`
+- 已确认：
+  - corridor 启动链正常拉起
+  - `gps_global_aligner` 与 `gps_route_runner` 都进入等待稳定 GPS 的预期状态
+  - 退出后无关键残留进程，串口无占用
+- 当前阻塞：
+  - 12 秒内未等到 stable GPS fix，故未进入完整路线执行
+  - `gps_global_aligner_node` 与 `gps_route_runner_node` 在外部中断时仍会打印既有的 `rclpy` shutdown traceback；属于收尾噪声，不是本次 Translation-Only 改动引入
+
+---
+
+## 已完成任务：Corridor GPS 路线锚定问题收口（2026-03-26）
+
+**工作流位置**: Step 29-31 已完成，Step 33-38 文档已同步  
 **最新相关提交**:
 - `5eb5fd1` `Harden corridor alignment handoff at waypoint boundaries`
 
