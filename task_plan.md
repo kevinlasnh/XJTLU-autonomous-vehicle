@@ -1,15 +1,136 @@
-# 系统优化批次 + 采集脚本改进 + Corridor v2 运行期微调
+# Nav2 避障修正 + 系统优化批次 + Corridor v2 运行期微调
 
-**Status**: `Corridor 最新 best-so-far 版本已部署到 GitHub / Jetson，L2 已收口，等待 CC 文档阶段`
+**Status**: `Corridor GPS 路线锚定问题已收敛，等待 CC 接手架构方案`
 **当前分支**: `gps`
-**最后更新**: 2026-03-25
+**最后更新**: 2026-03-26
 
 ---
 
-## 当前活跃任务：2026-03-25 Corridor 运行期收口
+## 当前活跃任务：Corridor GPS 路线锚定问题收口（2026-03-26）
 
-**工作流位置**: Step 31 已完成日志分析与 L2 记录，待 CC 接手文档阶段
-**车端最新提交**: `abf05a4` `Relax corridor point cloud height filters`
+**工作流位置**: Step 29-31 已完成，等待 CC Step 33-38  
+**最新相关提交**:
+- `5eb5fd1` `Harden corridor alignment handoff at waypoint boundaries`
+
+### 本轮已确认
+
+- Jetson 已部署 `5eb5fd1`，`gps_waypoint_dispatcher + bringup` build 通过
+- 最新实车 session：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-27-19/`
+- waypoint 边界小修已生效：
+  - 第二段没有再切换到新的 alignment
+  - waypoint 1 与 waypoint 2 都冻结在 `theta=86.63deg tx=386.14 ty=436.28 rev=1`
+- 但第二段仍物理上往建筑物方向偏，说明主问题不再是 waypoint 边界切换逻辑
+
+### 本轮核心结论
+
+1. 当前小修只解决了“第二段切换时换坏 alignment”这一类问题，且已验证生效
+2. 第一段绝对物理点位仍有偏差：
+   - startup fix 相对 `start_ref` 仍有 `2.48m` 偏差
+3. 第二段发出的目标线本身就带右偏分量：
+   - waypoint 1 末点附近 `(44.30, 0.10)`
+   - 第二段第一个 subgoal `(46.11, -29.90)`
+   - map 坐标增量约 `dx=+1.81m, dy=-30.00m`
+4. 这说明当前主问题已收敛到：
+   - GPS 路线几何本体
+   - `start_ref + launch_yaw_deg + startup GPS` 的整条路线锚定方法
+5. 继续只调 Nav2 YAML 或小修 runner，无法满足“稳定到预定物理位置”的目标
+
+### 交给 CC 的下一步
+
+- 重新设计 GPS 路线采集/锚定方法，而不是继续只做运行时调参
+- 候选方向：
+  - 路线改为 `map` 物理点位，GPS 只负责启动定位
+  - 保留 GPS 路线，但启动时改为多点刚体配准，不再只靠单个 `start_ref`
+  - 采图改为连续轨迹采集 + 中心线/拐角拟合，而不是单点均值 waypoint
+- 用户另提了一个**后续独立探索项**：
+  - 可单开分支 `gps-mppi`
+  - 评估 MPPI 等更强避障控制器
+  - 但该项应放在“坐标锚定方案”之后，不与当前主问题并行
+
+---
+
+## 当前活跃任务：Nav2 避障修正 + subgoal 编号 bug（4 项）
+
+**工作流位置**: Step 15 用户已确认，等待 Codex Step 17-25
+**修改文件**:
+- `src/bringup/config/nav2_explore.yaml`（改动 1-3）
+- `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`（改动 4）
+**构建**:
+```bash
+colcon build --packages-select bringup gps_waypoint_dispatcher --symlink-install --parallel-workers 1
+```
+
+### 改动 1：彻底禁用 Spin recovery（Codex 部署性修正口径）
+
+**根因**: 自定义 BT 不含 Spin，但 behavior_server 仍注册 spin 插件。Nav2 某些内部 recovery 路径可能直接调用已注册的 behavior plugin。
+
+**Codex 部署性修正**:
+- **不要删除** `bt_navigator.plugin_lib_names` 里的 `nav2_spin_action_bt_node` 和 `nav2_spin_cancel_bt_node`
+- 原因：最新实车已证明 runtime 很可能没有真正吃到 corridor BT rewrite，而上游默认 BT 明确包含 `<Spin>`
+- 如果直接删掉这两个 BT node plugin，而 runtime 又回退到默认 BT，可能导致 `bt_navigator` 在加载默认树时直接失败
+- 更稳妥的可部署口径是：
+  - 保留 bt_navigator 的 spin BT node plugin（只是不使用）
+  - 只删除 `behavior_server.behavior_plugins` 中的 `"spin"` 以及 `spin:` 参数块
+  - 这样即使默认 BT 仍被误用，至少不会先把导航启动链直接打断
+
+| 行号 | 当前值 | 改动 |
+|------|--------|------|
+| 157 | `- nav2_spin_action_bt_node` | **保留，不改** |
+| 195 | `- nav2_spin_cancel_bt_node` | **保留，不改** |
+| 636 | `behavior_plugins: ["spin", "backup", ...]` | 删掉 `"spin"` |
+| 637-642 | `spin:` 参数块（含注释） | **删除整块** |
+
+### 改动 2：修复 costmap 障碍表达（核心修复）
+
+**根因**: `clear_after_reading: true` 导致 STVL 每次 costmap 更新后立即清空所有体素。障碍只存活一个更新周期（~80ms），planner 和 controller ��到的障碍不一致。
+
+| 行号 | 参数 | 当前值 | 改为 |
+|------|------|--------|------|
+| 405 | local STVL `clear_after_reading` | `true` | **`false`** |
+| 509 | global STVL `clear_after_reading` | `true` | **`false`** |
+
+改完后障碍由 `voxel_decay` 自然管理：local 0.8s 衰减，global 1.5s 衰减。
+
+### 改动 3：降低 cost_scaling_factor 推开绿色路径
+
+**根因**: `cost_scaling_factor: 2.0` 让 inflation cost 衰减太快，planner 认为贴着障碍走"代价可接受"。controller 跟踪时稍有横向偏差就触发 `collision ahead`。
+
+| 行号 | 参数 | 当前值 | 改为 |
+|------|------|--------|------|
+| 371 | local inflation `cost_scaling_factor` | `2.0` | **`1.5`** |
+| 475 | global inflation `cost_scaling_factor` | `2.0` | **`1.5`** |
+
+`1.5` 是保守步进。降低后同距离 cost 更高，planner 会选更远的路径。���果效果不够可进一步降到 `1.0`。
+
+### 改动 4：修复 subgoal 编号日志 bug
+
+**现象**: 最终子目标坐标正确 `(47.48, -52.41)` 但状态串显示 `goal|1|2`（应为 `2/2`）。
+
+**根因**: `gps_route_runner_node.py`
+
+1. 第 602 行调用 `self._subgoal_index(segment, current_progress_m, segment_length_m)` — 传入的是**机器人当前位置**，不是**子目标目标位置**
+2. 第 433 行用 `math.floor(progress / segment_length) + 1` — 在 progress 恰好等于 segment_length 倍数时 off-by-one
+
+**修法**:
+- 第 602 行：`current_progress_m` → `next_progress_m`
+- 第 433 行：把 `floor + 1` 改为直接 `ceil`：
+  ```python
+  return max(1, min(segment.total_subgoals, int(math.ceil(max(0.0, current_progress_m) / safe_segment_length_m))))
+  ```
+
+**构建**: `colcon build --packages-select gps_waypoint_dispatcher --symlink-install --parallel-workers 1`
+
+### 验证
+
+1. Jetson 启动 corridor，RViz 观察 local/global costmap — 障碍应更密集持久
+2. 绿色 `/plan` 应远离障碍而不是贴边走
+3. `collision ahead` 触发次数应显著减少
+4. `behavior_server` 日志不应再出现 `Running spin`
+
+---
+
+## 已完成：2026-03-25 Corridor 运行期收口
 **最佳 session**: `/home/jetson/fyp_runtime_data/logs/2026-03-25-17-46-15/`
 
 ### 本轮已确认

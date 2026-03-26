@@ -1,6 +1,119 @@
 # FYP Autonomous Vehicle - Findings
 
-**最后更新**: 2026-03-25
+**最后更新**: 2026-03-26
+
+---
+
+## 2026-03-26 Corridor GPS 路线锚定问题收敛
+
+### 1. 最新 session `2026-03-26-15-27-19` 证明 waypoint 边界小修已生效
+
+- 相关提交：`5eb5fd1`
+- route runner 日志：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-27-19/console/python3_447107_1774510051775.log`
+- aligner 日志：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-27-19/console/python3_446692_1774510045689.log`
+
+关键事实：
+
+- waypoint 1 冻结：
+  - `theta=86.63deg tx=386.14 ty=436.28 rev=1`
+- waypoint 2 冻结：
+  - `theta=86.63deg tx=386.14 ty=436.28 rev=1`
+- 第二段不再切到新的 alignment
+- aligner 在第二段切换前后持续拒绝 raw GPS：
+  - `Rejecting raw GPS alignment: bootstrap translation delta 56.25m > 8.00m`
+
+结论：
+
+- `5eb5fd1` 修掉了“第二段 waypoint 边界换坏 alignment”这一类问题
+- 本轮后续异常不再归因于 waypoint 边界 alignment handoff
+
+### 2. 第一段绝对物理位置仍会偏，startup GPS 锚定误差依旧存在
+
+- route runner 启动日志：
+  - `Startup fix mean lat=31.2781752 lon=120.7327619 spread=0.08m distance_to_start_ref=2.48m`
+- aligner 启动日志：
+  - `Aligner startup fix mean lat=31.2781749 lon=120.7327616 spread=0.06m distance_to_start_ref=2.44m`
+
+结论：
+
+- 当前并不是从“正确起点真值”开始挂路线
+- 仅 startup 时这一笔 GPS 锚定，就已经带来约 `2.5m` 级别的位置误差
+- 这足以解释 waypoint 1 物理点位偏 2 到 3 米
+
+### 3. 第二段发出的目标线本身就带右偏分量，不是运行时中途跳点
+
+route runner 在第二段发出的第一个 subgoal：
+
+- waypoint 1 末点附近：
+  - `(44.30, 0.10)`
+- 第二段第一个 subgoal：
+  - `(46.11, -29.90)`
+
+两者 map 增量约：
+
+- `dx = +1.81m`
+- `dy = -30.00m`
+- heading 约 `-86.55deg`
+
+同时，当前 `current_route.yaml` 里的第二段 GPS 几何本身就是：
+
+- `ls-right-top-corner -> goal`
+- ENU 增量约 `dx=-52.08m, dy=-6.26m`
+
+结论：
+
+- 这次“往建筑物里走”不是 route runner 中途又换了一个新目标
+- 也不是最新小修把第二段拖偏
+- 而是当前 GPS 路线文件 + startup 锚定后，在 `map` 中生成的第二段目标线本身就不是用户想要的那条物理直线
+
+### 4. 第二段失败时仍有大量 `collision ahead`，但这是后果，不是根因
+
+system log：
+- `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-27-19/system/launch_stdout.log`
+
+关键现象：
+
+- 第二段目标固定在 `(46.11, -29.90)`
+- 随后大量出现：
+  - `RegulatedPurePursuitController detected collision ahead!`
+  - `Planning algorithm GridBased failed to generate a valid path to (46.11, -29.90)`
+  - `Running wait`
+  - `Running backup`
+- 最终：
+  - `FAILED_WAYPOINT_goal_SUBGOAL_1_STATUS_6`
+
+结论：
+
+- 第二段 abort 前确实发生了典型的 Nav2 局部碰撞/恢复链
+- 但本轮主因仍然是“目标线本身偏向建筑物一侧”
+- 避障参数仍可能需要继续调，但它已经不是当前最核心的问题
+
+### 5. 当前工程判断：问题已回到“GPS 路线建图与锚定方法”，不是继续做小修
+
+综合 2026-03-26 的多轮实测：
+
+- 只修 waypoint 边界 handoff，不足以把车稳定带到预定物理点
+- 只调 Nav2 局部避障，也无法修正第二段目标线本身的方向偏差
+
+当前最合理的架构判断：
+
+- 需要重设计 GPS 路线采集/锚定方法
+- 单点采集 `start_ref + waypoint GPS`，再用当天 startup GPS 把整条路线挂到 `map` 上，这套方法天然允许米级绝对误差
+
+### 6. 后续独立探索项：可评估 MPPI，但不应与当前坐标主问题混在一起
+
+用户提出：
+
+- 后续可单开分支 `gps-mppi`
+- 评估 MPPI 等更强避障控制器
+
+结论：
+
+- 这是合理的后续探索方向
+- 但它不能替代当前“路线锚定不准”的主问题
+- 顺序上应先由 CC 收敛 GPS 路线建图/锚定方案，再决定是否切换控制器
 
 ---
 
@@ -134,6 +247,45 @@
 结论：
 - 最终子目标的编号文案仍然不准
 - 这是日志可观测性问题，不是实际控制目标错了
+
+---
+
+## 2026-03-26 Nav2 避障修正方案部署性审查发现
+
+### 1. 当前锁定计划里“删除 spin BT node plugin”这一条不可直接部署
+
+本地与 Jetson 已确认：
+
+- corridor 自定义 BT 文件确实不含 `Spin`
+- 但最新实车 session 里 `behavior_server` 仍实际执行了 `spin`
+
+同时，Jetson 上游默认 BT：
+- `/opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml`
+- 明确包含：
+  - `<Spin spin_dist="1.57"/>`
+
+结论：
+- 当前不能把“corridor BT rewrite 已可靠生效”当成已证事实
+- 因此若直接删除 `bt_navigator.plugin_lib_names` 里的：
+  - `nav2_spin_action_bt_node`
+  - `nav2_spin_cancel_bt_node`
+- 一旦 runtime 继续回退到上游默认 BT，`bt_navigator` 可能直接因缺失 Spin 节点插件而无法正确加载默认树
+
+### 2. 更稳妥的可部署口径
+
+在不改变当前 Nav2 架构的前提下，更稳妥的部署方式是：
+
+- **保留** `bt_navigator` 的 Spin 相关 BT node plugin
+- **只删除** `behavior_server.behavior_plugins` 中的 `"spin"`
+- 同时删除 `spin:` 参数块
+
+这样做的含义是：
+- corridor 自定义 BT 若正确生效：不会再调用 Spin
+- 即使 runtime 仍误走默认 BT，也不会先因为插件库缺失把整个导航启动链打断
+
+结论：
+- 原始锁定计划：**不可直接部署**
+- 经 Codex 这一处微调后：**可继续进入 Step 20 等用户锁定**
 
 ---
 

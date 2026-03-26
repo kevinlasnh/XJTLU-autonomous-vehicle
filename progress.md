@@ -1,15 +1,19 @@
 # FYP Autonomous Vehicle - Progress Log
 
-**最后更新**: 2026-03-25
+**最后更新**: 2026-03-26
 
 ---
 
 ## 当前状态
 
-**Corridor 最新 best-so-far 版本已部署到 GitHub + Jetson，最新实车日志已分析并写入 L2；等待 CC 文档阶段。**
+**Corridor 2026-03-26 实车分析已收口，当前等待 CC 接手“GPS 路线采集/锚定方法”架构问题。**
 
 | 项目 | 状态 |
 |------|------|
+| Corridor GPS 路线锚定问题 | **Step 29-31 已完成；需回 CC 重设计采图/锚定方法** |
+| 小修 `5eb5fd1` waypoint 边界 alignment 守卫 | **已部署到 Jetson；已验证不再在第二段切换坏 alignment** |
+| 后续独立探索：`gps-mppi` | **仅记录为后续方向，未开始** |
+| Nav2 避障修正（spin/costmap/inflation） | **方案锁定，等待 Codex 部署** |
 | Corridor 最新实车收口（2026-03-25 晚） | **Step 29-31 已完成，L2 已更新** |
 | Corridor 最新车端提交 | **`abf05a4` 已部署到 Jetson** |
 | 系统优化批次（subgoal/legacy/cleanup/QoS） | **已部署到 GitHub + Jetson；等待现场验证** |
@@ -20,7 +24,94 @@
 
 ---
 
+## 最近完成 (2026-03-26)
+
+### Codex Corridor 小修 + 收口（Step 21-31）
+
+- [x] 本地实现 waypoint 边界 alignment 跳变守卫：
+  - `gps_route_runner_node.py`
+  - 新增 `waypoint_alignment_translation_guard_m: 3.0`
+  - 新增 `waypoint_alignment_theta_guard_deg: 2.0`
+- [x] 收紧 aligner bootstrap 平移拒绝阈值：
+  - `gps_global_aligner_node.py`
+  - `master_params.yaml`
+  - `max_bootstrap_translation_delta_m: 15.0 -> 8.0`
+- [x] 本地静态验证通过：
+  - `python -m py_compile gps_route_runner_node.py`
+  - `python -m py_compile gps_global_aligner_node.py`
+  - `yaml.safe_load(master_params.yaml)`
+- [x] 提交并推送：
+  - `5eb5fd1` `Harden corridor alignment handoff at waypoint boundaries`
+- [x] Jetson 部署完成：
+  - `git pull --ff-only origin gps`
+  - `colcon build --packages-select bringup gps_waypoint_dispatcher --symlink-install --parallel-workers 1`
+  - `source install/setup.bash`
+- [x] 启动级 smoke test：
+  - session `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-23-24/`
+  - 启动链正常
+  - 8 秒内未等到稳定 GPS fix，因此未进入完整导航
+  - 退出后 `/dev/serial_twistctl` 与 `/dev/wheeltec_gps` 无占用
+- [x] 用户完成后续实车测试：
+  - 最新 session `/home/jetson/fyp_runtime_data/logs/2026-03-26-15-27-19/`
+- [x] 最新日志结论已收敛：
+  - waypoint 2 不再切换坏 alignment，两个 waypoint 都冻结在 `rev=1`
+  - startup fix 相对 `start_ref` 仍偏 `2.48m`
+  - 第二段第一个 subgoal 仍是 `(46.11, -29.90)`，相对 waypoint 1 带约 `+1.81m` 右偏
+  - 当前主问题已从“小修 runner”收敛到“GPS 路线建图/锚定方法”
+- [x] Step 31：
+  - 已更新 `task_plan.md`
+  - 已更新 `findings.md`
+  - 已更新 `progress.md`
+
+### 当前收口断点（交给 CC）
+
+- [x] Step 29：最新 session 全量日志分析完成
+- [x] Step 30：问题性质已判断为架构问题，应回 Step 8
+- [x] Step 31：L2 文件已更新，可直接交给 CC 写文档/重做方案
+- [x] 额外记录的后续方向：
+  - 可单开分支 `gps-mppi`
+  - 评估 MPPI 等更强避障控制器
+  - 但该方向不替代当前 GPS 路线锚定主问题
+
+---
+
 ## 最近完成 (2026-03-25)
+
+### CC Nav2 避障修正调研（Step 8-16，2026-03-26）
+
+- [x] 调研 BT spin 为何仍执行：
+  - 确认 BT XML 不含 Spin，Jetson install 文件正确
+  - 根因：`behavior_plugins` 仍注册 spin 插件（nav2_explore.yaml:636-642）
+- [x] 调研 costmap 障碍稀疏根因：
+  - 根因：`clear_after_reading: true`（local:405, global:509）+ `observation_persistence: 0.0`
+  - STVL 体素读完即清，障碍只存活一个 costmap 更新周期
+- [x] 调研绿色路径贴边走的根因：
+  - `cost_scaling_factor: 2.0` 太高，inflation cost 衰减太快
+  - planner 认为贴障碍走"可接受"，controller 跟踪时进入高 cost 区触发 collision ahead
+- [x] 自审方案：所有改动只涉及 nav2_explore.yaml，无代码变更
+- [x] 用户确认 3 项改动
+- [x] 更新 task_plan.md + progress.md
+
+### Codex 部署性审查（Step 17-19，2026-03-26）
+
+- [x] 读取当前锁定计划与相关代码：
+  - `src/bringup/config/nav2_explore.yaml`
+  - `src/navigation/gps_waypoint_dispatcher/gps_waypoint_dispatcher/gps_route_runner_node.py`
+  - `src/bringup/launch/system_explore.launch.py`
+- [x] 复核最新实车证据与 Nav2 默认 BT：
+  - 最新实车 session 里 `behavior_server` 仍执行 `spin`
+  - 上游默认 BT `/opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml` 明确包含 `<Spin>`
+  - 说明 corridor BT rewrite 目前**不能视为已被 runtime 可靠使用**
+- [x] 发现部署 blocker：
+  - 计划里若直接删除 `bt_navigator.plugin_lib_names` 中的 `nav2_spin_action_bt_node` / `nav2_spin_cancel_bt_node`
+  - 一旦 runtime 继续回退上游默认 BT，`bt_navigator` 可能直接因缺少 Spin 节点插件而失败
+- [x] 在不改架构的前提下完成部署性微调：
+  - **保留** bt_navigator 的 spin BT node plugin
+  - **只删除** `behavior_server.behavior_plugins` 中的 `"spin"` 及其 `spin:` 参数块
+- [x] 已将上述微调写回 `task_plan.md`
+- [ ] 下一步：
+  - 向用户汇报“原计划存在 1 个部署风险，但经 Codex 微调后可部署”
+  - 等用户锁定后再进入 Step 21-25 代码实施
 
 ### Codex Corridor 实车收口（Step 29-31，2026-03-25 晚）
 
