@@ -633,7 +633,13 @@ behavior_server:
     cycle_frequency: 10.0
     # 恢复行为列表；决定 behavior server 可提供哪些动作。
     # 增删行为：会直接改变恢复和辅助动作集合。
-    behavior_plugins: ["backup", "drive_on_heading", "assisted_teleop", "wait"]
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+    # Spin 恢复行为参数块；负责原地转向动作。
+    # 改错结构或参数：原地转向行为可能不可用。
+    spin:
+      # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
+      # 改成不存在或不兼容的插件：对应功能块会加载失败。
+      plugin: "nav2_behaviors/Spin"
     # BackUp 恢复行为参数块；负责后退脱困动作。
     # 改错结构或参数：后退行为可能不可用。
     backup:

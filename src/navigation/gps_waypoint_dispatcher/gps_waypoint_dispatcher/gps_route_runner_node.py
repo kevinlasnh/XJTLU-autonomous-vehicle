@@ -430,13 +430,16 @@ class GPSRouteRunner(Node):
         if segment.total_subgoals <= 1:
             return 1
         safe_segment_length_m = max(0.5, segment_length_m)
-        return max(
-            1,
-            min(
-                segment.total_subgoals,
-                int(math.ceil(max(0.0, target_progress_m) / safe_segment_length_m)),
-            ),
-        )
+        clamped_target_progress_m = min(segment.total_length_m, max(0.0, target_progress_m))
+        best_index = 1
+        best_error = float("inf")
+        for subgoal_index in range(1, segment.total_subgoals + 1):
+            nominal_progress_m = min(segment.total_length_m, subgoal_index * safe_segment_length_m)
+            error_m = abs(clamped_target_progress_m - nominal_progress_m)
+            if error_m < best_error:
+                best_error = error_m
+                best_index = subgoal_index
+        return best_index
 
     def _append_map_segment(
         self,
