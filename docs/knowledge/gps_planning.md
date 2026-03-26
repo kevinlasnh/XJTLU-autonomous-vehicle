@@ -336,29 +336,40 @@ Corridor v2 解决 v1 的核心问题：
 - 不在 subgoal 执行中途因 alignment 更新而重算已执行进度
 - 仅在 waypoint 边界才吸收新 alignment
 
-### 12.3 运行期微调（2026-03-23~24）
+### 12.3 运行期微调（2026-03-23~26）
 
-v2 部署后经 CC 复审发现参数问题，经两轮修正收敛：
+v2 部署后经多轮实车微调收敛：
 
-| 参数 | v1 部署值 | 修正 v2 锁定值 | 理由 |
-|------|-----------|----------------|------|
-| `max_allowed_time_to_collision` | 1.2 | **0.6** | v1 方向错误：增大=更多停车 |
+| 参数 | 初始值 | 最���收口值 | 理由 |
+|------|--------|-----------|------|
+| `max_allowed_time_to_collision` | 0.6 | **0.30** | 更早触发平滑减速（配合 cost-regulated scaling） |
+| `use_cost_regulated_linear_velocity_scaling` | false | **true** | 靠近障碍平滑减速，替代二元急停 |
 | local `denoise_layer.minimal_group_size` | 3 | **4** | 抑制孤立噪声点 |
 | `waypoint_start_progress_guard_m` | 10.0 | **5.0** | GPS 2-sigma ~5m |
 | global STVL `transform_tolerance` | 0.35 | **0.5** | 与 local 一致 |
+| STVL `clear_after_reading` | true | **false** | 障碍由 voxel_decay 管理，不再每周期清空 |
+| global `cost_scaling_factor` | 2.0 | **1.0** | 推开绿色路径离障碍边缘 |
+| global `inflation_radius` | 0.75 | **0.95** | 安全余量增大 |
+| `max_bootstrap_translation_delta_m` | 15.0 | **8.0** | 拒绝偏差过大的 raw GPS alignment |
+| `waypoint_alignment_translation_guard_m` | (新增) | **3.0** | waypoint 边界处 alignment 跳变守卫 |
+| `waypoint_alignment_theta_guard_deg` | (新增) | **2.0** | waypoint 边界处 alignment 旋转守卫 |
 
-commit `a7dc2fd`: `Revert unsafe corridor tuning and tighten waypoint guard`
-
-### 12.4 实车验证结论
+### 12.4 实车验证结论（2026-03-26 收口）
 
 **已验证成立**:
-- 独立 global aligner 架构从”无法起跑”推进到 waypoint 1 完成（session `2026-03-22-21-05-17`）
-- 修正 v2 已部署到 Jetson（2026-03-24 smoke test 确认启动链正常）
-- 当前阻塞是现场 GPS 无 fix，不是部署链
+- 独立 global aligner 架构从”无法起跑”推进到 waypoint 1 完成
+- waypoint 边界 alignment 守卫已生效：第二段不再换坏 alignment（session `2026-03-26-15-27-19`）
+- BT override 已修复：corridor BT 现在正确加载（commit `d075c6b`）
+- STVL `clear_after_reading: false` 解决了障碍每周期清空的问题
 
-**当前收敛问题**:
-1. **Waypoint 边界 alignment 漂移**: 切到 waypoint 2 时投影跳到 16.5m，需进一步限幅
-2. **Nav2 stop-go**: collision ahead 误触发 + TF extrapolation，需 costmap/controller 微调
+**当前主瓶颈 — GPS 路线锚定方法**:
+- startup GPS 锚定带 ~2.5m 系统误差（`distance_to_start_ref=2.48m`）
+- 第二段目标线在 map 中本身就带右偏分量（dx=+1.81m），不是运行时跳点
+- 继续调 Nav2 YAML 或小修 runner 无法���决”稳定到预定物理位置”的目标
+- 候选重设计方向：
+  1. 多点刚体配准替代单点 `start_ref`
+  2. 路线改为 `map` 物理点位，GPS 只负责启动定位
+  3. 连续轨迹采集 + 中心线/拐角拟合
 
 ### 12.5 与 v1 对比
 
@@ -370,4 +381,4 @@ commit `a7dc2fd`: `Revert unsafe corridor tuning and tighten waypoint guard`
 | 对齐更新方式 | N/A | waypoint 内冻结，边界吸收 |
 | 终点精度 | ~4m（受 yaw0 影响） | 理论更高（取决于 aligner 质量） |
 | PGO 角色 | 提供 map→odom | 仅 loop closure，不参与 corridor 对齐 |
-| 实车状态 | baseline 保留 | 已部署，问题收敛到微调 |
+| 实车状态 | baseline 保留 | 已部署，Nav2 调参已收口，主瓶颈转移到 GPS 锚定方法 |

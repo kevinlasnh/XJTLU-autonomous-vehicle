@@ -49,14 +49,11 @@
    - 描述: 长时间运行时 FAST-LIO2、PGO 关键帧和相关缓存会推高内存占用。
    - 状态: 系统层面已做服务裁剪，但算法层未处理
 
-9. **[重要] 代价地图障碍残留 / 消散慢**
+9. **[已缓解] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
-   - 状态: 通过最大障碍物高度 `1.5m` 有部分缓解
-   - 2026-03-22 corridor v2 实车发现:
-     - Global costmap 保留启动前陈旧障碍，导致 `/plan` 绿色路径先被带弯
-     - Local costmap 近场碰撞判定产生 `collision ahead` stop-go 和 recovery
-     - 独立 global aligner 架构部署后，waypoint 1 已可稳定到达
-     - 当前问题后移到 waypoint 边界 alignment 漂移 + Nav2 平顺性微调
+   - 状态: 2026-03-26 STVL `clear_after_reading` 已从 `true` 改为 `false`（local + global），障碍由 `voxel_decay` 自然管理，不再每周期清空
+   - 同期 global inflation 从 `0.75 → 0.95`，`cost_scaling_factor` 从 `2.0 → 1.0`，绿色路径不再紧贴障碍边缘
+   - 影响: 已不再是 corridor 主要 stop-go 来源
 
 ## 中等问题
 
@@ -118,11 +115,11 @@
 20. **[已升级] Corridor v1 终点几米级残差 → v2 独立 aligner 已部署**
    - 描述: v1 使用 body_vector 直线导航，受 yaw0 不确定性影响终点偏差 ~4m。
    - 状态: 已升级到 corridor v2（独立 global aligner 架构），v1 作为 baseline 保留
-   - v2 当前状态:
+   - v2 当前状态（2026-03-26 收口）:
      - waypoint 1 已稳定到达
-     - 第二段已能完成直角转弯并推进较长距离（best session `2026-03-25-17-46-15`）
-     - 后段失稳链条：`collision ahead` → `recovery` → `lio_odom` 发散
-     - 主问题已收敛为"绿色路径贴膨胀层边缘 + 后段 recovery/odom 失稳"
+     - waypoint 边界 alignment 守卫已生效，不再换坏 alignment
+     - **主问题已收敛为 GPS 路线采集/锚定方法**: startup GPS 带 ~2.5m 误差，单点锚定无法保证稳定到预定物理位置
+     - 继续只调 Nav2 YAML 或小修 runner 已触及天花板，需重新设计锚定方案
 
 21. **[已解决] Corridor v2 PGO handoff 门槛与现场频率不匹配**
    - 描述: v2 初版使用 PGO live handoff，但 PGO ~1Hz 更新频率达不到切换门槛。
@@ -135,14 +132,23 @@
    - 根因: 当前 Jetson 上 costmap 更新 + TF 查询 + 点云处理的总计算量已接近瓶颈
    - 影响: TF extrapolation warnings、collision ahead 误报概率增加（但已通过降频缓解）
 
-23. **[待查] Corridor BT 文件已移除 Spin 但 runtime 仍执行 spin**
+23. **[已修复] Corridor BT 文件已移除 Spin 但 runtime 仍执行 spin**
    - 描述: 本地和 Jetson 的 corridor BT XML 都不含 `Spin`，但 `behavior_server` 日志仍打印 `Running spin`
-   - 可能原因: 运行时未真正加载 corridor BT rewrite，仍走 Nav2 默认 BT
-   - 影响: 不必要的原地旋转会在狭窄环境恶化局势
-   - 下一步: 查 `default_nav_to_pose_bt_xml` 的 rewrite 是否真正生效
+   - 根因: `default_nav_to_pose_bt_xml` 参数写在 `bt_navigator_navigate_to_pose_rclcpp_node` 下，不是 `bt_navigator` 下，导致 launch 注入无效
+   - 修复: commit `d075c6b` 将参数移到正确的 `bt_navigator` 节点下
+   - 状态: 已修复（2026-03-26）
 
 24. **[已知] 后段 `lio_odom` 发散**
    - 描述: 最新 best session 中，第二段后半 `lio_odom` 开始连续大跳（最大 13m），导致位姿发散、导航失败
    - 触发条件: 长时间 `collision ahead` + 多次 costmap clear + recovery 后
    - 根因: 待查，可能与 FAST-LIO2 在持续 recovery/backup 中的退化特征有关
    - 影响: 直接导致第二段后半无法完成
+
+25. **[重要] GPS 路线采集/锚定方法不足以保证物理精度**
+   - 描述: 当前 corridor GPS 路线依赖单个 `start_ref` + `launch_yaw_deg` 锚定。startup GPS 本身带 ~2.5m 误差，加上路线几何只在 ENU 域定义，导致 map 中生成的目标线系统性偏离用户期望的物理路径
+   - 证据（session `2026-03-26-15-27-19`）:
+     - `distance_to_start_ref=2.48m`
+     - 第二段目标线 dx=+1.81m 右偏
+     - 即使 waypoint 边界 alignment 守卫全部生效，物理偏差依然存在
+   - 状态: 2026-03-26 确认为当前主瓶颈，需重新设计锚定方案
+   - 候选方向: 多点刚体配准 / map 物理点位路线 / 连续轨迹采集
