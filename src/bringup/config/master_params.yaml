@@ -160,7 +160,7 @@
     # 原始 GPS 解与 bootstrap 差异过大时直接拒绝，避免误拖动整条路线。
     max_bootstrap_delta_deg: 25.0
     # 原始 GPS 解相对 bootstrap 的总平移漂移上限；避免 waypoint 边界整体拖偏几十米。
-    max_bootstrap_translation_delta_m: 15.0
+    max_bootstrap_translation_delta_m: 8.0
     # 连续发布 alignment 的周期；供 runner 与 bag 观测。
     publish_period_s: 0.2
     # 对齐状态日志的节流周期。
@@ -178,6 +178,10 @@
     waypoint_start_progress_guard_m: 5.0
     # 新 waypoint 开始时允许的最大横向偏差；超过则优先复用上一个 waypoint 的 alignment。
     waypoint_start_cross_track_guard_m: 5.0
+    # 新 waypoint 开始时允许相对上一段冻结 alignment 的最大平移跳变；超过则整条 route 继续沿用旧坐标系。
+    waypoint_alignment_translation_guard_m: 3.0
+    # 新 waypoint 开始时允许相对上一段冻结 alignment 的最大朝向跳变；超过说明 live alignment 不可信。
+    waypoint_alignment_theta_guard_deg: 2.0
 
 /serial_twistctl_node:
   ros__parameters:

@@ -75,7 +75,7 @@ class GPSGlobalAligner(Node):
         self.declare_parameter("max_theta_step_deg", 0.5)
         self.declare_parameter("max_translation_step_m", 0.30)
         self.declare_parameter("max_bootstrap_delta_deg", 25.0)
-        self.declare_parameter("max_bootstrap_translation_delta_m", 15.0)
+        self.declare_parameter("max_bootstrap_translation_delta_m", 8.0)
         self.declare_parameter("max_alignment_step_warning_deg", 5.0)
         self.declare_parameter("publish_period_s", 0.2)
         self.declare_parameter("status_log_period_s", 5.0)

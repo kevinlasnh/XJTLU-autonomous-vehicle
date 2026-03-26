@@ -39,6 +39,10 @@ def valid_fix(msg: NavSatFix | None) -> bool:
     return True
 
 
+def normalize_angle(angle: float) -> float:
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
 @dataclass
 class Alignment2D:
     theta: float
@@ -83,6 +87,8 @@ class GPSRouteRunner(Node):
         self.declare_parameter("enu_origin_alt", 0.0)
         self.declare_parameter("waypoint_start_progress_guard_m", 5.0)
         self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)
+        self.declare_parameter("waypoint_alignment_translation_guard_m", 3.0)
+        self.declare_parameter("waypoint_alignment_theta_guard_deg", 2.0)
 
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
         self._route_frame = str(self.get_parameter("route_frame").value)
@@ -98,6 +104,12 @@ class GPSRouteRunner(Node):
         )
         self._waypoint_start_cross_track_guard_m = float(
             self.get_parameter("waypoint_start_cross_track_guard_m").value
+        )
+        self._waypoint_alignment_translation_guard_m = float(
+            self.get_parameter("waypoint_alignment_translation_guard_m").value
+        )
+        self._waypoint_alignment_theta_guard_rad = math.radians(
+            float(self.get_parameter("waypoint_alignment_theta_guard_deg").value)
         )
 
         self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
@@ -405,6 +417,18 @@ class GPSRouteRunner(Node):
         clamped_along = max(0.0, min(segment.total_length_m, along))
         return clamped_along, cross
 
+    def _alignment_delta(
+        self, reference_alignment: Alignment2D, candidate_alignment: Alignment2D
+    ) -> tuple[float, float]:
+        translation_delta_m = math.hypot(
+            candidate_alignment.tx - reference_alignment.tx,
+            candidate_alignment.ty - reference_alignment.ty,
+        )
+        theta_delta_rad = abs(
+            normalize_angle(candidate_alignment.theta - reference_alignment.theta)
+        )
+        return translation_delta_m, theta_delta_rad
+
     def _point_on_segment(self, segment: SegmentPlan, progress_m: float) -> tuple[float, float]:
         clamped_progress = max(0.0, min(segment.total_length_m, progress_m))
         return (
@@ -553,15 +577,44 @@ class GPSRouteRunner(Node):
             segment, self._map_to_enu(current_xy[0], current_xy[1], previous_alignment)
         )
         previous_progress_m = max(0.0, min(segment.total_length_m, previous_raw_progress_m))
+        alignment_translation_delta_m, alignment_theta_delta_rad = self._alignment_delta(
+            previous_alignment, candidate_alignment
+        )
 
         candidate_suspicious = (
             abs(candidate_raw_progress_m) > self._waypoint_start_progress_guard_m
             or abs(candidate_cross_track_m) > self._waypoint_start_cross_track_guard_m
         )
+        alignment_jump_suspicious = (
+            alignment_translation_delta_m > self._waypoint_alignment_translation_guard_m
+            or alignment_theta_delta_rad > self._waypoint_alignment_theta_guard_rad
+        )
         previous_is_better = (
             abs(previous_raw_progress_m) + 1.0 < abs(candidate_raw_progress_m)
             or abs(previous_cross_track_m) + 0.5 < abs(candidate_cross_track_m)
         )
+        if alignment_jump_suspicious:
+            self.get_logger().warn(
+                "Rejecting new alignment at waypoint %s start: alignment jump %.2fm / %.2fdeg"
+                " exceeds guard %.2fm / %.2fdeg; candidate raw progress %.2fm"
+                " (clamped %.2fm) cross %.2fm vs previous raw progress %.2fm"
+                " (clamped %.2fm) cross %.2fm; reusing previous waypoint alignment"
+                % (
+                    segment.waypoint.name,
+                    alignment_translation_delta_m,
+                    math.degrees(alignment_theta_delta_rad),
+                    self._waypoint_alignment_translation_guard_m,
+                    math.degrees(self._waypoint_alignment_theta_guard_rad),
+                    candidate_raw_progress_m,
+                    candidate_progress_m,
+                    candidate_cross_track_m,
+                    previous_raw_progress_m,
+                    previous_progress_m,
+                    previous_cross_track_m,
+                )
+            )
+            return previous_alignment, previous_progress_m
+
         if candidate_suspicious and previous_is_better:
             self.get_logger().warn(
                 "Rejecting new alignment at waypoint %s start: candidate raw progress %.2fm"
