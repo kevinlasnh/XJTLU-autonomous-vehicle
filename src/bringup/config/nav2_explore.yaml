@@ -295,7 +295,7 @@ controller_server:
       simulate_ahead_time: 1.0
       rotate_to_goal_heading: false
       primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.90
+      desired_linear_vel: 0.45
       lookahead_dist: 1.25
       min_lookahead_dist: 0.60
       max_lookahead_dist: 1.80
@@ -360,7 +360,7 @@ local_costmap:
       denoise_layer:
         plugin: "nav2_costmap_2d::DenoiseLayer"
         enabled: true
-        minimal_group_size: 3
+        minimal_group_size: 4
         group_connectivity_type: 8
       # 膨胀层参数块；负责给障碍物外围增加安全缓冲。
       # 改错结构或参数：障碍安全边界会偏大或偏小。
@@ -397,7 +397,7 @@ local_costmap:
           marking: true
           clearing: false
           obstacle_range: 5.0
-          min_obstacle_height: -0.35
+          min_obstacle_height: 0.0
           max_obstacle_height: 2.0
           expected_update_rate: 0.0
           observation_persistence: 0.0
@@ -412,7 +412,7 @@ local_costmap:
           marking: false
           clearing: true
           max_z: 6.0
-          min_z: -0.35
+          min_z: 0.0
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
@@ -501,7 +501,7 @@ global_costmap:
           marking: true
           clearing: false
           obstacle_range: 4.0
-          min_obstacle_height: -0.35
+          min_obstacle_height: 0.0
           max_obstacle_height: 2.0
           expected_update_rate: 0.0
           observation_persistence: 0.0
@@ -516,7 +516,7 @@ global_costmap:
           marking: false
           clearing: true
           max_z: 5.0
-          min_z: -0.35
+          min_z: 0.0
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
@@ -749,7 +749,7 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_velocity: [0.9, 0.0, 1.0]
+    max_velocity: [0.5, 0.0, 1.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     min_velocity: [0.0, 0.0, -1.0]
