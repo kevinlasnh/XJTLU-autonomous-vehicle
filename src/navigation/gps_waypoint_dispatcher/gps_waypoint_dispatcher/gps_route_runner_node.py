@@ -389,14 +389,20 @@ class GPSRouteRunner(Node):
             dir_y=dy / total_length_m,
         )
 
-    def _progress_on_segment(
+    def _segment_projection(
         self, segment: SegmentPlan, current_enu: tuple[float, float]
     ) -> tuple[float, float]:
         rel_x = current_enu[0] - segment.start_enu[0]
         rel_y = current_enu[1] - segment.start_enu[1]
         along = rel_x * segment.dir_x + rel_y * segment.dir_y
-        clamped_along = max(0.0, min(segment.total_length_m, along))
         cross = rel_x * (-segment.dir_y) + rel_y * segment.dir_x
+        return along, cross
+
+    def _progress_on_segment(
+        self, segment: SegmentPlan, current_enu: tuple[float, float]
+    ) -> tuple[float, float]:
+        along, cross = self._segment_projection(segment, current_enu)
+        clamped_along = max(0.0, min(segment.total_length_m, along))
         return clamped_along, cross
 
     def _point_on_segment(self, segment: SegmentPlan, progress_m: float) -> tuple[float, float]:
@@ -536,32 +542,37 @@ class GPSRouteRunner(Node):
         if candidate_alignment is None:
             raise RuntimeError("lost ENU->map alignment before starting waypoint")
 
-        candidate_progress_m, candidate_cross_track_m = self._progress_on_segment(
+        candidate_raw_progress_m, candidate_cross_track_m = self._segment_projection(
             segment, self._map_to_enu(current_xy[0], current_xy[1], candidate_alignment)
         )
+        candidate_progress_m = max(0.0, min(segment.total_length_m, candidate_raw_progress_m))
         if waypoint_index == 0 or previous_alignment is None:
             return candidate_alignment, candidate_progress_m
 
-        previous_progress_m, previous_cross_track_m = self._progress_on_segment(
+        previous_raw_progress_m, previous_cross_track_m = self._segment_projection(
             segment, self._map_to_enu(current_xy[0], current_xy[1], previous_alignment)
         )
+        previous_progress_m = max(0.0, min(segment.total_length_m, previous_raw_progress_m))
 
         candidate_suspicious = (
-            candidate_progress_m > self._waypoint_start_progress_guard_m
+            abs(candidate_raw_progress_m) > self._waypoint_start_progress_guard_m
             or abs(candidate_cross_track_m) > self._waypoint_start_cross_track_guard_m
         )
         previous_is_better = (
-            abs(previous_progress_m) + 1.0 < abs(candidate_progress_m)
+            abs(previous_raw_progress_m) + 1.0 < abs(candidate_raw_progress_m)
             or abs(previous_cross_track_m) + 0.5 < abs(candidate_cross_track_m)
         )
         if candidate_suspicious and previous_is_better:
             self.get_logger().warn(
-                "Rejecting new alignment at waypoint %s start: candidate progress %.2fm cross %.2fm"
-                " vs previous progress %.2fm cross %.2fm; reusing previous waypoint alignment"
+                "Rejecting new alignment at waypoint %s start: candidate raw progress %.2fm"
+                " (clamped %.2fm) cross %.2fm vs previous raw progress %.2fm"
+                " (clamped %.2fm) cross %.2fm; reusing previous waypoint alignment"
                 % (
                     segment.waypoint.name,
+                    candidate_raw_progress_m,
                     candidate_progress_m,
                     candidate_cross_track_m,
+                    previous_raw_progress_m,
                     previous_progress_m,
                     previous_cross_track_m,
                 )
