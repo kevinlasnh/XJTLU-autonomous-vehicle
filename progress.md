@@ -1,15 +1,16 @@
 # FYP Autonomous Vehicle - Progress Log
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-03-27
 
 ---
 
 ## 当前状态
 
-**GPS Aligner Translation-Only 已部署到 GitHub + Jetson；当前等待现场 stable GPS 继续 Step 25/26。**
+**2026-03-27 最新实车第二段问题已完成日志收口；当前判定为架构/定位链问题，应回 Step 8 交给 CC 重新复审。**
 
 | 项目 | 状态 |
 |------|------|
+| 2026-03-27 第二段摇摆 + FAST-LIO 发散调研 | **Step 29-31 已完成，交回 CC Step 8** |
 | GPS Aligner Translation-Only 修正 | **Step 21-25 已完成启动级 smoke test；等待现场 stable GPS 继续验证** |
 | 小修 `5eb5fd1` waypoint 边界 alignment 守卫 | **已部署到 Jetson；已验证不再在第二段切换坏 alignment** |
 | 后续独立探索：`gps-mppi` | **仅记录为后续方向，未开始** |
@@ -21,6 +22,57 @@
 | Corridor v2 独立 aligner 架构 | **已部署** |
 | 运行期微调 v2（修正） | **已部署到 Jetson；等待 GPS fix** |
 | 当前分支 | `gps-rpp` |
+
+---
+
+## 最近完成 (2026-03-26)
+
+### Codex 第二段摇摆 + FAST-LIO 发散收口（Step 29-31，2026-03-27）
+
+- [x] 读取最新实车 session：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-27-13-43-46/`
+- [x] 确认车端版本：
+  - 分支 `gps-rpp`
+  - 提交 `ba0b858`
+- [x] 读取并量化：
+  - `gps_route_runner` 日志
+  - `gps_global_aligner` 日志
+  - `controller_server` / `planner_server` / `behavior_server` 日志
+  - `serial_twistctl.log`
+  - bag 中 `/gps_corridor/goal_map` `/gps_corridor/path_map` `/plan` `/tf` `/fastlio2/lio_odom`
+- [x] 已确认第二段前半程问题性质：
+  - `goal_map` 在第二段开始后基本不再更新
+  - 第二段摇摆不是目标点乱跳，而是固定目标下 Nav2/costmap/controller 反复左右修正
+  - 第二段共有 `collision ahead` 264 次
+  - `serial_twistctl` 第二段 `wc` 正负切换 24 次
+- [x] 已确认第二段后半程问题性质：
+  - `map->odom` 稳定
+  - `odom->base_link` 从 `1774590467s` 左右开始发散
+  - 最大单步跃迁约 `2.43m / 0.11s`
+- [x] 已确认路线锚定仍有问题：
+  - 启动时 `distance_to_start_ref=4.75m`
+  - route YAML 仍允许 `startup_gps_tolerance_m: 15.0`
+  - 当前第二段 route 几何在本次 frozen alignment 下仍带约 `3.28m` 侧偏分量
+- [x] 当前判断：
+  - 本轮不是继续给 Codex 小修 YAML 就能闭环的问题
+  - 应回 Step 8 让 CC 重新审“路线锚定方法 + launch_yaw + FAST-LIO 发散触发链”
+- [x] 本轮未改代码，未推送新提交
+- [x] Step 31：
+  - 已更新 `task_plan.md`
+  - 已更新 `findings.md`
+  - 已更新 `progress.md`
+
+### 当前收口断点（交给 CC）
+
+- [x] Step 29：最新实车 session 全量日志分析完成
+- [x] Step 30：问题性质已判断为架构/定位链问题，应回 Step 8
+- [x] Step 31：L2 文件已更新，等待 CC 继续复审
+- [x] CC 文档阶段（Step 33-38）：
+  - `docs/devlog/2026-03.md`: 新增 translation-only aligner 部署 + 03-27 实车验证 + 收口结论
+  - `docs/known_issues.md`: 更新 #24 odom 发散证据 + #25 GPS 锚定新数据 + 新增 #26 translation-only aligner
+  - `docs/knowledge/gps_planning.md`: 更新 Section 12.4 为 03-27 收口版，新增 translation-only 尝试
+  - `docs/index.md`: 日期 → 2026-03-27，分支 `gps` → `gps-rpp`，更新系统摘要
+  - git commit + push
 
 ---
 
@@ -885,7 +937,7 @@
 
 ## 断点位置
 
-**Step 33-38 文档阶段已完成（9 个文件 + L2 更新 + commit）。下一步等待现场恢复 stable GPS fix 后，用真实 route 完成 corridor 启动验证（Step 25 最终验证），再交给用户进入 Step 26 实车测试。**
+**Step 33-38 文档阶段已完成。下一个 session 回 Step 8，由 CC 重新复审”路线锚定方法 + launch_yaw + FAST-LIO/odom->base_link 发散触发链”。**
 
 ---
 

@@ -138,17 +138,29 @@
    - 修复: commit `d075c6b` 将参数移到正确的 `bt_navigator` 节点下
    - 状态: 已修复（2026-03-26）
 
-24. **[已知] 后段 `lio_odom` 发散**
-   - 描述: 最新 best session 中，第二段后半 `lio_odom` 开始连续大跳（最大 13m），导致位姿发散、导航失败
-   - 触发条件: 长时间 `collision ahead` + 多次 costmap clear + recovery 后
-   - 根因: 待查，可能与 FAST-LIO2 在持续 recovery/backup 中的退化特征有关
+24. **[已知] 后段 `lio_odom` / `odom→base_link` 发散**
+   - 描述: 多轮实车中第二段后半程 `odom→base_link` 开始连续大跳，导致位姿发散、导航失败
+   - 最新证据（session `2026-03-27-13-43-46`）:
+     - `map→odom` 最大单步变化仅 1e-11 量级（稳定）
+     - `odom→base_link` 从 `1774590467s` 起单步跃迁达 2.43m/0.11s
+     - 漂移严格发生在本地位姿链，不是 global aligner 漂移
+   - 触发条件: 长时间 `collision ahead` + 多次 recovery 后
+   - 根因: 待查，可能与 FAST-LIO2 在持续 recovery/backup 中的退化有关
    - 影响: 直接导致第二段后半无法完成
 
 25. **[重要] GPS 路线采集/锚定方法不足以保证物理精度**
    - 描述: 当前 corridor GPS 路线依赖单个 `start_ref` + `launch_yaw_deg` 锚定。startup GPS 本身带 ~2.5m 误差，加上路线几何只在 ENU 域定义，导致 map 中生成的目标线系统性偏离用户期望的物理路径
-   - 证据（session `2026-03-26-15-27-19`）:
-     - `distance_to_start_ref=2.48m`
-     - 第二段目标线 dx=+1.81m 右偏
-     - 即使 waypoint 边界 alignment 守卫全部生效，物理偏差依然存在
-   - 状态: 2026-03-26 确认为当前主瓶颈，需重新设计锚定方案
+   - 最新证据（session `2026-03-27-13-43-46`）:
+     - `distance_to_start_ref=4.75m`（tolerance 15.0m 允许了过大偏差起跑）
+     - frozen alignment 下第二段 map 投影 dx=+3.28m 侧偏
+     - translation-only aligner 持续拒绝修正（delta 8.88~9.50m > 8.0m 阈值）
+   - 状态: 2026-03-27 再次确认为当前主瓶颈，需回 Step 8 重新复审锚定方案
    - 候选方向: 多点刚体配准 / map 物理点位路线 / 连续轨迹采集
+
+26. **[已知] Translation-only aligner 未能纠回启动锚定误差**
+   - 描述: commit `94862d7` �� global aligner 改为固定 bootstrap 旋转、只估计平移的模式，意图在运行中逐步修正启动锚定偏差
+   - 实车结果（session `2026-03-27-13-43-46`）:
+     - 运行期持续打印 `Rejecting raw GPS alignment: bootstrap translation delta 8.88m > 8.00m`
+     - 没有成功发布新的可信 runtime 平移修正
+   - 根因: 启动锚定本身偏差已超过 aligner 的 `max_bootstrap_translation_delta_m: 8.0` 阈值
+   - 状���: 已记录，不单独修 — 属于 #25 GPS 锚定主问题的下游表现

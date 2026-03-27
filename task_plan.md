@@ -1,8 +1,62 @@
 # GPS Aligner Translation-Only 修正 + Corridor v2 运行期微调
 
-**Status**: `GPS Aligner Translation-Only 已部署，等待现场 stable GPS 验证`
+**Status**: `2026-03-27 最新实车第二段问题已完成收口；当前判断为架构/定位链问题，交回 CC Step 8 复审`
 **当前分支**: `gps-rpp`
-**最后更新**: 2026-03-26
+**最后更新**: 2026-03-27
+
+---
+
+## 当前活跃任务：第二段摇摆 + 后半程 odom 发散问题收口（2026-03-27）
+
+**工作流位置**: Step 29-31 已完成；问题性质判定为架构/定位链问题，交回 CC Step 8
+**最新实车 session**:
+- `/home/jetson/fyp_runtime_data/logs/2026-03-27-13-43-46/`
+**车端版本**:
+- 分支：`gps-rpp`
+- 提交：`ba0b858`
+
+### 本轮已确认
+
+- route runner 第二段目标点没有随车身摇摆而更新：
+  - `/gps_corridor/goal_map` 全 session 仅 6 条
+  - 第二段开始后只在 `1774590357.108`、`1774590357.110` 发过目标
+- 第二段前半程的左右摇摆来自固定目标下的 Nav2/costmap/controller 链：
+  - `/plan` 第二段共有 316 条
+  - `collision ahead`：264 次
+  - `Controller patience exceeded`：多次
+  - `serial_twistctl` 第二段 `wc` 正负切换 24 次
+- 第二段后半程确实发生坐标链发散，但漂的不是 global aligner：
+  - `/tf` 中 `map->odom` 基本不动，可视为稳定
+  - `/tf` 中 `odom->base_link` 从 `1774590467s` 左右开始大跳
+  - 最大单步约 `2.43m / 0.11s`
+- 当前 route 锚定条件仍然过宽：
+  - 启动时 `distance_to_start_ref=4.75m`
+  - 但 route YAML 仍允许 `startup_gps_tolerance_m: 15.0`
+- 当前第二段路线几何在本次 frozen alignment 下仍带侧偏：
+  - route ENU 第二段：`dx=-52.13m dy=-6.23m`
+  - 投到本次 frozen alignment 后，map 向量约：`dx=+3.28m dy=-52.40m`
+- 本次 `gps_global_aligner` 没有真正纠回这类偏差：
+  - 全程持续拒绝 raw GPS：`bootstrap translation delta 8.88m ~ 9.50m > 8.00m`
+
+### Codex 当前判断
+
+1. 第二段摇摆不是“目标点自己左右乱跑”，而是车在追一条本身偏侧的目标线时，局部规划/避障不断左右修正
+2. 后半程真正炸掉的是 `FAST-LIO2 / odom->base_link` 本地位姿链，不是 `map->odom` 全局对齐源
+3. 仅继续让 Codex 调 Nav2 YAML 或直接放宽 aligner guard，不足以证明会朝正确方向收敛
+4. 当前更合理的下一步是交回 CC，从“路线锚定方法 + launch_yaw + FAST-LIO 发散触发链”重新复审
+
+### 给 CC 的复审输入
+
+- 不要把本轮主因写成“goal_map 在摇”
+- 需要区分两条问题链：
+  - 前半程：固定错误目标线下的 Nav2 摇摆 / recovery
+  - 后半程：`odom->base_link` 发散
+- 当前更值得优先复审的方向：
+  - route 启动门槛是否应明显收紧（`startup_fix_spread_max_m`、`startup_gps_tolerance_m`）
+  - `launch_yaw_deg` 与第二个 waypoint 是否需要重采/重定标
+  - 是否需要在 runner/monitor 中加入 `odom->base_link` 发散 watchdog
+  - FAST-LIO2 在第二段后半程为何发散，是否与 recovery / stop-go /环境退化有关
+- 当前不建议把“继续放宽 aligner 8m guard”作为第一优先级直接部署
 
 ---
 

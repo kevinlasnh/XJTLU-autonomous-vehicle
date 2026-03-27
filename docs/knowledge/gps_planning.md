@@ -1,6 +1,6 @@
 # GPS 全局导航与场景路网
 
-## 1. 当前状态（2026-03-22）
+## 1. 当前状态（2026-03-27）
 
 当前 GPS 导航有两条并行链路：
 
@@ -9,13 +9,13 @@
    - 当前被 PGO 段错误阻塞（known_issues #1）
    - 软件链已通，实车未通过
 
-2. **Fixed-launch GPS corridor**（`gps` 分支，当前主开发线）
+2. **Fixed-launch GPS corridor**（`gps-rpp` 分支，当前主开发线）
    - 使用 `collect_gps_route.py` 采集多点路线
-   - **独立 global aligner 架构**（commit `e51a46a`~`2bb6fbf`）
+   - **独立 global aligner 架构**（commit `e51a46a`~`94862d7`）
    - `gps_global_aligner_node` 平滑发布 `ENU->map` 变换
    - `gps_route_runner_node` 消费稳定 alignment，冻结 waypoint 内进度
    - **waypoint 1 已稳定到达**（session `2026-03-22-21-05-17`）
-   - 当前问题：waypoint 边界 alignment 漂移 + Nav2 平顺性微调
+   - 当前主瓶颈：GPS 路线锚定方法 + FAST-LIO2 odom 发散
 
 ## 2. Source Of Truth 与运行时产物
 
@@ -354,7 +354,7 @@ v2 部署后经多轮实车微调收敛：
 | `waypoint_alignment_translation_guard_m` | (新增) | **3.0** | waypoint 边界处 alignment 跳变守卫 |
 | `waypoint_alignment_theta_guard_deg` | (新增) | **2.0** | waypoint 边界处 alignment 旋转守卫 |
 
-### 12.4 实车验证结论（2026-03-26 收口）
+### 12.4 实车验证结论（2026-03-27 收口）
 
 **已验证成立**:
 - 独立 global aligner 架构从”无法起跑”推进到 waypoint 1 完成
@@ -362,10 +362,21 @@ v2 部署后经多轮实车微调收敛：
 - BT override 已修复：corridor BT 现在正确加载（commit `d075c6b`）
 - STVL `clear_after_reading: false` 解决了障碍每周期清空的问题
 
-**当前主瓶颈 — GPS 路线锚定方法**:
-- startup GPS 锚定带 ~2.5m 系统误差（`distance_to_start_ref=2.48m`）
-- 第二段目标线在 map 中本身就带右偏分量（dx=+1.81m），不是运行时跳点
-- 继续调 Nav2 YAML 或小修 runner 无法���决”稳定到预定物理位置”的目标
+**Translation-only aligner 尝试（commit `94862d7`）**:
+- 将 `_solve_alignment()` 改为固定 bootstrap 旋转，只估计平移
+- 新增 GPS 跳变过滤（>10m/0.5s 丢弃）
+- 参数调整：`pair_window_s: 90.0`、`pair_min_spacing_m: 2.0`、`alignment_min_spread_m: 20.0`
+- 实车结果（session `2026-03-27-13-43-46`）：运行期持续拒绝 raw GPS alignment（delta > 8m），未能纠回启动锚定误差
+
+**2026-03-27 关键发现**:
+- 第二段摇摆不是目标点跳变，而是固定目标下 Nav2 planner/controller 左右修正（collision ahead 264 次）
+- 第二段路线本体就带 3.28m 侧偏（frozen alignment + startup GPS 4.75m 偏差）
+- 后段 `odom->base_link` 发散（最大单步 2.43m/0.11s），严格在本地位姿链，与 global aligner 无关
+
+**当前主瓶颈 — GPS 路线锚定方法 + FAST-LIO2 发散**:
+- startup GPS 锚定带 2.5~4.75m 系统误差
+- 继续调 Nav2 YAML 或小修 runner/aligner 无法解决稳定到预定物理位置的目标
+- FAST-LIO2 在持续 recovery/backup 后出现 odom 发散，需独立调查
 - 候选重设计方向：
   1. 多点刚体配准替代单点 `start_ref`
   2. 路线改为 `map` 物理点位，GPS 只负责启动定位
@@ -381,4 +392,4 @@ v2 部署后经多轮实车微调收敛：
 | 对齐更新方式 | N/A | waypoint 内冻结，边界吸收 |
 | 终点精度 | ~4m（受 yaw0 影响） | 理论更高（取决于 aligner 质量） |
 | PGO 角色 | 提供 map→odom | 仅 loop closure，不参与 corridor 对齐 |
-| 实车状态 | baseline 保留 | 已部署，Nav2 调参已收口，主瓶颈转移到 GPS 锚定方法 |
+| 实车状态 | baseline 保留 | 已部署，Nav2 调参已收口，主瓶颈为 GPS 锚定 + odom 发散 |

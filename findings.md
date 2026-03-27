@@ -1,6 +1,151 @@
 # FYP Autonomous Vehicle - Findings
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-03-27
+
+---
+
+## 2026-03-27 第二段摇摆与 `odom->base_link` 发散收口
+
+### 1. 最新实车 session `2026-03-27-13-43-46` 中，第二段目标点没有跟着车身摇摆
+
+- 车端版本：
+  - 分支：`gps-rpp`
+  - 提交：`ba0b858`
+- route runner 日志：
+  - `/home/jetson/fyp_runtime_data/logs/2026-03-27-13-43-46/console/python3_34304_1774590239287.log`
+- bag 统计：
+  - `/gps_corridor/goal_map`：6 条
+  - `/gps_corridor/path_map`：3 条
+  - `/plan`：590 条
+
+关键事实：
+
+- 第二段开始：
+  - `WAYPOINT_TARGET|2|2|goal`
+  - `NAVIGATING_SUBGOAL|goal|1|2|46.26|-29.76|aligner`
+- 第二段目标发布时间：
+  - `1774590357.108`
+  - `1774590357.110`
+- 第二段之后没有新的 `goal_map` 更新
+
+结论：
+
+- 用户在 RViz 中看到“车在左右摇摆，但目标点没有跟着摇摆”与 bag 一致
+- 本轮问题不是 runner 在第二段持续重发/重投影目标点
+
+### 2. 第二段前半程的左右摇摆来自固定目标下的 Nav2 局部规划/避障链
+
+system log：
+- `/home/jetson/fyp_runtime_data/logs/2026-03-27-13-43-46/system/launch_stdout.log`
+
+关键事实：
+
+- `collision ahead`：264 次
+- `Controller patience exceeded`：多次
+- `Running wait`：3 次
+- `Running backup`：2 次
+- 第二段内 `/plan` 的终点保持不变：
+  - 始终指向 `(46.26, -29.76)` 附近
+- 但 `/plan` 的起始 heading 明显抖动：
+  - 多个 10 秒窗标准差已达 `20°+`
+  - `1774590467-1774590477` 窗口达 `76.05°`
+- `serial_twistctl.log` 中第二段 `wc` 正负切换 24 次
+
+结论：
+
+- 第二段前半程不是“目标点在摆”，而是固定目标下 planner/controller 在不断左右修正
+- 这能解释用户看到的左右摆车身
+
+### 3. 当前第二段路线锚定仍然带侧偏，本体就不是理想物理直线
+
+- route 文件：
+  - `/home/jetson/fyp_runtime_data/gnss/current_route.yaml`
+- 当前 route 第二段 ENU 几何：
+  - `ls-right-top-corner -> goal`
+  - `dx=-52.13m`
+  - `dy=-6.23m`
+  - 长度约 `52.50m`
+- 本次 frozen alignment：
+  - `theta=86.77deg tx=385.16 ty=437.23 rev=1`
+- 在该 frozen alignment 下，第二段投到 map 后约为：
+  - `dx=+3.28m`
+  - `dy=-52.40m`
+
+同时，启动条件为：
+
+- `Startup fix mean ... distance_to_start_ref=4.75m`
+- route YAML 仍允许：
+  - `startup_gps_tolerance_m: 15.0`
+
+结论：
+
+- 当前第二段目标线本身仍带明显侧偏，不只是 Nav2 在“瞎抖”
+- 启动 GPS 门槛过宽，允许车在距离 `start_ref` 近 `5m` 偏差时直接起跑
+- 当前主问题仍然包括“路线锚定方法与启动门槛”
+
+### 4. 本轮 `gps_global_aligner` 没有真正纠回这类偏差
+
+aligner 日志：
+- `/home/jetson/fyp_runtime_data/logs/2026-03-27-13-43-46/console/python3_33876_1774590233221.log`
+
+关键事实：
+
+- 运行期持续打印：
+  - `Rejecting raw GPS alignment: bootstrap translation delta 8.88m > 8.00m`
+  - 后续上升到 `9.50m > 8.00m`
+- 后半段多次回到：
+  - `ALIGNER_ACCUMULATING|...`
+- 没有证据显示 aligner 成功发布新的可信 runtime 平移修正并被 runner 接纳
+
+结论：
+
+- 这次 translation-only aligner 并没有把坏启动锚定纠回去
+- 但也没有新的证据表明是 global aligner 把第二段后半程拖炸
+
+### 5. 第二段后半程确实发生坐标链发散，但漂的是 `odom->base_link`，不是 `map->odom`
+
+基于 bag 中 `/tf` 与 `/fastlio2/lio_odom` 的量化结果：
+
+- `map->odom` 最大单步变化仅 `1e-11` 量级，可视为 0
+- `odom->base_link` 在第二段前中段最大单步大致为 `0.07m ~ 0.25m`
+- 从 `1774590467s` 左右开始：
+  - 单步跃迁升到 `2.00m+`
+- 最大单步：
+  - `2.43m / 0.11s`
+
+同时 controller 日志在同一时间窗出现：
+
+- `Transform data too old when converting from map to odom`
+- `Lookup would require extrapolation into the future`
+- `Control loop missed its desired rate of 15.0000Hz`
+
+结论：
+
+- 本轮后半程确实存在用户感知到的“整个坐标系/IMU 全飘了”的现象
+- 但严格按 ROS/Nav2 语义，这次漂的是本地位姿链 `odom->base_link`
+- 更准确的工程判断应是：
+  - `FAST-LIO2 / lio_odom` 发散
+  - 不能直接下结论说“global aligner 漂了”
+
+### 6. 当前最合理的交接口径：回到 CC 重新审“路线锚定 + FAST-LIO 发散触发链”
+
+当前不建议 Codex 直接继续做一轮大杂烩调参，原因是：
+
+- 仅放宽 aligner 的 `8m` guard：
+  - 可能无效
+  - 也可能重新引入 waypoint 边界切坏 alignment 的旧风险
+- 仅继续调 costmap：
+  - 还不能证明当前 `collision ahead` 主要是假障碍
+  - 目标线本身偏侧仍会把车往坏方向带
+- 仅降 controller 频率：
+  - 也不能解释或修复 `odom->base_link` 大跳
+
+更合理的 CC 复审输入应是：
+
+1. route 启动门槛是否应显著收紧
+2. `launch_yaw_deg` 与第二个 waypoint 是否需要重采/重标
+3. 是否要在 runner/monitor 加 `odom->base_link` 发散 watchdog
+4. FAST-LIO2 为什么在第二段后半程开始发散，是否与 recovery / stop-go / corridor 几何或环境退化有关
 
 ---
 
