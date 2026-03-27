@@ -9,7 +9,7 @@ from pathlib import Path as FSPath
 import rclpy
 import yaml
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Path as NavPath
 from rclpy.action import ActionClient
@@ -73,6 +73,14 @@ class SegmentPlan:
     dir_y: float
 
 
+@dataclass
+class CalibrationEvent:
+    state: str
+    waypoint_index: int
+    waypoint_name: str
+    revision: int | None = None
+
+
 class GPSRouteRunner(Node):
     def __init__(self) -> None:
         super().__init__("gps_route_runner")
@@ -81,6 +89,9 @@ class GPSRouteRunner(Node):
         self.declare_parameter("base_frame", "base_link")
         self.declare_parameter("fix_topic", "/fix")
         self.declare_parameter("alignment_topic", "/gps_corridor/enu_to_map")
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("calibration_request_topic", "/gps_corridor/calibration_request")
+        self.declare_parameter("calibration_status_topic", "/gps_corridor/calibration_status")
         self.declare_parameter("startup_wait_timeout_s", 90.0)
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
@@ -89,12 +100,25 @@ class GPSRouteRunner(Node):
         self.declare_parameter("waypoint_start_cross_track_guard_m", 5.0)
         self.declare_parameter("waypoint_alignment_translation_guard_m", 3.0)
         self.declare_parameter("waypoint_alignment_theta_guard_deg", 2.0)
+        self.declare_parameter("odom_watchdog_step_warn_m", 0.5)
+        self.declare_parameter("odom_watchdog_step_abort_m", 1.0)
+        self.declare_parameter("odom_watchdog_warn_count_abort", 3)
+        self.declare_parameter("odom_watchdog_tf_stale_abort_count", 3)
+        self.declare_parameter("odom_watchdog_monitor_period_s", 0.1)
+        self.declare_parameter("waypoint_calibration_timeout_s", 150.0)
 
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
         self._route_frame = str(self.get_parameter("route_frame").value)
         self._base_frame = str(self.get_parameter("base_frame").value)
         self._fix_topic = str(self.get_parameter("fix_topic").value)
         self._alignment_topic = str(self.get_parameter("alignment_topic").value)
+        self._cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
+        self._calibration_request_topic = str(
+            self.get_parameter("calibration_request_topic").value
+        )
+        self._calibration_status_topic = str(
+            self.get_parameter("calibration_status_topic").value
+        )
         self._startup_wait_timeout_s = float(self.get_parameter("startup_wait_timeout_s").value)
         self._enu_origin_lat = float(self.get_parameter("enu_origin_lat").value)
         self._enu_origin_lon = float(self.get_parameter("enu_origin_lon").value)
@@ -111,19 +135,47 @@ class GPSRouteRunner(Node):
         self._waypoint_alignment_theta_guard_rad = math.radians(
             float(self.get_parameter("waypoint_alignment_theta_guard_deg").value)
         )
+        self._odom_watchdog_step_warn_m = float(
+            self.get_parameter("odom_watchdog_step_warn_m").value
+        )
+        self._odom_watchdog_step_abort_m = float(
+            self.get_parameter("odom_watchdog_step_abort_m").value
+        )
+        self._odom_watchdog_warn_count_abort = int(
+            self.get_parameter("odom_watchdog_warn_count_abort").value
+        )
+        self._odom_watchdog_tf_stale_abort_count = int(
+            self.get_parameter("odom_watchdog_tf_stale_abort_count").value
+        )
+        self._odom_watchdog_monitor_period_s = float(
+            self.get_parameter("odom_watchdog_monitor_period_s").value
+        )
+        self._waypoint_calibration_timeout_s = float(
+            self.get_parameter("waypoint_calibration_timeout_s").value
+        )
 
         self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
         self._goal_pub = self.create_publisher(PoseStamped, "/gps_corridor/goal_map", 10)
         self._path_pub = self.create_publisher(NavPath, "/gps_corridor/path_map", 10)
+        self._cmd_vel_pub = self.create_publisher(Twist, self._cmd_vel_topic, 10)
+        self._calibration_request_pub = self.create_publisher(
+            String, self._calibration_request_topic, 10
+        )
         self._fix_sub = self.create_subscription(NavSatFix, self._fix_topic, self._fix_callback, 10)
         self._alignment_sub = self.create_subscription(
             Float64MultiArray, self._alignment_topic, self._alignment_callback, 10
+        )
+        self._calibration_status_sub = self.create_subscription(
+            String, self._calibration_status_topic, self._calibration_status_callback, 10
         )
 
         self._latest_fix: NavSatFix | None = None
         self._last_fix_key: tuple | None = None
         self._latest_alignment: Alignment2D | None = None
         self._alignment_revision = 0
+        self._latest_calibration_event: CalibrationEvent | None = None
+        self._authorized_alignment_revision: int | None = None
+        self._authorized_waypoint_index: int | None = None
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self._nav_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
@@ -163,6 +215,30 @@ class GPSRouteRunner(Node):
         self.get_logger().info(
             "Received valid ENU->map transform: theta=%.2fdeg tx=%.2f ty=%.2f"
             % (math.degrees(theta), tx, ty)
+        )
+
+    def _calibration_status_callback(self, msg: String) -> None:
+        parts = msg.data.split("|")
+        if len(parts) < 3:
+            return
+        state = parts[0]
+        if not state.startswith("CALIBRATION_"):
+            return
+        try:
+            waypoint_index = int(parts[1]) - 1
+        except ValueError:
+            return
+        revision = None
+        if state == "CALIBRATION_COMPLETE" and len(parts) >= 4:
+            try:
+                revision = int(parts[3])
+            except ValueError:
+                revision = None
+        self._latest_calibration_event = CalibrationEvent(
+            state=state,
+            waypoint_index=waypoint_index,
+            waypoint_name=parts[2],
+            revision=revision,
         )
 
     def _load_route(self, path: FSPath) -> dict:
@@ -348,6 +424,23 @@ class GPSRouteRunner(Node):
     def _current_xy(self) -> tuple[float, float]:
         x, y, _ = self._lookup_current_pose(announce_wait=False)
         return x, y
+
+    def _try_lookup_current_pose(
+        self, timeout_s: float = 0.05
+    ) -> tuple[float, float, float] | None:
+        try:
+            transform = self._tf_buffer.lookup_transform(
+                self._route_frame,
+                self._base_frame,
+                Time(),
+                timeout=Duration(seconds=timeout_s),
+            )
+        except TransformException:
+            return None
+        translation = transform.transform.translation
+        rotation = transform.transform.rotation
+        yaw = quaternion_to_yaw(rotation.x, rotation.y, rotation.z, rotation.w)
+        return float(translation.x), float(translation.y), yaw
 
     def _enu_to_map(self, enu_x: float, enu_y: float, alignment: Alignment2D) -> tuple[float, float]:
         cos_theta = math.cos(alignment.theta)
@@ -539,7 +632,32 @@ class GPSRouteRunner(Node):
         if path.poses:
             self._goal_pub.publish(path.poses[0])
 
-    def _send_goal(self, pose: PoseStamped) -> int:
+    def _publish_zero_cmd_vel(self, repeat: int = 3) -> None:
+        zero = Twist()
+        for _ in range(max(1, repeat)):
+            self._cmd_vel_pub.publish(zero)
+            rclpy.spin_once(self, timeout_sec=0.05)
+
+    def _abort_goal_with_watchdog(
+        self,
+        goal_handle,
+        waypoint_name: str,
+        subgoal_index: int,
+        reason: str,
+    ) -> int:
+        self.get_logger().error(
+            "Aborting %s subgoal %d due to odom watchdog: %s"
+            % (waypoint_name, subgoal_index, reason)
+        )
+        self._publish_status(
+            "ODOM_DIVERGENCE_ABORT|%s|%d|%s" % (waypoint_name, subgoal_index, reason)
+        )
+        cancel_future = goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=2.0)
+        self._publish_zero_cmd_vel()
+        return GoalStatus.STATUS_ABORTED
+
+    def _send_goal(self, pose: PoseStamped, waypoint_name: str, subgoal_index: int) -> int:
         goal = NavigateToPose.Goal()
         pose.header.stamp = self.get_clock().now().to_msg()
         goal.pose = pose
@@ -549,11 +667,143 @@ class GPSRouteRunner(Node):
         if goal_handle is None or not goal_handle.accepted:
             return GoalStatus.STATUS_ABORTED
         result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self, result_future)
-        result = result_future.result()
-        if result is None:
-            return GoalStatus.STATUS_UNKNOWN
-        return int(result.status)
+        last_pose = self._try_lookup_current_pose(timeout_s=0.05)
+        last_pose_mono = time.monotonic()
+        warning_count = 0
+        tf_stale_count = 0
+
+        while rclpy.ok():
+            rclpy.spin_once(self, timeout_sec=self._odom_watchdog_monitor_period_s)
+            if result_future.done():
+                result = result_future.result()
+                if result is None:
+                    return GoalStatus.STATUS_UNKNOWN
+                return int(result.status)
+
+            current_pose = self._try_lookup_current_pose(timeout_s=0.05)
+            now_mono = time.monotonic()
+            if current_pose is None:
+                tf_stale_count += 1
+                if tf_stale_count >= self._odom_watchdog_tf_stale_abort_count:
+                    return self._abort_goal_with_watchdog(
+                        goal_handle,
+                        waypoint_name,
+                        subgoal_index,
+                        "TF_STALE",
+                    )
+                continue
+
+            tf_stale_count = 0
+            if last_pose is None:
+                last_pose = current_pose
+                last_pose_mono = now_mono
+                continue
+
+            dt_s = max(1e-3, now_mono - last_pose_mono)
+            step_m = math.hypot(
+                current_pose[0] - last_pose[0],
+                current_pose[1] - last_pose[1],
+            )
+            last_pose = current_pose
+            last_pose_mono = now_mono
+
+            if step_m > self._odom_watchdog_step_abort_m:
+                return self._abort_goal_with_watchdog(
+                    goal_handle,
+                    waypoint_name,
+                    subgoal_index,
+                    "STEP_%.2fm_IN_%.2fs" % (step_m, dt_s),
+                )
+
+            if step_m > self._odom_watchdog_step_warn_m:
+                warning_count += 1
+                self.get_logger().warn(
+                    "Odom watchdog warning for %s subgoal %d: step %.2fm in %.2fs (%d/%d)"
+                    % (
+                        waypoint_name,
+                        subgoal_index,
+                        step_m,
+                        dt_s,
+                        warning_count,
+                        self._odom_watchdog_warn_count_abort,
+                    )
+                )
+                if warning_count >= self._odom_watchdog_warn_count_abort:
+                    return self._abort_goal_with_watchdog(
+                        goal_handle,
+                        waypoint_name,
+                        subgoal_index,
+                        "REPEATED_WARNING_%.2fm" % step_m,
+                    )
+                continue
+
+            warning_count = 0
+
+        return GoalStatus.STATUS_UNKNOWN
+
+    def _wait_for_alignment_revision(self, revision: int, timeout_s: float = 5.0) -> bool:
+        deadline = time.time() + timeout_s
+        while rclpy.ok() and time.time() < deadline:
+            if (
+                self._latest_alignment is not None
+                and self._latest_alignment.revision >= revision
+            ):
+                return True
+            rclpy.spin_once(self, timeout_sec=0.1)
+        return False
+
+    def _request_waypoint_calibration(self, waypoint_index: int, waypoint_name: str) -> None:
+        self._latest_calibration_event = None
+        self._publish_status(
+            "CALIBRATING_AT_WAYPOINT|%d|%d|%s"
+            % (waypoint_index + 1, len(self._route["waypoints"]), waypoint_name)
+        )
+        self._calibration_request_pub.publish(
+            String(data="CALIBRATE|%d|%s" % (waypoint_index + 1, waypoint_name))
+        )
+
+    def _wait_for_waypoint_calibration(
+        self, waypoint_index: int, waypoint_name: str
+    ) -> bool:
+        deadline = time.time() + self._waypoint_calibration_timeout_s
+        while rclpy.ok() and time.time() < deadline:
+            event = self._latest_calibration_event
+            if (
+                event is not None
+                and event.waypoint_index == waypoint_index
+                and event.waypoint_name == waypoint_name
+            ):
+                if event.state == "CALIBRATION_COMPLETE" and event.revision is not None:
+                    if not self._wait_for_alignment_revision(event.revision):
+                        break
+                    self._authorized_waypoint_index = waypoint_index + 1
+                    self._authorized_alignment_revision = event.revision
+                    self.get_logger().info(
+                        "Calibration accepted for next waypoint start: %s rev=%d"
+                        % (waypoint_name, event.revision)
+                    )
+                    return True
+                if event.state in ("CALIBRATION_FAILED", "CALIBRATION_TIMEOUT"):
+                    return False
+            rclpy.spin_once(self, timeout_sec=0.2)
+        return False
+
+    def _maybe_calibrate_after_waypoint(
+        self, waypoint_index: int, waypoint_name: str
+    ) -> None:
+        if waypoint_index + 1 >= len(self._route["waypoints"]):
+            return
+        self._request_waypoint_calibration(waypoint_index, waypoint_name)
+        if self._wait_for_waypoint_calibration(waypoint_index, waypoint_name):
+            self._publish_status(
+                "CALIBRATION_READY|%d|%d|%s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint_name)
+            )
+            return
+        self._publish_status(
+            "CALIBRATION_FALLBACK|%d|%d|%s"
+            % (waypoint_index + 1, len(self._route["waypoints"]), waypoint_name)
+        )
 
     def _choose_waypoint_alignment(
         self,
@@ -571,6 +821,20 @@ class GPSRouteRunner(Node):
         )
         candidate_progress_m = max(0.0, min(segment.total_length_m, candidate_raw_progress_m))
         if waypoint_index == 0 or previous_alignment is None:
+            return candidate_alignment, candidate_progress_m
+
+        authorized_calibration = (
+            self._authorized_waypoint_index == waypoint_index
+            and self._authorized_alignment_revision is not None
+            and candidate_alignment.revision >= self._authorized_alignment_revision
+        )
+        if authorized_calibration:
+            self.get_logger().info(
+                "Accepting authorized calibration alignment for waypoint %s at rev=%d"
+                % (segment.waypoint.name, candidate_alignment.revision)
+            )
+            self._authorized_waypoint_index = None
+            self._authorized_alignment_revision = None
             return candidate_alignment, candidate_progress_m
 
         previous_raw_progress_m, previous_cross_track_m = self._segment_projection(
@@ -698,7 +962,7 @@ class GPSRouteRunner(Node):
                 )
             )
 
-            status = self._send_goal(next_subgoal)
+            status = self._send_goal(next_subgoal, waypoint.name, subgoal_index)
             if status != GoalStatus.STATUS_SUCCEEDED:
                 self._publish_status(
                     f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_{subgoal_index}_STATUS_{status}"
@@ -747,6 +1011,7 @@ class GPSRouteRunner(Node):
                 "WAYPOINT_REACHED|%d|%d|%s"
                 % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
             )
+            self._maybe_calibrate_after_waypoint(waypoint_index, waypoint.name)
 
         self._publish_status("SUCCEEDED")
         return True

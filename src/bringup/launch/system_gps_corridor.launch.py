@@ -119,6 +119,8 @@ def generate_launch_description():
             '/gps_corridor/status',
             '/gps_corridor/alignment_status',
             '/gps_corridor/alignment_debug',
+            '/gps_corridor/calibration_request',
+            '/gps_corridor/calibration_status',
             '/gps_corridor/enu_to_map',
             '/gps_corridor/pgo_enu_to_map',
             '/gps_corridor/goal_map',

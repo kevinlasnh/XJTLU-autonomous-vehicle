@@ -26,7 +26,7 @@
       # 局部地图体素边长；调大可减少切块频率，但会增加局部地图规模。
       cube_len: 300.0
       # 检测范围；调大覆盖更远，但近邻搜索和匹配开销上升。
-      det_range: 60.0
+      det_range: 30.0
       # 地图平移阈值；调大可减少地图移动，调小更敏感。
       move_thresh: 1.5
 
@@ -150,21 +150,29 @@
     # 采纳新配对前要求的最小位移；增大间距，减少高噪声冗余点对。
     pair_min_spacing_m: 2.0
     # 至少多少个最近配对后才尝试解算对齐。
-    alignment_min_pairs: 5
+    alignment_min_pairs: 8
     # 至少累计多少 ENU 展幅后才允许在线修正；避免小展幅下被 GPS 噪声误导。
     alignment_min_spread_m: 20.0
+    # waypoint 校准点对的最小展幅；不足则拒绝显式校准结果。
+    calibration_min_spread_m: 20.0
     # 单次允许的最大角度更新步长；限制运行中参考系转动速度。
     max_theta_step_deg: 0.5
     # 单次允许的最大平移更新步长；限制运行中参考系平移速度。
-    max_translation_step_m: 0.30
+    max_translation_step_m: 0.15
     # 原始 GPS 解与 bootstrap 差异过大时直接拒绝，避免误拖动整条路线。
     max_bootstrap_delta_deg: 25.0
     # 原始 GPS 解相对 bootstrap 的总平移漂移上限；避免 waypoint 边界整体拖偏几十米。
     max_bootstrap_translation_delta_m: 8.0
+    # 显式 waypoint 校准结果允许的最大平移跳变；与 live raw GPS 分开控制。
+    max_calibration_translation_delta_m: 12.0
     # 连续发布 alignment 的周期；供 runner 与 bag 观测。
     publish_period_s: 0.2
     # 对齐状态日志的节流周期。
     status_log_period_s: 5.0
+    # runner 发布 waypoint 校准请求的话题。
+    calibration_request_topic: /gps_corridor/calibration_request
+    # aligner 发布 waypoint 校准结果的话题。
+    calibration_status_topic: /gps_corridor/calibration_status
 
 /gps_route_runner:
   ros__parameters:
@@ -182,6 +190,24 @@
     waypoint_alignment_translation_guard_m: 3.0
     # 新 waypoint 开始时允许相对上一段冻结 alignment 的最大朝向跳变；超过说明 live alignment 不可信。
     waypoint_alignment_theta_guard_deg: 2.0
+    # 发布底盘速度控制的话题；watchdog abort 时发送零速度。
+    cmd_vel_topic: /cmd_vel
+    # odom watchdog 预警阈值：单步位移超过该值记一次 warning。
+    odom_watchdog_step_warn_m: 0.5
+    # odom watchdog 直接中止阈值：单步位移超过该值立即 abort。
+    odom_watchdog_step_abort_m: 1.0
+    # 连续多少次 warning 后直接 abort。
+    odom_watchdog_warn_count_abort: 3
+    # 连续多少次 TF stale 后直接 abort。
+    odom_watchdog_tf_stale_abort_count: 3
+    # watchdog 检查周期。
+    odom_watchdog_monitor_period_s: 0.1
+    # runner 发布 waypoint 校准请求的话题。
+    calibration_request_topic: /gps_corridor/calibration_request
+    # aligner 发布 waypoint 校准状态的话题。
+    calibration_status_topic: /gps_corridor/calibration_status
+    # waypoint 校准最长等待时长；超时则 fallback 到旧 alignment。
+    waypoint_calibration_timeout_s: 150.0
 
 /serial_twistctl_node:
   ros__parameters:

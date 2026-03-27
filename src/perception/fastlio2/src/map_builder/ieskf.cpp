@@ -1,5 +1,51 @@
 #include "ieskf.h"
 
+#include <algorithm>
+#include <cmath>
+
+namespace {
+constexpr double kMinCovarianceDiag = 1e-8;
+constexpr double kMaxCovarianceDiag = 1.0;
+constexpr double kRegularizedMinEigenvalue = 75.0;
+
+void clampCovarianceDiagonal(M21D &covariance)
+{
+    covariance = 0.5 * (covariance + covariance.transpose());
+    for (int index = 0; index < covariance.rows(); ++index)
+    {
+        double diag = covariance(index, index);
+        if (!std::isfinite(diag))
+            diag = kMaxCovarianceDiag;
+        covariance(index, index) = std::clamp(diag, kMinCovarianceDiag, kMaxCovarianceDiag);
+    }
+}
+
+void regularizeMeasurementBlock(M21D &system_matrix)
+{
+    M12D measurement_block = system_matrix.block<12, 12>(0, 0);
+    Eigen::SelfAdjointEigenSolver<M12D> solver(measurement_block);
+    if (solver.info() != Eigen::Success)
+        return;
+
+    Eigen::Matrix<double, 12, 1> eigenvalues = solver.eigenvalues();
+    bool regularized = false;
+    for (int index = 0; index < eigenvalues.size(); ++index)
+    {
+        if (eigenvalues(index) < kRegularizedMinEigenvalue)
+        {
+            eigenvalues(index) = kRegularizedMinEigenvalue;
+            regularized = true;
+        }
+    }
+
+    if (!regularized)
+        return;
+
+    system_matrix.block<12, 12>(0, 0) =
+        solver.eigenvectors() * eigenvalues.asDiagonal() * solver.eigenvectors().transpose();
+}
+}
+
 double State::gravity = 9.81;
 
 M3D Jr(const V3D &inp)
@@ -84,12 +130,14 @@ void IESKF::update()
     V21D delta = V21D::Zero();
     M21D H = M21D::Identity();
     V21D b;
+    bool have_valid_measurement = false;
 
     for (size_t i = 0; i < m_max_iter; i++)
     {
         m_loss_func(m_x, shared_data);
         if (!shared_data.valid)
             break;
+        have_valid_measurement = true;
         H.setZero();
         b.setZero();
         delta = m_x - predict_x;
@@ -101,6 +149,7 @@ void IESKF::update()
 
         H.block<12, 12>(0, 0) += shared_data.H;
         b.block<12, 1>(0, 0) += shared_data.b;
+        regularizeMeasurementBlock(H);
 
         delta = -H.inverse() * b;
 
@@ -111,10 +160,17 @@ void IESKF::update()
             break;
     }
 
+    if (!have_valid_measurement)
+    {
+        clampCovarianceDiagonal(m_P);
+        return;
+    }
+
     M21D L = M21D::Identity();
     // L.block<3, 3>(0, 0) = JrInv(delta.segment<3>(0));
     // L.block<3, 3>(6, 6) = JrInv(delta.segment<3>(6));
     L.block<3, 3>(0, 0) = Jr(delta.segment<3>(0));
     L.block<3, 3>(6, 6) = Jr(delta.segment<3>(6));
     m_P = L * H.inverse() * L.transpose();
+    clampCovarianceDiagonal(m_P);
 }

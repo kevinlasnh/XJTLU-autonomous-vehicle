@@ -54,6 +54,15 @@ class AlignmentPair:
     map_y: float
 
 
+@dataclass
+class CalibrationPair:
+    label: str
+    enu_x: float
+    enu_y: float
+    map_x: float
+    map_y: float
+
+
 class GPSGlobalAligner(Node):
     def __init__(self) -> None:
         super().__init__("gps_global_aligner")
@@ -64,6 +73,8 @@ class GPSGlobalAligner(Node):
         self.declare_parameter("alignment_topic", "/gps_corridor/enu_to_map")
         self.declare_parameter("status_topic", "/gps_corridor/alignment_status")
         self.declare_parameter("debug_topic", "/gps_corridor/alignment_debug")
+        self.declare_parameter("calibration_request_topic", "/gps_corridor/calibration_request")
+        self.declare_parameter("calibration_status_topic", "/gps_corridor/calibration_status")
         self.declare_parameter("startup_wait_timeout_s", 90.0)
         self.declare_parameter("enu_origin_lat", 0.0)
         self.declare_parameter("enu_origin_lon", 0.0)
@@ -72,10 +83,12 @@ class GPSGlobalAligner(Node):
         self.declare_parameter("pair_min_spacing_m", 2.0)
         self.declare_parameter("alignment_min_pairs", 5)
         self.declare_parameter("alignment_min_spread_m", 20.0)
+        self.declare_parameter("calibration_min_spread_m", 20.0)
         self.declare_parameter("max_theta_step_deg", 0.5)
         self.declare_parameter("max_translation_step_m", 0.30)
         self.declare_parameter("max_bootstrap_delta_deg", 25.0)
         self.declare_parameter("max_bootstrap_translation_delta_m", 8.0)
+        self.declare_parameter("max_calibration_translation_delta_m", 12.0)
         self.declare_parameter("max_alignment_step_warning_deg", 5.0)
         self.declare_parameter("publish_period_s", 0.2)
         self.declare_parameter("status_log_period_s", 5.0)
@@ -87,6 +100,12 @@ class GPSGlobalAligner(Node):
         self._alignment_topic = str(self.get_parameter("alignment_topic").value)
         self._status_topic = str(self.get_parameter("status_topic").value)
         self._debug_topic = str(self.get_parameter("debug_topic").value)
+        self._calibration_request_topic = str(
+            self.get_parameter("calibration_request_topic").value
+        )
+        self._calibration_status_topic = str(
+            self.get_parameter("calibration_status_topic").value
+        )
         self._startup_wait_timeout_s = float(self.get_parameter("startup_wait_timeout_s").value)
         self._enu_origin_lat = float(self.get_parameter("enu_origin_lat").value)
         self._enu_origin_lon = float(self.get_parameter("enu_origin_lon").value)
@@ -95,6 +114,9 @@ class GPSGlobalAligner(Node):
         self._pair_min_spacing_m = float(self.get_parameter("pair_min_spacing_m").value)
         self._alignment_min_pairs = int(self.get_parameter("alignment_min_pairs").value)
         self._alignment_min_spread_m = float(self.get_parameter("alignment_min_spread_m").value)
+        self._calibration_min_spread_m = float(
+            self.get_parameter("calibration_min_spread_m").value
+        )
         self._max_theta_step_rad = math.radians(
             float(self.get_parameter("max_theta_step_deg").value)
         )
@@ -104,6 +126,9 @@ class GPSGlobalAligner(Node):
         )
         self._max_bootstrap_translation_delta_m = float(
             self.get_parameter("max_bootstrap_translation_delta_m").value
+        )
+        self._max_calibration_translation_delta_m = float(
+            self.get_parameter("max_calibration_translation_delta_m").value
         )
         self._max_alignment_step_warning_rad = math.radians(
             float(self.get_parameter("max_alignment_step_warning_deg").value)
@@ -116,7 +141,13 @@ class GPSGlobalAligner(Node):
         )
         self._status_pub = self.create_publisher(String, self._status_topic, 10)
         self._debug_pub = self.create_publisher(Float64MultiArray, self._debug_topic, 10)
+        self._calibration_status_pub = self.create_publisher(
+            String, self._calibration_status_topic, 10
+        )
         self._fix_sub = self.create_subscription(NavSatFix, self._fix_topic, self._fix_callback, 10)
+        self._calibration_request_sub = self.create_subscription(
+            String, self._calibration_request_topic, self._calibration_request_callback, 10
+        )
 
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
@@ -127,6 +158,8 @@ class GPSGlobalAligner(Node):
         self._current_alignment: Alignment2D | None = None
         self._raw_alignment: Alignment2D | None = None
         self._pair_buffer: deque[AlignmentPair] = deque()
+        self._calibration_pairs: list[CalibrationPair] = []
+        self._pending_calibration_request: tuple[int, str] | None = None
         self._last_pair_enu: tuple[float, float] | None = None
         self._last_pair_map: tuple[float, float] | None = None
         self._last_status_line = ""
@@ -148,6 +181,10 @@ class GPSGlobalAligner(Node):
             self._last_status_line = text
             self._last_status_log_mono = now_mono
         self._status_pub.publish(String(data=text))
+
+    def _publish_calibration_status(self, text: str) -> None:
+        self.get_logger().info(text)
+        self._calibration_status_pub.publish(String(data=text))
 
     def _publish_alignment(self, alignment: Alignment2D | None, valid: bool) -> None:
         msg = Float64MultiArray()
@@ -187,6 +224,25 @@ class GPSGlobalAligner(Node):
 
     def _fix_callback(self, msg: NavSatFix) -> None:
         self._latest_fix = msg
+
+    def _calibration_request_callback(self, msg: String) -> None:
+        parts = msg.data.split("|")
+        if len(parts) < 3 or parts[0] != "CALIBRATE":
+            return
+        try:
+            waypoint_index = int(parts[1]) - 1
+        except ValueError:
+            self.get_logger().warn(
+                "Ignoring malformed calibration request: %s" % msg.data
+            )
+            return
+        if self._pending_calibration_request is not None:
+            self.get_logger().warn(
+                "Dropping calibration request for %s because one is already pending"
+                % parts[2]
+            )
+            return
+        self._pending_calibration_request = (waypoint_index, parts[2])
 
     def _load_route(self, path: FSPath) -> dict:
         if not path.exists():
@@ -369,9 +425,32 @@ class GPSGlobalAligner(Node):
                 spread = math.hypot(
                     pairs[i].enu_x - pairs[j].enu_x,
                     pairs[i].enu_y - pairs[j].enu_y,
-                )
-                max_spread = max(max_spread, spread)
+            )
+            max_spread = max(max_spread, spread)
         return max_spread
+
+    def _upsert_calibration_pair(
+        self, label: str, enu_x: float, enu_y: float, map_x: float, map_y: float
+    ) -> None:
+        for index, pair in enumerate(self._calibration_pairs):
+            if pair.label == label:
+                self._calibration_pairs[index] = CalibrationPair(
+                    label=label,
+                    enu_x=enu_x,
+                    enu_y=enu_y,
+                    map_x=map_x,
+                    map_y=map_y,
+                )
+                return
+        self._calibration_pairs.append(
+            CalibrationPair(
+                label=label,
+                enu_x=enu_x,
+                enu_y=enu_y,
+                map_x=map_x,
+                map_y=map_y,
+            )
+        )
 
     def _solve_alignment(self, pairs: list[AlignmentPair]) -> Alignment2D | None:
         if self._bootstrap_alignment is None:
@@ -397,6 +476,157 @@ class GPSGlobalAligner(Node):
 
         self._alignment_revision += 1
         return Alignment2D(theta=theta, tx=tx, ty=ty, source="raw_gps", revision=self._alignment_revision)
+
+    def _solve_calibration_alignment(
+        self, pairs: list[CalibrationPair]
+    ) -> Alignment2D | None:
+        if len(pairs) < 2:
+            return None
+        spread_m = self._compute_pair_spread_m(pairs)
+        if spread_m < self._calibration_min_spread_m:
+            return None
+
+        enu_cx = sum(pair.enu_x for pair in pairs) / len(pairs)
+        enu_cy = sum(pair.enu_y for pair in pairs) / len(pairs)
+        map_cx = sum(pair.map_x for pair in pairs) / len(pairs)
+        map_cy = sum(pair.map_y for pair in pairs) / len(pairs)
+
+        h00 = 0.0
+        h01 = 0.0
+        h10 = 0.0
+        h11 = 0.0
+        for pair in pairs:
+            enu_dx = pair.enu_x - enu_cx
+            enu_dy = pair.enu_y - enu_cy
+            map_dx = pair.map_x - map_cx
+            map_dy = pair.map_y - map_cy
+            h00 += enu_dx * map_dx
+            h01 += enu_dx * map_dy
+            h10 += enu_dy * map_dx
+            h11 += enu_dy * map_dy
+
+        theta = normalize_angle(math.atan2(h10 - h01, h00 + h11))
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+        tx = map_cx - (cos_theta * enu_cx - sin_theta * enu_cy)
+        ty = map_cy - (sin_theta * enu_cx + cos_theta * enu_cy)
+        if not (math.isfinite(theta) and math.isfinite(tx) and math.isfinite(ty)):
+            return None
+        return Alignment2D(
+            theta=theta,
+            tx=tx,
+            ty=ty,
+            source="waypoint_calibration_raw",
+            revision=self._alignment_revision,
+        )
+
+    def _apply_calibration_alignment(self, raw_alignment: Alignment2D) -> Alignment2D | None:
+        if self._current_alignment is None:
+            return None
+        theta_delta = abs(normalize_angle(raw_alignment.theta - self._current_alignment.theta))
+        if theta_delta > self._max_bootstrap_delta_rad:
+            self.get_logger().warn(
+                "Rejecting calibration alignment: theta delta %.2fdeg > %.2fdeg"
+                % (math.degrees(theta_delta), math.degrees(self._max_bootstrap_delta_rad))
+            )
+            return None
+        translation_delta = math.hypot(
+            raw_alignment.tx - self._current_alignment.tx,
+            raw_alignment.ty - self._current_alignment.ty,
+        )
+        if translation_delta > self._max_calibration_translation_delta_m:
+            self.get_logger().warn(
+                "Rejecting calibration alignment: translation delta %.2fm > %.2fm"
+                % (translation_delta, self._max_calibration_translation_delta_m)
+            )
+            return None
+
+        self._alignment_revision += 1
+        accepted = Alignment2D(
+            theta=raw_alignment.theta,
+            tx=raw_alignment.tx,
+            ty=raw_alignment.ty,
+            source="waypoint_calibration",
+            revision=self._alignment_revision,
+        )
+        self._current_alignment = accepted
+        self._bootstrap_alignment = accepted
+        self._raw_alignment = accepted
+        return accepted
+
+    def _handle_pending_calibration_request(self) -> None:
+        request = self._pending_calibration_request
+        if request is None:
+            return
+        self._pending_calibration_request = None
+        waypoint_index, waypoint_name = request
+        self._publish_calibration_status(
+            "CALIBRATION_STARTED|%d|%s" % (waypoint_index + 1, waypoint_name)
+        )
+        try:
+            calibration_fix = self._wait_for_stable_fix()
+            current_pose = self._lookup_current_pose("ALIGNER_WAITING_FOR_MAP_TF")
+        except Exception as exc:
+            self.get_logger().warn(
+                "Calibration failed at %s: %s" % (waypoint_name, exc)
+            )
+            self._publish_calibration_status(
+                "CALIBRATION_TIMEOUT|%d|%s" % (waypoint_index + 1, waypoint_name)
+            )
+            return
+
+        calibration_enu_x, calibration_enu_y = self._projector.forward(
+            calibration_fix["lat"], calibration_fix["lon"]
+        )
+        self._upsert_calibration_pair(
+            "wp%d:%s" % (waypoint_index + 1, waypoint_name),
+            calibration_enu_x,
+            calibration_enu_y,
+            current_pose[0],
+            current_pose[1],
+        )
+
+        spread_m = (
+            self._compute_pair_spread_m(self._calibration_pairs)
+            if len(self._calibration_pairs) >= 2
+            else 0.0
+        )
+        raw_alignment = self._solve_calibration_alignment(self._calibration_pairs)
+        if raw_alignment is None:
+            self._publish_calibration_status(
+                "CALIBRATION_FAILED|%d|%s" % (waypoint_index + 1, waypoint_name)
+            )
+            return
+
+        accepted_alignment = self._apply_calibration_alignment(raw_alignment)
+        if accepted_alignment is None:
+            self._publish_calibration_status(
+                "CALIBRATION_FAILED|%d|%s" % (waypoint_index + 1, waypoint_name)
+            )
+            return
+
+        self.get_logger().info(
+            "Calibration alignment accepted at %s: theta=%.2fdeg tx=%.2f ty=%.2f pairs=%d spread=%.2fm"
+            % (
+                waypoint_name,
+                math.degrees(accepted_alignment.theta),
+                accepted_alignment.tx,
+                accepted_alignment.ty,
+                len(self._calibration_pairs),
+                spread_m,
+            )
+        )
+        self._publish_alignment(accepted_alignment, True)
+        self._publish_calibration_status(
+            "CALIBRATION_COMPLETE|%d|%s|%d|%d|%.2f"
+            % (
+                waypoint_index + 1,
+                waypoint_name,
+                accepted_alignment.revision,
+                len(self._calibration_pairs),
+                spread_m,
+            )
+        )
 
     def _trim_pairs(self, now_mono: float) -> None:
         while self._pair_buffer and now_mono - self._pair_buffer[0].stamp_mono > self._pair_window_s:
@@ -529,6 +759,10 @@ class GPSGlobalAligner(Node):
         self._bootstrap_alignment = self._build_bootstrap_alignment(x0, y0, yaw0)
         self._current_alignment = self._bootstrap_alignment
         self._raw_alignment = self._bootstrap_alignment
+        startup_enu_x, startup_enu_y = self._projector.forward(
+            startup_fix["lat"], startup_fix["lon"]
+        )
+        self._upsert_calibration_pair("start_ref", startup_enu_x, startup_enu_y, x0, y0)
 
         self.get_logger().info(
             "Bootstrap ENU->map ready: yaw0=%.2fdeg launch_yaw=%.2fdeg theta=%.2fdeg tx=%.2f ty=%.2f"
@@ -545,6 +779,7 @@ class GPSGlobalAligner(Node):
         last_publish_mono = 0.0
         while rclpy.ok():
             rclpy.spin_once(self, timeout_sec=0.2)
+            self._handle_pending_calibration_request()
             ingested = self._ingest_latest_fix_pair()
             pairs = list(self._pair_buffer)
             spread_m = self._compute_pair_spread_m(pairs) if len(pairs) >= 2 else 0.0
