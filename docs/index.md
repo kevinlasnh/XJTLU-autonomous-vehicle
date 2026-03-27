@@ -1,65 +1,65 @@
-# FYP 自主导航车辆文档索引
+# FYP Autonomous Navigation Vehicle Documentation Index
 
-> 最后更新: 2026-03-27
+> Last updated: 2026-03-27
 
-## 当前系统摘要
+## Current System Summary
 
-- 当前主运行模式: `make launch-explore`
-- GPS 融合模式已部署: `make launch-explore-gps`
-- GPS 目标导航模式已在 `feature/gps-navigation-v4` 完成软件部署并通过室内 smoke: `make launch-nav-gps`
-- **GPS Corridor v2 独立 Global Aligner 架构已在 `gps-rpp` 分支部署**: `make launch-corridor`
-  - waypoint 1 已稳定到达，运行期微调已收口（Nav2 参数 + waypoint alignment 守卫）
-  - Translation-only aligner 已尝试但未能纠回启动锚定误差（commit `94862d7`）
-  - 当前主瓶颈：GPS 路线锚定方法（startup GPS 2.5~4.75m 误差）+ FAST-LIO2 odom 发散
-- 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
-- 运行时数据根目录: `~/fyp_runtime_data`
-- 参数统一入口: `src/bringup/config/master_params.yaml`
-- 日志统一入口: `scripts/launch_with_logs.sh`
+- Current primary operating mode: `make launch-explore`
+- GPS fusion mode deployed: `make launch-explore-gps`
+- GPS goal navigation mode software deployment completed on `feature/gps-navigation-v4`, passed indoor smoke test: `make launch-nav-gps`
+- **GPS Corridor v2 standalone Global Aligner architecture deployed on `gps-rpp` branch**: `make launch-corridor`
+  - Waypoint 1 reached reliably; runtime fine-tuning closed out (Nav2 parameters + waypoint alignment guard)
+  - Translation-only aligner attempted but failed to correct startup anchoring error (commit `94862d7`)
+  - Current primary bottleneck: GPS route anchoring method (startup GPS ~2.5--4.75 m error) + FAST-LIO2 odom divergence
+- Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2
+- Runtime data root directory: `~/fyp_runtime_data`
+- Unified parameter entry point: `src/bringup/config/master_params.yaml`
+- Unified logging entry point: `scripts/launch_with_logs.sh`
 
-## 核心文档
+## Core Documentation
 
-| 主题 | 文件 |
-|------|------|
-| 系统结构与数据流 | [architecture.md](architecture.md) |
-| 常用命令 | [commands.md](commands.md) |
-| 开发规范 | [conventions.md](conventions.md) |
-| 执行工作流 | [workflow.md](workflow.md) |
-| 已知问题与当前阻塞 | [known_issues.md](known_issues.md) |
-| 硬件规格参数 | [hardware_spec.md](hardware_spec.md) |
+| Topic | File |
+|-------|------|
+| System architecture and data flow | [architecture.md](architecture.md) |
+| Common commands | [commands.md](commands.md) |
+| Development conventions | [conventions.md](conventions.md) |
+| Execution workflow | [workflow.md](workflow.md) |
+| Known issues and current blockers | [known_issues.md](known_issues.md) |
+| Hardware specifications | [hardware_spec.md](hardware_spec.md) |
 
-## 技术深度文档
+## Technical Deep-Dive Documentation
 
-| 主题 | 文件 |
-|------|------|
-| FAST-LIO2 工作原理 | [knowledge/fastlio2.md](knowledge/fastlio2.md) |
+| Topic | File |
+|-------|------|
+| FAST-LIO2 internals | [knowledge/fastlio2.md](knowledge/fastlio2.md) |
 | PGO + GPS Factor | [knowledge/pgo.md](knowledge/pgo.md) |
-| Nav2 调参与运行约束 | [knowledge/nav2_tuning.md](knowledge/nav2_tuning.md) |
-| GPS 全局导航与路网规划 | [knowledge/gps_planning.md](knowledge/gps_planning.md) |
+| Nav2 tuning and runtime constraints | [knowledge/nav2_tuning.md](knowledge/nav2_tuning.md) |
+| GPS global navigation and route planning | [knowledge/gps_planning.md](knowledge/gps_planning.md) |
 
-## 开发日志
+## Development Log
 
-| 时间段 | 文件 |
+| Period | File |
 |--------|------|
 | 2025-11 | [devlog/2025-11.md](devlog/2025-11.md) |
 | 2025-12 | [devlog/2025-12.md](devlog/2025-12.md) |
 | 2026-03 | [devlog/2026-03.md](devlog/2026-03.md) |
 
-## 仓库级辅助文档
+## Repository-Level Auxiliary Documentation
 
-| 文件 | 用途 |
-|------|------|
-| [`../README.md`](../README.md) | 仓库总览与快速开始 |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | 贡献流程与 PR 要求 |
-| [`../CLAUDE.md`](../CLAUDE.md) | Agent 侧执行约束摘要 |
+| File | Purpose |
+|------|---------|
+| [`../README.md`](../README.md) | Repository overview and quick start |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution process and PR requirements |
+| [`../CLAUDE.md`](../CLAUDE.md) | Agent-side execution constraints summary |
 
-## 归档说明
+## Archive Notes
 
-- `docs/devlog/legacy/` 为历史原始文档归档，仅保留参考价值，不按当前结构继续维护。
-- `src/third_party/` 下的上游文档不属于本项目自维护文档范围。
+- `docs/devlog/legacy/` contains archived historical documents, kept for reference only and not maintained under the current structure.
+- Upstream documentation under `src/third_party/` is outside the scope of this project's self-maintained documentation.
 
-## 维护原则
+## Maintenance Principles
 
-1. 代码、launch、参数、系统环境、流程有变动时，同步更新对应文档。
-2. 当月开发记录统一追加到 `devlog/YYYY-MM.md`。
-3. 新问题或状态变化同步到 `known_issues.md`。
-4. 命令和流程文档必须反映当前仓库真实可执行状态，而不是历史习惯。
+1. When code, launch files, parameters, system environment, or workflows change, update the corresponding documentation accordingly.
+2. Monthly development records are appended to `devlog/YYYY-MM.md`.
+3. New issues or status changes are synced to `known_issues.md`.
+4. Command and workflow documentation must reflect the current executable state of the repository, not historical conventions.

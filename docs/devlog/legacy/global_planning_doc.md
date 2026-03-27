@@ -1,27 +1,27 @@
-# 全局规划层开发备忘
+# Global Planning Layer Development Memo
 
-## 开发板块
+## Development Modules
 
-### 最高优先级（需要立马解决的问题，对系统运行有直接影响）
-1. 怎么保证这个 gps 地图是精准的
-2. 万一你起点的 gps 值和哪个预定义的节点都对不上怎么办，能不能让这个 astar 算法以自身初始 gps 值为起点进行导航
+### Highest Priority (Issues requiring immediate resolution, directly impacting system operation)
+1. How to ensure the GPS map is accurate
+2. What if the starting GPS value does not match any predefined node -- can the A* algorithm use its own initial GPS value as the starting point for navigation
 
-### 中等优先级（短时间内需要解决，对系统运行无直接影响）
+### Medium Priority (Issues to resolve in the short term, no direct impact on system operation)
 
-### 低优先级（解决了更优，不解决亦可）
+### Low Priority (Better if resolved, acceptable if not)
 
-## 杂项
-1. 
+## Miscellaneous
+1.
 
-# 全局规划层开发日志
+# Global Planning Layer Development Log
 
 ## 2025.11.27
-1. 已创建 doc 文件
-2. A star 算法的特征点需要提取，不然点太密集了
+1. Created the doc file
+2. A* algorithm feature points need to be extracted, otherwise the points are too dense
 
 ## 2025.12.01
-1. gps 航点的位置必须要设定在没有障碍物的区域，不然 Nav2 压根不能让车辆踩到这个航点上
-2. 这个 astar 算法还比较低级，这个 astar 只支持在现有的节点上去规划路径吗 然后所有节点都是 gps 值预定义好的
-3. 怎么保证这个 gps 地图是精准的
-4. 万一你起点的 gps 值和哪个预定义的节点都对不上怎么办
-5. 现在都不需要考虑这个航点的问题了 都是定死的 gps，现在唯一的问题就是实时 gps 如果漂移了该怎么维护 Nav2 的实时全局地图位姿正确
+1. GPS waypoint positions must be set in obstacle-free areas, otherwise Nav2 simply cannot navigate the vehicle onto these waypoints
+2. This A* algorithm is still quite basic -- it only supports path planning on existing nodes, and all nodes are predefined with GPS values
+3. How to ensure the GPS map is accurate
+4. What if the starting GPS value does not match any predefined node
+5. The waypoint issue no longer needs consideration since all GPS values are fixed; the only remaining issue is how to maintain Nav2's real-time global map pose correctness when real-time GPS drifts

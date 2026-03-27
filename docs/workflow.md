@@ -1,19 +1,19 @@
-# 项目工作流指南
+# Project Workflow Guide
 
-> 当前标准: 代码与文档改动都走分支 + PR，`main` 只接收已验证结果。
+> Current standard: Both code and documentation changes go through branches + PRs; `main` only receives verified results.
 
-## 1. 角色分工
+## 1. Role Division
 
-| 角色 | 责任 |
-|------|------|
-| kevinlasnh | 提需求、做最终决策、执行实车测试 |
-| Claude | 架构、调研、方案设计、结果复审 |
-| Codex | 执行实现、构建验证、提交、PR、文档同步 |
-| 团队开发者 | 按同样分支和 PR 规则协作 |
+| Role | Responsibility |
+|------|----------------|
+| kevinlasnh | Defines requirements, makes final decisions, executes on-vehicle tests |
+| Claude | Architecture, research, solution design, result review |
+| Codex | Implementation execution, build verification, commits, PRs, documentation sync |
+| Team developers | Collaborate under the same branch and PR rules |
 
-## 2. 标准开发流
+## 2. Standard Development Flow
 
-### 2.1 会话开始
+### 2.1 Session Start
 
 ```bash
 ssh jetson@100.97.227.24
@@ -25,46 +25,46 @@ git branch -v
 git log --oneline -5
 ```
 
-如果上次已经构建过并准备继续调试：
+If a previous build exists and you are continuing to debug:
 
 ```bash
 source install/setup.bash
 ```
 
-### 2.2 创建分支
+### 2.2 Create Branch
 
 ```bash
 git checkout -b gps
 ```
 
-分支命名直接用描述名，不加前缀：
+Branch naming uses descriptive names directly, without prefixes:
 
-- 示例: `gps`、`nav-tuning`、`lidar-fix`、`docs-sync`
+- Examples: `gps`, `nav-tuning`, `lidar-fix`, `docs-sync`
 
-### 2.3 研究与实施
+### 2.3 Research and Implementation
 
-1. 先核对真实代码状态、launch 链和当前参数。
-2. 再做改动，不凭历史记忆直接写。
-3. 如果改动涉及系统行为，先确认影响的运行模式。
-4. 新增 launch / mode / 参数 profile 时，同步更新文档，不留到后面补猜。
+1. First verify the actual code state, launch chain, and current parameters.
+2. Then make changes -- do not write from historical memory alone.
+3. If changes affect system behavior, first confirm which operating modes are impacted.
+4. When adding new launch files / modes / parameter profiles, update documentation concurrently rather than leaving it for later.
 
-### 2.4 构建
+### 2.4 Build
 
 ```bash
 colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
 
-规则：
+Rules:
 
-1. `--parallel-workers 1` 是硬性要求。
-2. 每次构建后都要重新 `source install/setup.bash`。
-3. Python 包虽可借助 `--symlink-install` 免重编，但仍要做运行验证。
-4. `build-navigation` 当前包含 `waypoint_collector`、`waypoint_nav_tool`、`gps_waypoint_dispatcher`。
+1. `--parallel-workers 1` is a hard requirement.
+2. `source install/setup.bash` must be re-executed after every build.
+3. Python packages can skip rebuilding under `--symlink-install`, but runtime verification is still required.
+4. `build-navigation` currently includes `waypoint_collector`, `waypoint_nav_tool`, `gps_waypoint_dispatcher`.
 
-### 2.5 启动与验证
+### 2.5 Launch and Verify
 
-按改动范围选择合适模式：
+Choose the appropriate mode based on the scope of changes:
 
 ```bash
 make launch-slam
@@ -74,39 +74,39 @@ make launch-nav-gps
 make launch-travel
 ```
 
-验证时至少检查：
+At minimum, verify the following:
 
-- 相关节点是否都在线
-- 关键 topic / action 是否有数据
-- `map -> odom -> base_link` TF 是否完整
-- session 日志是否落到 `~/fyp_runtime_data/logs/latest/`
+- All relevant nodes are online
+- Key topics / actions have data
+- `map -> odom -> base_link` TF chain is complete
+- Session logs are landing in `~/fyp_runtime_data/logs/latest/`
 
-实车相关改动需要补上人工现场测试结论。
+Changes related to on-vehicle behavior require a follow-up with manual on-site test conclusions.
 
-### 2.6 GPS 导航专项验证
+### 2.6 GPS Navigation-Specific Verification
 
-如果改动涉及 `nav-gps`，至少补下面这些检查：
+If changes involve `nav-gps`, at minimum add these checks:
 
-1. `build_scene_runtime.py` 是否成功生成 `current_scene/` 编译产物
-2. `gps_anchor_localizer` 是否进入 `NAV_READY`
-3. `gps_waypoint_dispatcher` 是否成功读取 `scene_points.yaml`
-4. `/compute_route` / `/follow_path` / `/navigate_to_pose` action 是否在线
-5. `goto_name` / `list_destinations` / `stop` 是否行为正确
-6. 室内无 live fix 时，是否可用 mock / replay `/fix` 做软件 smoke
+1. Whether `build_scene_runtime.py` successfully generates `current_scene/` compiled artifacts
+2. Whether `gps_anchor_localizer` enters `NAV_READY`
+3. Whether `gps_waypoint_dispatcher` successfully reads `scene_points.yaml`
+4. Whether `/compute_route` / `/follow_path` / `/navigate_to_pose` actions are online
+5. Whether `goto_name` / `list_destinations` / `stop` behave correctly
+6. Whether mock / replay `/fix` can be used for software smoke testing when there is no live fix indoors
 
-## 3. AI 协作流
+## 3. AI Collaboration Flow
 
-当任务由 Claude + Codex 共同执行时，控制面不在这个仓库内，而在 PC command-center 仓库中维护：
+When tasks are jointly executed by Claude + Codex, the control plane is not in this repository but maintained in the PC command-center repository:
 
 - `task_plan.md`
 - `findings.md`
 - `progress.md`
 
-这个 Jetson 仓库负责真实实现、构建、运行和归档文档。
+This Jetson repository is responsible for actual implementation, building, running, and archiving documentation.
 
-## 4. 提交与 PR
+## 4. Commits and PRs
 
-### 4.1 提交
+### 4.1 Commits
 
 ```bash
 git add path/to/file1 path/to/file2
@@ -114,13 +114,13 @@ git commit -m "Explain what changed and why"
 git push -u origin feature/your-topic
 ```
 
-要求：
+Requirements:
 
-1. 只添加具体文件。
-2. 不提交无关改动。
-3. Commit message 用英文。
+1. Only add specific files.
+2. Do not commit unrelated changes.
+3. Commit messages must be in English.
 
-### 4.2 PR 与合并
+### 4.2 PRs and Merges
 
 ```bash
 gh auth status
@@ -131,57 +131,56 @@ git pull --ff-only
 git fetch --prune
 ```
 
-如果 Jetson 上 `gh auth status` 返回 token 无效，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 `gh pr create` / `gh pr merge`，然后再让 Jetson 回拉 `main`。
+If `gh auth status` on the Jetson returns an invalid token, you can run `gh pr create` / `gh pr merge` on a local workstation already logged into GitHub CLI for the same branch, then have the Jetson pull `main` back.
 
-## 5. 文档触发规则
+## 5. Documentation Trigger Rules
 
-以下变化发生时，不允许只改代码不改文档：
+When the following changes occur, modifying only code without updating documentation is not allowed:
 
-| 变化类型 | 最少要同步的文档 |
-|----------|------------------|
-| 节点源码 | `devlog`、相关 `knowledge`、必要时 `architecture.md` |
-| launch 文件 | `devlog`、`commands.md`、`workflow.md`、必要时 `architecture.md` |
-| YAML 参数 | `devlog`、对应知识文档 |
-| 脚本与工具 | `devlog`、`commands.md`、必要时 `workflow.md` |
-| bug 修复 / 新 bug | `devlog`、`known_issues.md` |
-| 系统环境变化 | `devlog`、`commands.md`、`workflow.md` |
-| 工作流变化 | `workflow.md`、`conventions.md` |
+| Change Type | Minimum Documentation to Sync |
+|-------------|-------------------------------|
+| Node source code | `devlog`, related `knowledge`, `architecture.md` when necessary |
+| Launch files | `devlog`, `commands.md`, `workflow.md`, `architecture.md` when necessary |
+| YAML parameters | `devlog`, corresponding knowledge document |
+| Scripts and tools | `devlog`, `commands.md`, `workflow.md` when necessary |
+| Bug fixes / new bugs | `devlog`, `known_issues.md` |
+| System environment changes | `devlog`, `commands.md`, `workflow.md` |
+| Workflow changes | `workflow.md`, `conventions.md` |
 
-## 6. 会话结束检查表
+## 6. Session End Checklist
 
-会话在以下项目全部完成前不算收口：
+A session is not considered closed until all of the following are complete:
 
-1. 改动已验证。
-2. 相关文档已同步。
-3. 分支已推送。
-4. PR 已创建并合并，或者明确记录为什么本次只停在 feature 分支。
-5. Jetson 已回到最新 `main`，或者明确记录当前停留分支和原因。
-6. 如果有新的系统事实、问题或阻塞，已写入开发日志和问题追踪。
+1. Changes have been verified.
+2. Related documentation has been synced.
+3. Branch has been pushed.
+4. PR has been created and merged, or there is a clear record of why only a feature branch was left.
+5. Jetson is back on the latest `main`, or there is a clear record of the current branch and reason for staying.
+6. If there are new system facts, issues, or blockers, they have been written to the development log and issue tracker.
 
 
-## 2.7 Fixed-Launch GPS Corridor 工作流
+## 2.7 Fixed-Launch GPS Corridor Workflow
 
-当任务目标收缩成”固定启动位 → GPS 路线终点”的 corridor 验证时，优先使用：
+When the task objective narrows to "fixed launch position -> GPS route endpoint" corridor verification, prefer using:
 
-1. 采集 corridor 多点路线：
+1. Collect corridor multi-waypoint route:
    - `python3 scripts/collect_gps_route.py`
-2. 将车停回固定 Launch Pose，朝向摆正
-3. 直接启动：
+2. Return the vehicle to the fixed Launch Pose, align the heading
+3. Launch directly:
    - `make launch-corridor`
-   - 或 `bash scripts/launch_with_logs.sh corridor`
-4. 观察：
+   - or `bash scripts/launch_with_logs.sh corridor`
+4. Observe:
    - `/gps_corridor/status`
-5. 由 `gps_global_aligner_node` + `gps_route_runner_node` 自动：
-   - 独立 aligner 估计平滑 `ENU→map` 变换
-   - 检查当前 `/fix` 是否靠近 `start_ref`
-   - Bootstrap 启动（`yaw0 + launch_yaw_deg`）
-   - GPS waypoints → ENU → map 转换
-   - Waypoint 内冻结 alignment，按段切 subgoals
-   - 串行 `NavigateToPose`
+5. `gps_global_aligner_node` + `gps_route_runner_node` automatically:
+   - Standalone aligner estimates smoothed `ENU->map` transform
+   - Checks whether current `/fix` is close to `start_ref`
+   - Bootstrap startup (`yaw0 + launch_yaw_deg`)
+   - GPS waypoints -> ENU -> map conversion
+   - Freeze alignment within waypoint, split subgoals per segment
+   - Sequential `NavigateToPose`
 
-这���工作流不再需要：
+This workflow no longer requires:
 - `nav_gps_menu.py`
 - `goto_name`
 - `route_server`
 - `scene_gps_bundle.yaml`
-

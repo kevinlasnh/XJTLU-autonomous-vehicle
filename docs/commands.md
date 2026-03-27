@@ -1,33 +1,33 @@
-# 操作命令手册
+# Operations Command Manual
 
-本文档只记录当前仓库和当前 Jetson 环境下确认可执行的命令。
+This document only records commands confirmed to be executable in the current repository and current Jetson environment.
 
-## 1. 构建与 Source
+## 1. Build and Source
 
 ```bash
 cd ~/fyp_autonomous_vehicle
 
-# 首次依赖初始化
+# Initial dependency setup
 make setup
 
-# 全量构建
+# Full build
 make build
 
-# 分层构建
+# Layered build
 make build-sensor
 make build-perception
 make build-planning
 make build-navigation
 
-# 单包构建
+# Single package build
 colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 
-# 每次构建后必须重新 source
+# Must re-source after every build
 source /opt/ros/humble/setup.bash
 source ~/fyp_autonomous_vehicle/install/setup.bash
 ```
 
-## 2. 初始化运行时数据
+## 2. Initialize Runtime Data
 
 ```bash
 cd ~/fyp_autonomous_vehicle
@@ -36,7 +36,7 @@ bash scripts/init_runtime_data.sh
 ls ~/fyp_runtime_data
 ```
 
-## 3. 启动五种运行模式
+## 3. Launch Five Operating Modes
 
 ```bash
 cd ~/fyp_autonomous_vehicle
@@ -48,7 +48,7 @@ make launch-nav-gps
 make launch-travel
 ```
 
-等效的 wrapper 直调方式：
+Equivalent wrapper direct invocation:
 
 ```bash
 bash scripts/launch_with_logs.sh slam
@@ -58,7 +58,7 @@ bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
 ```
 
-等效的 `ros2 launch` 方式：
+Equivalent `ros2 launch` invocation:
 
 ```bash
 ros2 launch bringup system_slam.launch.py
@@ -68,7 +68,7 @@ ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
 ```
 
-## 4. 单独启动核心组件
+## 4. Launch Individual Core Components
 
 ```bash
 # Livox
@@ -77,13 +77,13 @@ ros2 launch livox_ros_driver2 msg_MID360_launch.py
 # WIT IMU
 ros2 run wit_ros2_imu wit_ros2_imu
 
-# GNSS 原始驱动
+# GNSS raw driver
 ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py
 
-# GNSS 标定
+# GNSS calibration
 ros2 launch gnss_calibration gnss_calibration_launch.py
 
-# GNSS scene-ready localizer（新 GPS 路网架构）
+# GNSS scene-ready localizer (new GPS route-graph architecture)
 ros2 run gnss_calibration gps_anchor_localizer_node \
   --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
 
@@ -93,10 +93,10 @@ ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/br
 # PGO + FAST-LIO2
 ros2 launch pgo pgo_launch.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
 
-# 兼容旧平铺 PGO 配置
+# Compatible with legacy flat PGO config
 ros2 launch pgo pgo_launch.py pgo_config:=pgo_no_gps.yaml
 
-# 串口节点
+# Serial nodes
 ros2 run serial_reader serial_reader_node
 ros2 run serial_twistctl serial_twistctl_node
 
@@ -109,7 +109,7 @@ ros2 run gps_waypoint_dispatcher list_destinations
 ros2 run gps_waypoint_dispatcher stop
 ```
 
-## 5. 调试与状态检查
+## 5. Debugging and Status Checks
 
 ```bash
 # topic / node / action
@@ -121,7 +121,7 @@ ros2 action info /follow_path
 ros2 action info /navigate_to_pose
 ros2 node info /pgo/pgo_node
 
-# 频率与消息
+# Frequency and messages
 ros2 topic hz /livox/lidar
 ros2 topic hz /fastlio2/body_cloud
 ros2 topic echo /pgo/optimized_odom --once
@@ -134,7 +134,7 @@ ros2 topic echo /gps_goal_manager/status --once
 ros2 topic echo /gps_waypoint_dispatcher/goal_map --once
 ros2 topic echo /gps_waypoint_dispatcher/path_map --once
 
-# 参数
+# Parameters
 ros2 param get /fastlio2/lio_node lidar_max_range
 ros2 param get /pgo/pgo_node gps.enable
 ros2 param get /pgo/pgo_node gps.topic
@@ -147,94 +147,94 @@ ros2 run tf2_ros tf2_monitor odom base_link
 ros2 run tf2_tools tf2_echo map base_link
 ```
 
-常见诊断重点：
+Common diagnostic focus points:
 
-- `map -> odom` 是否存在
-- `/pgo/optimized_odom` 是否在持续发布
-- `/gps_system/status` 是否已经到 `NAV_READY`
-- `/gnss` 是否为 `gps_anchor_localizer` 发布的有效 scene-calibrated GNSS 数据
-- `/compute_route` / `/follow_path` / `/navigate_to_pose` action 是否在线
-- RViz fixed frame 是否为 `map`
+- Whether `map -> odom` exists
+- Whether `/pgo/optimized_odom` is being published continuously
+- Whether `/gps_system/status` has reached `NAV_READY`
+- Whether `/gnss` contains valid scene-calibrated GNSS data published by `gps_anchor_localizer`
+- Whether `/compute_route` / `/follow_path` / `/navigate_to_pose` actions are online
+- Whether the RViz fixed frame is set to `map`
 
-## 6. 日志与运行时数据
+## 6. Logs and Runtime Data
 
 ```bash
-# 查看当前 latest 指向
+# Check what latest points to
 readlink -f ~/fyp_runtime_data/logs/latest
 
-# 查看当前 session 元信息
+# View current session metadata
 cat ~/fyp_runtime_data/logs/latest/system/session_info.yaml
 
-# 查看 tegrastats
+# View tegrastats
 tail -f ~/fyp_runtime_data/logs/latest/system/tegrastats.log
 
-# 查看 console 日志目录
+# View console log directory
 ls ~/fyp_runtime_data/logs/latest/console
 
-# 查看 data 日志目录
+# View data log directory
 ls ~/fyp_runtime_data/logs/latest/data
 ```
 
-## 7. 数据采集与评测
+## 7. Data Collection and Evaluation
 
 ```bash
-# 录制 rosbag
+# Record rosbag
 bash scripts/data_collection/record_bag.sh
 bash scripts/data_collection/record_bag.sh ~/fyp_runtime_data/bags/my_run
 
-# 单独录 tegrastats
+# Record tegrastats separately
 bash scripts/data_collection/record_perf.sh
 bash scripts/data_collection/record_perf.sh ~/fyp_runtime_data/perf/my_run.log
 
-# 导出 TUM 轨迹
+# Export TUM trajectory
 python3 scripts/data_collection/bag_to_tum.py   ~/fyp_runtime_data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
 ```
 
-## 8. 地图保存
+## 8. Map Saving
 
 ```bash
-# 保存 3D 点云地图
+# Save 3D point cloud map
 ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
 
-# 保存 2D 栅格地图
+# Save 2D occupancy grid map
 ros2 run nav2_map_server map_saver_cli -f ~/fyp_runtime_data/maps/2d/<dir>/map
 
-# 查看 PCD
+# View PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 ```
 
-## 9. 停止系统与紧急停车
+## 9. Stop System and Emergency Stop
 
 ```bash
-# 系统结束后做一次干净清理，确保下次从空状态启动
+# Clean up after system shutdown to ensure a clean state for the next launch
 cd ~/fyp_autonomous_vehicle && make kill-runtime
 ```
 
-硬件层面的急停优先级：
+Hardware-level emergency stop priority:
 
-1. PS2 手柄 `X` 键失能电机
-2. 车身红色物理急停按钮
+1. PS2 gamepad `X` button to disable motors
+2. Red physical emergency stop button on the vehicle body
 
-## 10. Git 与 PR
+## 10. Git and PR
 
 ```bash
-# 同步 main
+# Sync main
 git checkout main
 git pull --ff-only
 
-# 创建分支
+# Create branch
 git checkout -b docs/sync-current-state
 
-# 检查状态
+# Check status
 git status
 git branch -v
 git log --oneline -5
 
-# 推送分支
+# Push branch
 git push -u origin docs/sync-current-state
 ```
 
-GitHub CLI：
+GitHub CLI:
 
 ```bash
 gh auth status
@@ -242,7 +242,7 @@ gh pr create
 gh pr merge --merge --delete-branch
 ```
 
-如果 Jetson 上 `gh auth status` 返回 token 无效，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 `gh pr create` / `gh pr merge`，然后回 Jetson 执行：
+If `gh auth status` on the Jetson returns an invalid token, you can run `gh pr create` / `gh pr merge` on a local workstation that is already logged into GitHub CLI for the same branch, then return to the Jetson to execute:
 
 ```bash
 git checkout main
@@ -250,27 +250,27 @@ git pull --ff-only
 git fetch --prune
 ```
 
-## 11. 系统维护
+## 11. System Maintenance
 
 ```bash
-# 磁盘 / 内存
+# Disk / memory
 df -h /
 free -h
 htop
 
-# JetPack / 机型
+# JetPack / model
 cat /etc/nv_tegra_release
 cat /proc/device-tree/model
 
-# NetworkManager 与有线网口自启动状态
+# NetworkManager and wired interface auto-start status
 systemctl is-enabled NetworkManager
 systemctl is-active NetworkManager
 nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --active
 
-# 检查当前机器是否具备无密码 sudo
+# Check if current machine has passwordless sudo
 sudo -n true && echo sudo_ok
 
-# 切换 Jetson WiFi，并在 Jetson 侧重启 ToDesk（Linux 本机直接执行）
+# Switch Jetson WiFi and restart ToDesk on the Jetson side (execute directly on the Linux host)
 cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status
 cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh
 cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor
@@ -278,20 +278,20 @@ cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor
 cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh Pixel
 cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
 
-# GPS dispatcher 依赖
+# GPS dispatcher dependencies
 apt list --installed | grep ros-humble-geographic-msgs
 python3 -c "import pyproj; print(pyproj.__version__)"
 ```
 
-说明：
-- 不带参数时默认在 `XJTLU` 和 `Pixel` 之间 toggle
-- 上面这几条就是在 Jetson / Linux 本机直接运行的完整一行命令
-- 脚本在 Jetson 本机执行时会自动切到本地模式；如果当前 shell 是 SSH/Tailscale，会话可能在切网过程中断开
-- 每次切网都会在 Jetson 侧重启 `todeskd`，日志写入 `/tmp/wifi-switch.log`
+Notes:
+- Without arguments, the script toggles between `XJTLU` and `Pixel` by default
+- The commands above are complete one-line commands to run directly on the Jetson / Linux host
+- When the script runs locally on the Jetson, it automatically switches to local mode; if the current shell is SSH/Tailscale, the session may disconnect during the network switch
+- Each network switch restarts `todeskd` on the Jetson side, with logs written to `/tmp/wifi-switch.log`
 
-## 12. GPS 数据采集
+## 12. GPS Data Collection
 
-最短两行启动命令：
+Minimum two-line launch commands:
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
@@ -305,28 +305,28 @@ source install/setup.bash
 python3 scripts/collect_gps_scene.py
 ```
 
-脚本说明：
-- 坐标源: **仅使用 /fix**
-- 采样: 每点 10 个样本取平均
-- 质量门槛: 样本散布 < 2m，否则拒绝采集
-- 输出文件: `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
-- 单文件同时维护：
+Script description:
+- Coordinate source: **uses /fix only**
+- Sampling: 10 samples per point, averaged
+- Quality threshold: sample spread < 2 m, otherwise collection is rejected
+- Output file: `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- A single file simultaneously maintains:
   - fixed origin
   - graph nodes
   - `anchor`
   - `dest`
   - edges
 
-交互命令：
-- `Enter`：采图点
-- `e`：添加两点之间的边，按双向通行处理
-- `o`：从已有点里选择 fixed origin
-- `u`：修改已有点的名字 / anchor / destination
-- `l`：列出所有点和边，显示 anchor / dest / origin
-- `d`：按 ID 删除指定点
-- `q`：保存并退出
+Interactive commands:
+- `Enter`: collect a map point
+- `e`: add an edge between two points, treated as bidirectional
+- `o`: select a fixed origin from existing points
+- `u`: modify name / anchor / destination of an existing point
+- `l`: list all points and edges, showing anchor / dest / origin
+- `d`: delete a specific point by ID
+- `q`: save and exit
 
-采集后编译运行时文件：
+Compile runtime files after collection:
 
 ```bash
 cd ~/fyp_autonomous_vehicle
@@ -335,81 +335,81 @@ source install/setup.bash
 python3 scripts/build_scene_runtime.py
 ```
 
-采集规范：
-- 所有转弯、路口、目的地入口必须踩点
-- 允许系统上电启动的区域附近必须布 `anchor`
-- graph edge 按节点间直线段理解，弯道必须靠增加节点离散化
-- 脚本会提示是否与上一个点自动建边
+Collection guidelines:
+- All turns, intersections, and destination entrances must have waypoints
+- Areas where the system may be powered on must have nearby `anchor` points
+- Graph edges are understood as straight-line segments between nodes; curves must be discretized by adding more nodes
+- The script will prompt whether to automatically create an edge with the previous point
 
-## 13. GPS 导航调试
+## 13. GPS Navigation Debugging
 
 ```bash
-# 启动 nav-gps
+# Launch nav-gps
 make launch-nav-gps
 
-# 查看 scene 目标列表
+# View scene destination list
 ros2 run gps_waypoint_dispatcher list_destinations
 
-# 室内软件 smoke 可用 mock /fix 驱动 gps_anchor_localizer
+# Indoor software smoke test can use mock /fix to drive gps_anchor_localizer
 ros2 topic pub /fix sensor_msgs/msg/NavSatFix \
   "{header: {frame_id: 'gps'}, status: {status: 0, service: 1}, latitude: 31.274927, longitude: 120.737548, altitude: 0.0, position_covariance: [4.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 25.0], position_covariance_type: 2}" \
   --rate 5
 
-# 观察 ready 状态
+# Observe ready status
 ros2 topic echo /gps_system/status
 ros2 topic echo /gps_goal_manager/status
 
-# 发送英文命名目标
+# Send English-named destination
 ros2 run gps_waypoint_dispatcher goto_name anchor_a
 
-# 检查 route / local planner action 是否在线
+# Check if route / local planner actions are online
 ros2 action list | grep -E 'compute_route|follow_path|navigate_to_pose'
 
-# 停止当前任务
+# Stop current task
 ros2 run gps_waypoint_dispatcher stop
 
-# 一键拉起 nav-gps，等待 NAV_READY，并按编号选择 destination
+# One-command launch nav-gps, wait for NAV_READY, and select destination by number
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
 ```
 
 ## 14. Fixed-Launch GPS Corridor
 
-### GPS 路线采集（踩点）
+### GPS Route Collection (Waypoint Survey)
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
 ```
 
-交互流程：
-1. 输入路线名称
-2. 把车放在起点，按 Enter 采 `start_ref`（10 次采样，spread < 2m）
-3. 依次移动到各 waypoint，按 Enter 采点
-   - 每个点采完显示 ENU 坐标预览和 spread
-   - `Accept / Retry? [A/r]` — 信号不好可以当场重采
-   - 高度异常（> 10m 跳变）会自动告警
-4. 确认 `launch_yaw_deg`（首段 > 5m 自动建议，否则手动输入）
-5. 保存前显示路线摘要表格（各段距离、方位角、ENU 坐标）
-6. 确认保存 → `~/fyp_runtime_data/gnss/current_route.yaml`
+Interactive workflow:
+1. Enter route name
+2. Place the vehicle at the start point, press Enter to collect `start_ref` (10 samples, spread < 2 m)
+3. Move to each waypoint sequentially, press Enter to collect
+   - After each point, ENU coordinate preview and spread are displayed
+   - `Accept / Retry? [A/r]` -- poor signal allows immediate re-collection
+   - Altitude anomalies (> 10 m jump) trigger automatic warnings
+4. Confirm `launch_yaw_deg` (auto-suggested if first segment > 5 m, otherwise manual input)
+5. Route summary table displayed before saving (segment distances, bearings, ENU coordinates)
+6. Confirm save -> `~/fyp_runtime_data/gnss/current_route.yaml`
 
-### 自动 corridor 导航
+### Automatic Corridor Navigation
 
 ```bash
 cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
 ```
 
-结束后清理残留进程：
+Clean up residual processes after completion:
 
 ```bash
 cd ~/fyp_autonomous_vehicle && make kill-runtime
 ```
 
-Makefile 快捷启动：
+Makefile shortcut launch:
 
 ```bash
 cd ~/fyp_autonomous_vehicle && make launch-corridor
 ```
 
-调试观察：
+Debug observation:
 
 ```bash
 ros2 topic echo /gps_corridor/status
@@ -418,24 +418,23 @@ ros2 topic echo /gps_corridor/path_map
 ros2 topic echo /gps_corridor/enu_to_map
 ```
 
-说明：
-- 该模式假定车辆已经摆在固定 Launch Pose，并且车头朝向摆正
-- `collect_gps_route.py` 会采 `start_ref + 多个关键 waypoint`，并生成 `~/fyp_runtime_data/gnss/current_route.yaml`
-- `collect_gps_route.py` 若未检测到 `/fix`，会自动后台拉起 `nmea_navsat_driver`，采完后自动收掉
-- 采集时会显式确认 `launch_yaw_deg`；如果起点到第一个 waypoint 太近，会要求手工输入
-- 子目标间距默认 30m（基于 global costmap 半径 35m - 5m buffer），采集时自动写入路线文件
-- 运行时不会再弹出 menu，也不会等待额外命令
-- wrapper 会把日志和 bag 写入 `~/fyp_runtime_data/logs/<session>/`
-- 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_route_runner` 会直接 abort，不动车
-- **Ctrl+C 会自动清理全部节点、ros2 daemon、串口占用**，无需手动 `make kill-runtime`
+Notes:
+- This mode assumes the vehicle is already placed at the fixed Launch Pose with the heading aligned
+- `collect_gps_route.py` collects `start_ref + multiple key waypoints` and generates `~/fyp_runtime_data/gnss/current_route.yaml`
+- If `collect_gps_route.py` does not detect `/fix`, it automatically launches `nmea_navsat_driver` in the background and stops it after collection
+- The collection process explicitly confirms `launch_yaw_deg`; if the start point is too close to the first waypoint, manual input is required
+- Default subgoal spacing is 30 m (based on global costmap radius 35 m - 5 m buffer), automatically written to the route file during collection
+- At runtime, no menu appears and no additional commands are awaited
+- The wrapper writes logs and bags to `~/fyp_runtime_data/logs/<session>/`
+- During startup, if the current `/fix` deviates from `start_ref` beyond tolerance, `gps_route_runner` will abort immediately without moving the vehicle
+- **Ctrl+C automatically cleans up all nodes, ros2 daemon, and serial port occupancy** -- no need for manual `make kill-runtime`
 
-**Quiet 模式**（默认）:
-- 前台只显示简化中文状态
-- 完整 launch 输出写入 `~/fyp_runtime_data/logs/<session>/system/launch_stdout.log`
-- 启动超时默认 45s，可通过 `FYP_CORRIDOR_STARTUP_TIMEOUT_S` 环境变量调整
+**Quiet mode** (default):
+- Only simplified status messages are shown in the foreground
+- Full launch output is written to `~/fyp_runtime_data/logs/<session>/system/launch_stdout.log`
+- Default startup timeout is 45 s, adjustable via the `FYP_CORRIDOR_STARTUP_TIMEOUT_S` environment variable
 
-**Raw 模式**（调试用）:
+**Raw mode** (for debugging):
 ```bash
 FYP_CORRIDOR_CONSOLE_MODE=raw bash scripts/launch_with_logs.sh corridor
 ```
-
