@@ -1,332 +1,331 @@
-# 感知层备忘
+# Perception Layer Memo
 
-## 开发板块
+## Development Backlog
 
-### 最高优先级（需要立马解决的问题，对系统运行有直接影响）
-1. 
+### Highest Priority (Issues requiring immediate resolution, directly impacting system operation)
+1.
 
-### 中等优先级（短时间内需要解决，对系统运行无直接影响）
-1. 为 pgo 节点的全局点云添加 topic 输出使其可以在 rviz 中显示
-2. 去除 fastlio2 中的 world_cloud 的发布，因为这个数据毫无意义
+### Medium Priority (To be resolved in the short term, no direct impact on system operation)
+1. Add a topic output for the PGO node's global point cloud so it can be displayed in RViz
+2. Remove the world_cloud publication from FAST-LIO2, as this data serves no useful purpose
 
-### 低优先级（解决了更优，不解决亦可）
-1. 
+### Low Priority (Nice to have, not essential)
+1.
 
-## 三融合算法开发草案
-1. 第一我们需要用 gps 数据来校准的得到我们机器人在全局坐标系上的实时位姿 也就是我们知道自己在哪 如果不使用 gps 数据来校准实时位姿可能会出现机器人全局坐标系和物理世界坐标系发生偏移的情况
-2. 第二我们需要用 gps 数据来校准我们的目标点和所有航点在全局坐标系上的目标位姿 这个是为了保证我们知道自己的目标的位置在哪 这样可以保证我们的目标在物理世界坐标系中的位置可以精准映射到机器人全局坐标系中的位置
-3. 这两个校准缺一不可 是保证能够完整导航的关键
+## Three-Way Fusion Algorithm Development Draft
+1. First, we need to use GPS data to calibrate the robot's real-time pose in the global coordinate frame -- that is, to know where we are. Without GPS calibration of the real-time pose, the robot's global coordinate frame may drift from the physical world coordinate frame.
+2. Second, we need to use GPS data to calibrate the target poses of our goal point and all waypoints in the global coordinate frame. This ensures we know where our targets are, so that positions in the physical world can be accurately mapped into the robot's global coordinate frame.
+3. Both calibrations are indispensable and are key to ensuring complete navigation.
 
-## 杂项
-1. 提升 pgo 的消息过滤器队列深度可以有效解决 Nav2 的 costmap 在长时间运行下产生的地图不更新或消散问题
-2. body_cloud，相对位置: 相对于机器人本体固定，随机器人一起运动，数据特点: 点云位置会随着机器人姿态变化而变化，适用场景: 局部感知、实时避障、近距离障碍检测
-3. world_cloud，相对位置: 固定在世界坐标系中，不随机器人运动变化，数据特点: 点云位置在世界坐标系中稳定，用于构建全局地图，适用场景: SLAM建图、全局路径规划、地图保存
-4. pgo 节点的功能为整个 SLAM 系统中的全局优化和回环检测模块，其核心作用是构建和优化全局地图的一致性，消除里程计漂移，修正 fastlio2 节点长时间运行而积累的定位误差，当机器人回到之前访问过的位置之后，通过回环检测来校正全局地图，并提供全局一致的坐标系，发布 map 到 odom 的 TF 变换，作为全局定位参考
-5. 点云地图保存基于 PGO 节点的位姿图优化来进行的，只有当机器人人移动超过 0.5 米或者需按照超过 10 度的时候才会保存一个新的关键帧，单个子地图为每个关键帧，完整的地图为将每个关键帧拼接到一起形成的全局地图
-6. QoS 参数不对应的话 topic 会接收不到任何信息
-7. slam_toolbox 和 pointcloud_to_laserscan 节点的代码都是安装 humble 的时候自带的编译好的产物，如果想要改动这两个节点的参数则需要在对应的节点包里面改动其的 yaml 文件参数就行了，你改不了节点源代码的
+## Miscellaneous
+1. Increasing the PGO message filter queue depth can effectively solve the costmap staleness or dissipation issue that occurs in Nav2 during extended operation.
+2. body_cloud -- Relative position: fixed to the robot body, moves with the robot. Data characteristics: point cloud positions change with robot pose. Use cases: local perception, real-time obstacle avoidance, close-range obstacle detection.
+3. world_cloud -- Relative position: fixed in the world coordinate frame, does not change with robot motion. Data characteristics: point cloud positions are stable in the world frame, used to build global maps. Use cases: SLAM mapping, global path planning, map saving.
+4. The PGO node serves as the global optimization and loop closure detection module in the entire SLAM system. Its core purpose is to build and optimize global map consistency, eliminate odometry drift, and correct localization errors accumulated during extended FAST-LIO2 operation. When the robot returns to a previously visited location, it corrects the global map through loop closure detection and provides a globally consistent coordinate frame by publishing the map-to-odom TF transform as a global localization reference.
+5. Point cloud map saving is based on the PGO node's pose graph optimization. A new keyframe is saved only when the robot moves more than 0.5 meters or rotates more than 10 degrees. Each individual sub-map is a keyframe, and the complete map is the global map formed by stitching all keyframes together.
+6. If QoS parameters do not match, a topic will not receive any messages.
+7. The slam_toolbox and pointcloud_to_laserscan nodes are pre-compiled binaries that come with the Humble installation. To modify their parameters, you only need to edit the corresponding YAML parameter files in the respective packages -- you cannot modify the node source code.
 
-## odom 里程计数据解读
-1. fastlio2 会输出 odom，也就是里程计数据，这个数据极其关键，这个数据包中会包含推算出的位置和姿态，其中位置为 **pose.pose.position (x, y, z)**，这个三个数值表示机器人在世界坐标系下的位置，也就是在全局 map 下的位置，姿态为 **pose.pose.orientation (x, y, z, w)**，这个四个数值表示机器人在世界坐标系下的姿态，也就是在全局 map 下的姿态
-2. odom 数据是通过 IMU 数据来进行前向积分来计算出来的，这个计算为 IESKF 迭代误差状态卡尔曼滤波中的一部分，下面解读详细的计算过程
-3. 先来解读位置数据的计算
-   1. 首先初始位置 t_wi 为 0，速度 v 也等于零
-   2. 这时候第一批 IMU 数据到达
-   3. 输入线加速度 acc 和角加速度 gyro，此时时间差为 dt，大约为 5ms，此时的这个线加速度和角加速度都是以矩阵的形式呈现，其中分别包含 x 轴，y 轴，z 轴的数据，请特别注意，这时候的线加速度和角加速度都是以机器人的自身坐标系为准的
-   4. 所以下一步就是要把机器人的自身坐标系的线加速度和角加速度转化成全局坐标系下的线加速度和角加速度，计算 a_world = R_wi × (acc - ba) + g，其中 a_world 就是机器人在全局坐标系下的线加速度和角加速度，公式中的 R_wi（Rotate from World to IMU）表示全局坐标系到机体自身坐标系的旋转矩阵，表示机器人当前的姿态和朝向，是一个 3 * 3 的矩阵，对陀螺仪的角速度进行积分而得到，ba 表示加速度计的 bias（零偏），也就是当真实加速度为零的时候的显示的值不一定为零，是状态的一部分，（acc - ba）就是表示去除零偏后的真实加速度，R_wi *（acc - ba）就是把机器人自身坐标系下的加速度转换到全局坐标系下的加速度，g 表示重力加速度向量，一般为 [0, 0, -9.81] m/s²，表示在全局坐标系下的重力加速度，其 z 轴方向的符号正负取决于坐标系的定义
-      1. 机器人的旋转矩阵 R_wi 的计算可以分成七步
-      2. 在开始之前先详细解释一下旋转矩阵的意义：
-      3. 首先：预输入数据，陀螺仪测量值 gyro 矩阵和 dt 时间差，时间差就是两个 IMU 数据之间的时间差
-      4. 第一步：去除 gyro 数据的零偏，去除 bg，然后的到真实的陀螺仪数据，公式 **ω_true = gyro - bg**
-      5. 第二步：计算角度增量，公式 **Δθ = ω_true × dt = [Δθx, Δθy, Δθz]**
-      6. 第三步：指数映射得到增量旋转，公式 **ΔR = Sophus::SO3d::exp(Δθ).matrix()**，这一步是计算的**核心**，我暂时也没法看懂
-      7. 第四步：更新旋转矩阵，**R_wi = R_wi × ΔR**，这里的乘法的具象体现就是在原本姿态 R_wi 的基础上再转动一次，这一步计算完之后就已经的到了预测的姿态了，但是这时候得到的预测姿态是有累计误差的，这里的误差的主要出现在 ΔR 上，基于 ΔR 的计算公式 **ΔR = Exp((ω - bg) × dt)**，也就是 sin 和 cos，然后 x y z 轴固定的旋转分别有三个旋转矩阵来维护，首先角速度 ω 就会出现测量噪声，获取的数据不一定是精准的，然后零偏 bg 也会有误差，如果 bg 不准的话，最后时间 dt 也会有误差，如果测量不精准的话，这三种误差随着计算的累计会越来越大，然后就会导致这个旋转矩阵的总误差值越来越大
-      8. 第五步：LiDAR 数据到达，计算姿态残差，这时候主要是来比较点云的数据能不能匹配到现有的地图平面上，这里就涉及对于点云的数据格式和数据意义的解读，以及如何计算残差
-         1. LiDAR 的数据是测量的相对于自己的距离和角度，与任何外部坐标系无关，其测量的具体数据是距离 r（激光走了多远反射回来），水平角 θ（激光朝哪个水平方向发射）和垂直角 φ（激光朝哪个垂直方向发射），也就是说原始数据可能就是这样一种数据格式 **(r=5m, θ=30°, φ=0°)**，这个数据是和世界坐标系不相关的
-         2. 然后，这个数据返回回来之后，这个原始数据将被转换成 LiDAR 本地坐标系下面的（x, y, z），这时候还是和世界坐标系无关的，这个转换使用的公式是标准球坐标到笛卡尔坐标的转换公式 **(x=r*cos(φ)*cos(θ), y=r*cos(φ)*sin(θ), z=r*sin(φ))**，这个转换之后每个点云就有了其在机器人本地坐标系下的坐标
-         3. 问题就来了，现在要把这个点云转化到全局坐标系下面，因为 SLAM 地图是在全局坐标系下面建立的，如果这个时候要把这个实时的点云数据转换到全局坐标系之下的话，就必须要使用机器人的旋转矩阵
-         4. 将机器人的本地坐标系点云转化到全局坐标系的点云的转换公式为 **p_world = R_wi × p_lidar + t_wi**，求解这个点云在全局坐标系中的点的公式就是**单个点云点到这个机器人本地坐标系原点的向量**乘上**这个机器人本体坐标系和全局坐标系之间的旋转矩阵**再加上**机器人本体坐标系原点相对于全局坐标系原点的平移向量**，这就是一个非常经典的机器人坐标系问题
-         5. 下一步就是要使用 IESKF 迭代误差状态卡尔曼滤波来求解姿态修正量，当点云的每个点的数据被从机器人本体坐标系转化到全局坐标系之后就会和一个全局地图的已知墙壁平面进行比较，但是现在因为是 SLAM 实时建图模式，所以这里新加到全局坐标系的点云的每个点就是和已保存的全局点云地图的已知平面来进行比较，**那么这个已知平面是怎么来的呢**，fastlio2 是通过 ikd-Tree 数据结构来保存已经扫描过的全局的点云地图，然后这时候就涉及一个动态计算局部平面的算法，如下
-            1. 第一步：针对于每个新的点云点，在 ikd-Tree 中找到与其相邻的最近的 5 个点
-            2. 第二步：用这被选择到的 5 个点的数据来拟合出一个局部平面，可以用一个标准方程来进行表示为 **ax + by + cz + d = 0**
-            3. 第三步：计算新的点云点到这个平面的**残差**，**残差**就是这个新的点云点到这个新的拟合平面的距离，运用点到平面距离公式 **r = |n · (Q - P̄)|**，如果 r = 0 说明点在平面上，则是完美的没有残差的，但凡是大于零或者小于零的情况都是新点云点和拟合平面不吻合的情况，有残差的情况
-      9.  第六步：对姿态的修正，使用公式 **R_wi = R_wi × Exp(Δθ_correction)**，然后就能得到校正后的姿态，这里涉及了迭代误差状态卡尔曼滤波的核心内容，优化的目标就是**找到修正量 Δθ，使得所有点的残差平方和最小**，此问题为非线性最小二乘问题，这里就涉及了雅可比矩阵 H，其表残差对于位姿修正量的偏导数 **H = ∂(残差) / ∂(姿态)**，这个雅可比矩阵就是对通过计算残差的点到平面的距离公式来进行操作而得出的，这个偏导数的物理意义就是当姿态改变一小点的时候，这个残差会改变多少，这里的 H 就是残差对于修正量的敏感度，当我们对位姿做一个小小的变化的时候，这个变化即为位姿修正量，残差就会线性变换，**rᵢ(Δθ) ≈ rᵢ(0) + H · Δθ**，所以可以理解为 **H · Δθ = 残差的变化量**，那么针对多个点的情况，写成矩阵形式 **r = H · Δθ + b**，这时候要最小化残差，等于寻找 **||H·Δθ + b||²** 的最小值，展开这个式子得到 **(Δθ)ᵀ·Hᵀ·H·Δθ + 2·bᵀ·H·Δθ + bᵀ·b**，然后对 **Δθ** 进行求导得到 Normal equation **Hᵀ·H·Δθ = -Hᵀ·b**，转换形式的 **Δθ = (HᵀH)⁻¹ · Hᵀ·b**，其中 **H⁺ = (HᵀH)⁻¹Hᵀ** 称为H的伪逆（Moore-Penrose逆），那么最后我们可以得到 **Δθ = H⁺ · b**，得到了位姿修正量 Δθ 的具体计算值
-      10. 第七步：根据上一步算到的位姿修正量 Δθ 来更新旋转矩阵 R_wi，从而得到最终的姿态，公式 **R_wi = R_wi × Exp(Δθ)**
-   5. 然后下一步就是进行速度积分，利用上一步求出来的全局坐标系加速度 a_world 来带入这个公式进行计算 **v = v + a_world × dt**
-   6. 做完了速度积分之后就进行位置积分，利用上一步求出来的速度 v 来带入这个公式进行计算 **t_wi = t_wi + v × dt**，到这就得到了机器人在全局坐标系中的相对位置矩阵，这个位置是推算出来的
-   7. 然后点云信息到达，进行位置残差计算，这个和姿态残差计算是类似的，主要是看点云数据能不能匹配到现有的地图平面上，为什么全局位置也可以使用点云的残差进行反向推算是因为公式 ****p_world = R_wi × p_lidar + t_wi** 中的 t_wi 就是位置向量，t_wi 也被包括在了推算全局点云位置的计算中，所以说点云数据匹配到全局地图平面上之后就可以反向推算出位置向量 t_wi 的修正量，这里就是全局位置变一点，残差怎么变，全局位置的雅可比矩阵反而更简单，计算量更小，总之通过点云的局部信息校准之后得到了 **Δt_wi = H⁻¹ × b**
-   8. 然后根据的到的全局位置修正量来修正全局位置向量，公式 **t_wi = t_wi + Δt_wi**
-4. 好现在来解读四元数的数据，四元数的数据和旋转矩阵的数据是可以相互转换的
-   1. 四元数的计算首u先要先对机器人的旋转进行思考，假设机器人要旋转，我们需要知道两件事，第一件事就是绕哪个轴来转，第二件事就是转多少度（思路对的但是有不同实现的方法）
-   2. w x y z都是实数，任何三维旋转都能用一条单位轴 u=(Ux, Uy, Uz)和一个转角θ(弧度）唯一表示,w：cos(θ/2)只决定转多大，范围是[-1,1]
-x, y, z：sin(θ/2) 分别乘以轴的三分量一起决定绕哪转；它们不是坐标，也不是独立向量，而是方向×半角正弦的标量系数
-   3. 注意四元数的方法是找到一个新的唯一的旋转轴u并使用旋转角度θ旋转一次！！ w 本身不是角度，(x,y,z) 也不是直接把轴拿来用！！它们一起编码轴和角，真正的旋转轴
-       u=(x,y,z)/√(x²+y²+z²) 旋转角 θ=2arccos(w) 
-   4. 重要约束‖q‖² = w² + x² + y²+z² =cos²(θ/2)+sin²(θ/2)·|u|² =1 这样它被强制落在4D单位球面上，从而把这4个参数压缩成3个有效自由度，正好与三维旋转所需的3个自由度匹配
-   5. 给定了旋转轴矩阵 u 和旋转角 θ 之后，四元数就可以进行计算了，**q = w + xi + yj + zk = [w, x, y, z] = [q_w, q_x, q_y, q_z]** 单位4元数（|q|=1)长这样**q=cos(θ/2)+sin(θ/2)(Ux*i + Uy * j + Uz * k)**  注意θ是旋转的角度（Ux, Uy, Uz）分别是三个旋转轴的单位向量，是新轴向量u的3个分向量 最后可以这么表示 q=cos(θ/2) + sin(θ/2)*u 其中cos(θ/2)->w, sin(θ/2)*u -> (x,y,z)
-   6. 旋转矩阵R是一个3*3的正交矩阵，R=Rz(ψ)*Ry(θ)*Rx(φ)特点是R^T*R=I，det(R)=1对任意的向量v，旋转后的向量v′=Rv 可以把一个向量从机体坐标系变换到世界坐标系或者反过来，它和四元数本质上是同一旋转的不同参数化
-   8. 物理意义是 R的第1列=机体坐标系的x轴在世界坐标系中的单位向量  R的第2列=机体坐标系的y轴在世界坐标系中的单位向量  R的第3列=机体坐标系的z轴在世界坐标系中的单位向量
-   9. Rodrigues旋转公式：v'=cos(θ)*v + (1-cos(θ))(u*v)u + sin(u*v) u就是给定的旋转轴向量（Ux，Uy，Uz），得到的R可以转换任意向量v到v'：单位四元数 (w,x,y,z) 出发，直接把cosθ = 2w²−1和sinθ=2w 的隐含量代入 Rodrigues 公式，写出旋转矩阵 R：对角元 Rᵢᵢ = 1−2(y²+z²)、1−2(x²+z²)、1−2(x²+y²)，非对角元 R₁₂ = 2(xy − wz)、R₁₃ = 2(xz + wy)、R₂₁ = 2(xy + wz)、R₂₃ = 2(yz − wx)、R₃₁ = 2(xz − wy)、R₃₂ = 2(yz + wx)
-   10. 反向推理：得到wxyz的R表达：先算轨迹 trace(t)=R₁₁+R₂₂+R₃₃，若t>0 则令 s=2√(t+1)，直接得 w=(t+1)/s、x=(R₃₂−R₂₃)/s、y=(R₁₃−R₃₁)/s、z=(R₂₁−R₁₂)/s；若 t≤0 则改按 R 的最大对角元分支求 s 并同样用对应列元素与 R 的和差算出 w,x,y,z 全程只用R的条目，无需三角函数，即得单位四元数
-   11. 欧拉角：将一个三维空间旋转动作变成三个按固定顺序执行的单轴旋转来参数化三维旋转，就是3个旋转轴每一个旋转一个对应的角度。常用的顺序是ZYX（yaw ψ（航向）,pitch θ（俯仰）, roll φ（翻滚））。按顺序依次对坐标系做三次轴旋转，把三个转角(ψ,θ,φ)分别代入对应轴的基本旋转矩阵Rz(ψ),Ry(θ),Rx(φ)，R=Rz(ψ)*Ry(θ)*Rx(φ)，得到由这三个角度表达的旋转矩阵；反之从R的元素取反正切组合解回ψ,θ,φ。这个方法会遇到万向节锁，在位姿控制领域主要都使用旋转矩阵和四元数
-   12. 万向节锁：当ZYX欧拉角的中间俯仰角 θ=±90°的时候，旋转映射R(ψ,θ,φ)=Rz(ψ)*Ry(θ)*Rx(φ)的雅可比矩阵的秩由3降为2，第 1、3 列线性相关，ψ与φ合并成单自由度(ψ−φ)，三维控制空间塌成二维平面；或者这么想yaw和roll完全耦合成了一个固定的角度(ψ+φ) 无论你怎么单独改yaw或roll，效果完全一样 所以整体自由度从3降到2。当pitch=90°,θ=π/2，sinθ = 1, cosθ = 0，代入上面公式得到：
-R = [ 0 -sin(ψ+φ) cos(ψ+φ)
-      0  cos(ψ+φ) sin(ψ+φ)
+## Odom (Odometry) Data Interpretation
+1. FAST-LIO2 outputs odom (odometry) data, which is extremely critical. This data contains the estimated position and orientation: position is **pose.pose.position (x, y, z)** -- these three values represent the robot's position in the world coordinate frame (i.e., in the global map frame); orientation is **pose.pose.orientation (x, y, z, w)** -- these four values represent the robot's orientation in the world coordinate frame (i.e., in the global map frame).
+2. Odom data is computed through forward integration of IMU data, as part of the IESKF (Iterated Error-State Kalman Filter). The detailed computation process is explained below.
+3. First, let us interpret the position data computation:
+   1. Initially, position t_wi = 0 and velocity v = 0.
+   2. Then the first batch of IMU data arrives.
+   3. Input: linear acceleration acc and angular velocity gyro. The time step is dt, approximately 5ms. Both linear acceleration and angular velocity are presented in matrix form, containing data for the x, y, and z axes. Note carefully: at this point, both linear acceleration and angular velocity are in the robot's body coordinate frame.
+   4. The next step is to convert the linear acceleration and angular velocity from the robot's body frame to the global frame. Compute: a_world = R_wi x (acc - ba) + g, where a_world is the linear acceleration in the global frame. R_wi (Rotate from World to IMU) is the rotation matrix from the global frame to the body frame, representing the robot's current pose and heading -- a 3x3 matrix obtained by integrating gyroscope angular velocity. ba is the accelerometer bias (zero offset) -- the reading when the true acceleration is zero may not be zero, and is part of the state. (acc - ba) represents the true acceleration after removing the bias. R_wi x (acc - ba) converts the acceleration from the body frame to the global frame. g is the gravity vector, typically [0, 0, -9.81] m/s^2, representing gravitational acceleration in the global frame; the sign of the z-component depends on the coordinate frame definition.
+      1. The computation of the robot's rotation matrix R_wi can be broken down into seven steps.
+      2. Before we begin, let us explain the meaning of the rotation matrix in detail:
+      3. First: pre-input data -- gyroscope measurement matrix gyro and time step dt (the time difference between two consecutive IMU measurements).
+      4. Step 1: Remove the gyro bias bg to obtain the true gyroscope data. Formula: **omega_true = gyro - bg**
+      5. Step 2: Compute the angular increment. Formula: **delta_theta = omega_true x dt = [delta_theta_x, delta_theta_y, delta_theta_z]**
+      6. Step 3: Exponential mapping to obtain the incremental rotation. Formula: **delta_R = Sophus::SO3d::exp(delta_theta).matrix()**. This step is the **core** of the computation; I cannot fully understand it at this time.
+      7. Step 4: Update the rotation matrix. **R_wi = R_wi x delta_R**. The multiplication here concretely means rotating once more from the current pose R_wi. After this step, the predicted pose is obtained, but the predicted pose contains accumulated error. The error mainly comes from delta_R. Based on delta_R's formula **delta_R = Exp((omega - bg) x dt)** (involving sin and cos), with three separate rotation matrices maintaining rotations around the x, y, and z axes: first, the angular velocity omega has measurement noise (the acquired data may not be precise); then the bias bg may also have error (if bg is inaccurate); finally, the time step dt may have error (if the measurement is imprecise). These three types of errors accumulate over computation, causing the total error of the rotation matrix to grow ever larger.
+      8. Step 5: LiDAR data arrives -- compute the pose residual. The main task here is to compare whether point cloud data can match existing map planes. This involves interpreting the point cloud data format and meaning, as well as computing residuals.
+         1. LiDAR data measures distance and angles relative to itself, independent of any external coordinate frame. The specific measurements are: distance r (how far the laser traveled before reflecting back), horizontal angle theta (the horizontal direction of the laser emission), and vertical angle phi (the vertical direction of the laser emission). In other words, the raw data may look like **(r=5m, theta=30deg, phi=0deg)** -- this data is unrelated to the world coordinate frame.
+         2. After this data returns, the raw measurements are converted to (x, y, z) in the LiDAR's local coordinate frame -- still unrelated to the world frame. The conversion uses the standard spherical-to-Cartesian coordinate formula: **(x=r*cos(phi)*cos(theta), y=r*cos(phi)*sin(theta), z=r*sin(phi))**. After this conversion, each point has coordinates in the robot's local frame.
+         3. The question arises: we now need to transform these points into the global coordinate frame, because the SLAM map is built in the global frame. To convert real-time point cloud data into the global frame, we must use the robot's rotation matrix.
+         4. The formula to transform points from the robot's local frame to the global frame is: **p_world = R_wi x p_lidar + t_wi**. To solve for a point's position in the global frame: take the vector from each point to the robot's local frame origin, multiply by the rotation matrix between the robot's body frame and the global frame, then add the translation vector from the robot's body frame origin to the global frame origin. This is a classic robotics coordinate frame problem.
+         5. The next step is to use the IESKF (Iterated Error-State Kalman Filter) to solve for the pose correction. After each point is transformed from the body frame to the global frame, it is compared against known wall planes in the global map. However, since we are in SLAM real-time mapping mode, each newly added point in the global frame is compared against known planes in the saved global point cloud map. **So how are these known planes determined?** FAST-LIO2 uses an ikd-Tree data structure to store the scanned global point cloud map. This involves a dynamic local plane fitting algorithm, as follows:
+            1. Step 1: For each new point, find its 5 nearest neighbors in the ikd-Tree.
+            2. Step 2: Fit a local plane using these 5 selected points, represented by the standard equation **ax + by + cz + d = 0**.
+            3. Step 3: Compute the **residual** of the new point to this plane. The **residual** is the distance from the new point to the fitted plane, using the point-to-plane distance formula **r = |n . (Q - P_bar)|**. If r = 0, the point lies on the plane (perfect, no residual). Any value greater or less than zero indicates a mismatch between the new point and the fitted plane (residual exists).
+      9. Step 6: Pose correction. Using the formula **R_wi = R_wi x Exp(delta_theta_correction)**, the corrected pose is obtained. This involves the core of the Iterated Error-State Kalman Filter. The optimization objective is to **find the correction delta_theta that minimizes the sum of squared residuals of all points**. This is a nonlinear least-squares problem involving the Jacobian matrix H, which represents the partial derivative of the residual with respect to the pose correction: **H = d(residual) / d(pose)**. This Jacobian is derived from the point-to-plane distance formula. The physical meaning of this partial derivative is: when the pose changes slightly, how much does the residual change? Here, H is the sensitivity of the residual to the correction. When we make a small change to the pose (the pose correction), the residual changes linearly: **r_i(delta_theta) ~ r_i(0) + H . delta_theta**, which can be understood as **H . delta_theta = change in residual**. For multiple points in matrix form: **r = H . delta_theta + b**. To minimize the residual means finding the minimum of **||H . delta_theta + b||^2**. Expanding: **(delta_theta)^T . H^T . H . delta_theta + 2 . b^T . H . delta_theta + b^T . b**. Taking the derivative with respect to delta_theta gives the Normal Equation: **H^T . H . delta_theta = -H^T . b**, which rearranges to **delta_theta = (H^T H)^(-1) . H^T . b**, where **H+ = (H^T H)^(-1) H^T** is the pseudo-inverse (Moore-Penrose inverse) of H. Thus we obtain **delta_theta = H+ . b** -- the concrete computed value of the pose correction.
+      10. Step 7: Update the rotation matrix R_wi using the pose correction delta_theta computed in the previous step, yielding the final pose. Formula: **R_wi = R_wi x Exp(delta_theta)**
+   5. Next, velocity integration is performed using the global-frame acceleration a_world from the previous step: **v = v + a_world x dt**
+   6. After velocity integration, position integration is performed using the velocity v from the previous step: **t_wi = t_wi + v x dt**. This yields the robot's relative position matrix in the global coordinate frame -- this position is estimated.
+   7. Then point cloud data arrives for position residual computation. This is similar to the pose residual computation -- the main task is to check whether point cloud data can match existing map planes. The reason global position can also be back-calculated from point cloud residuals is that the formula **p_world = R_wi x p_lidar + t_wi** contains t_wi (the position vector). Since t_wi is included in the global point cloud position computation, after matching point cloud data to global map planes, the correction for the position vector t_wi can be back-calculated. The idea is: when the global position changes slightly, how does the residual change? The Jacobian for global position is actually simpler and less computationally expensive. After calibration using local point cloud information, we obtain: **delta_t_wi = H^(-1) x b**
+   8. Then the global position vector is corrected using the computed correction: **t_wi = t_wi + delta_t_wi**
+4. Now let us interpret the quaternion data. Quaternion data and rotation matrix data are interconvertible.
+   1. To compute a quaternion, first think about robot rotation. For any rotation, we need to know two things: which axis to rotate around, and how many degrees to rotate (correct idea, but with different implementation methods).
+   2. w, x, y, z are all real numbers. Any 3D rotation can be uniquely represented by a unit axis u=(Ux, Uy, Uz) and an angle theta (radians). w: cos(theta/2) determines only the rotation magnitude, range [-1,1]. x, y, z: sin(theta/2) multiplied by the three axis components together determine the rotation direction; they are not coordinates or independent vectors, but scalar coefficients of direction x half-angle sine.
+   3. Note that the quaternion method finds a single unique rotation axis u and uses rotation angle theta for a single rotation!! w itself is not an angle, and (x,y,z) are not the axis used directly!! They together encode the axis and angle. The actual rotation axis is:
+       u=(x,y,z)/sqrt(x^2+y^2+z^2), rotation angle theta=2arccos(w)
+   4. Important constraint: ||q||^2 = w^2 + x^2 + y^2 + z^2 = cos^2(theta/2) + sin^2(theta/2) . |u|^2 = 1. This forces it onto the 4D unit sphere, compressing 4 parameters into 3 effective degrees of freedom, which exactly matches the 3 degrees of freedom needed for 3D rotation.
+   5. Given the rotation axis matrix u and rotation angle theta, the quaternion can be computed: **q = w + xi + yj + zk = [w, x, y, z] = [q_w, q_x, q_y, q_z]**. A unit quaternion (|q|=1) looks like: **q = cos(theta/2) + sin(theta/2)(Ux*i + Uy*j + Uz*k)**. Note that theta is the rotation angle, and (Ux, Uy, Uz) are the unit vectors of the three rotation axes -- the 3 components of the new axis vector u. Finally: q = cos(theta/2) + sin(theta/2)*u, where cos(theta/2) -> w, sin(theta/2)*u -> (x,y,z).
+   6. The rotation matrix R is a 3x3 orthogonal matrix, R=Rz(psi)*Ry(theta)*Rx(phi). Its properties: R^T*R=I, det(R)=1. For any vector v, the rotated vector v'=Rv can transform a vector from the body frame to the world frame or vice versa. It and the quaternion are essentially different parameterizations of the same rotation.
+   8. Physical meaning: Column 1 of R = the body-frame x-axis unit vector in the world frame. Column 2 of R = the body-frame y-axis unit vector in the world frame. Column 3 of R = the body-frame z-axis unit vector in the world frame.
+   9. Rodrigues' rotation formula: v' = cos(theta)*v + (1-cos(theta))(u.v)u + sin(theta)(u x v). u is the given rotation axis vector (Ux, Uy, Uz). The resulting R can transform any vector v to v'. Starting from a unit quaternion (w,x,y,z), directly substituting the implicit quantities cos(theta) = 2w^2 - 1 and sin(theta) = 2w into Rodrigues' formula gives the rotation matrix R: diagonal elements R_ii = 1-2(y^2+z^2), 1-2(x^2+z^2), 1-2(x^2+y^2); off-diagonal elements R_12 = 2(xy - wz), R_13 = 2(xz + wy), R_21 = 2(xy + wz), R_23 = 2(yz - wx), R_31 = 2(xz - wy), R_32 = 2(yz + wx).
+   10. Reverse derivation: obtaining w, x, y, z from R: first compute the trace t = R_11 + R_22 + R_33. If t > 0, let s = 2*sqrt(t+1), then directly obtain w = (t+1)/s, x = (R_32 - R_23)/s, y = (R_13 - R_31)/s, z = (R_21 - R_12)/s. If t <= 0, switch to the branch based on R's largest diagonal element, compute s, and similarly use the corresponding column elements and sums/differences of R to calculate w, x, y, z. The entire process uses only R's entries without trigonometric functions, yielding the unit quaternion.
+   11. Euler angles: parameterize a 3D rotation by decomposing it into three single-axis rotations executed in a fixed order -- each axis rotates by its corresponding angle. The common order is ZYX (yaw psi, pitch theta, roll phi). Performing three successive axis rotations in order, substituting the three angles (psi, theta, phi) into the corresponding basic rotation matrices Rz(psi), Ry(theta), Rx(phi): R = Rz(psi)*Ry(theta)*Rx(phi), yielding the rotation matrix expressed by these three angles. Conversely, the angles psi, theta, phi can be recovered from R's elements using inverse tangent combinations. This method suffers from gimbal lock; in pose control applications, rotation matrices and quaternions are predominantly used.
+   12. Gimbal lock: When the middle pitch angle theta = +/-90 degrees in ZYX Euler angles, the rank of the Jacobian of the rotation mapping R(psi, theta, phi) = Rz(psi)*Ry(theta)*Rx(phi) drops from 3 to 2. Columns 1 and 3 become linearly dependent, psi and phi merge into a single degree of freedom (psi - phi), and the 3D control space collapses into a 2D plane. Alternatively: yaw and roll become fully coupled into a fixed angle (psi + phi) -- no matter how you independently change yaw or roll, the effect is identical, so the total degrees of freedom drop from 3 to 2. When pitch = 90 degrees, theta = pi/2, sin(theta) = 1, cos(theta) = 0, substituting into the formula above:
+R = [ 0 -sin(psi+phi) cos(psi+phi)
+      0  cos(psi+phi) sin(psi+phi)
       -1    0         0    ]
 
-## fastlio2 算法流程详细解读
+## FAST-LIO2 Algorithm Detailed Walkthrough
 
-### 阶段 0：系统初始化（仅启动时执行一次）
-1. 收集前 N 帧 IMU 数据（默认 20 帧）
-2. 计算加速度均值 → 估计重力方向
-3. 计算角速度均值 → 估计陀螺仪零偏 bg
-4. 设置初始姿态 R_wi（让 Z 轴对齐重力方向）
-5. 初始化协方差矩阵 P
-6. 收到第一帧点云 → 构建初始 ikd-Tree 地图
-7. 初始化完成，进入正常建图模式
+### Phase 0: System Initialization (executed once at startup)
+1. Collect the first N frames of IMU data (default 20 frames)
+2. Compute the mean acceleration to estimate gravity direction
+3. Compute the mean angular velocity to estimate gyroscope bias bg
+4. Set the initial pose R_wi (aligning the Z-axis with the gravity direction)
+5. Initialize the covariance matrix P
+6. Receive the first point cloud frame and build the initial ikd-Tree map
+7. Initialization complete; enter normal mapping mode
 
-### 阶段 1：数据接收与同步（每帧执行）
-1. IMU 数据（~200Hz）持续进入 imu_buffer
-2. LiDAR 数据（~10Hz）持续进入 lidar_buffer
-3. 等待一帧完整点云到达
-4. 收集该帧点云时间范围内的所有 IMU 数据（约 10-20 个）
-5. 打包成 SyncPackage { cloud, imus[], time_start, time_end }
+### Phase 1: Data Reception and Synchronization (executed per frame)
+1. IMU data (~200Hz) continuously enters imu_buffer
+2. LiDAR data (~10Hz) continuously enters lidar_buffer
+3. Wait for a complete point cloud frame to arrive
+4. Collect all IMU data within the time range of that point cloud frame (approximately 10-20 samples)
+5. Package into SyncPackage { cloud, imus[], time_start, time_end }
 
-### 阶段 2：IMU 前向积分 + 姿态序列生成
-1. 先用 IMU 进行**前向积分**得到预测的姿态（不一定准）
-   
-#### 2.1 积分过程（对每个 IMU 数据执行）
-1. 去除陀螺仪零偏：**ω_true = gyro - bg**
-2. 计算角度增量：**Δθ = ω_true × dt**
-3. 指数映射得到旋转增量：**ΔR = Exp(Δθ)**
-4. 更新旋转矩阵：**R_wi = R_wi × ΔR**
-5. 去除加速度计零偏并转到世界坐标系：**a_world = R_wi × (acc - ba) + g**
-6. 速度积分：**v = v + a_world × dt**
-7. 位置积分：**t_wi = t_wi + v × dt**
-8. **保存当前时刻的姿态到 poses_cache**（用于点云去畸变）
+### Phase 2: IMU Forward Integration + Pose Sequence Generation
+1. First, use IMU forward integration to obtain a predicted pose (not necessarily accurate)
 
-#### 2.2 积分结果
-- 得到 N 个时刻的姿态序列 poses_cache
-- 得到预测的最终姿态（扫描结束时刻）
+#### 2.1 Integration Process (executed for each IMU sample)
+1. Remove gyroscope bias: **omega_true = gyro - bg**
+2. Compute angular increment: **delta_theta = omega_true x dt**
+3. Exponential mapping to obtain rotation increment: **delta_R = Exp(delta_theta)**
+4. Update rotation matrix: **R_wi = R_wi x delta_R**
+5. Remove accelerometer bias and transform to world frame: **a_world = R_wi x (acc - ba) + g**
+6. Velocity integration: **v = v + a_world x dt**
+7. Position integration: **t_wi = t_wi + v x dt**
+8. **Save the current pose to poses_cache** (used for point cloud de-distortion)
 
-### 阶段 3：点云去畸变
-1. 用预测的姿态序列去给点云去除畸变，让点云变得大概正确
+#### 2.2 Integration Results
+- Obtain a sequence of N poses at different time instants: poses_cache
+- Obtain the predicted final pose (at the end of the scan)
 
-#### 3.1 为什么需要去畸变
-- 点云扫描一圈需要 ~100ms
-- 这段时间内车在移动，每个点扫描时刻的车姿态都不同
-- 如果不校正，点云会"糊"在一起
+### Phase 3: Point Cloud De-distortion
+1. Use the predicted pose sequence to de-distort the point cloud, making it approximately correct
 
-#### 3.2 去畸变过程（对每个点云点执行）
-1. 获取该点的扫描时刻 t_point（存储在 curvature 字段）
-2. 从 poses_cache 中找到对应时刻的 IMU 姿态 (R_point, t_point)
-3. 计算该点在扫描时刻的世界坐标：**p_world = R_point × p_local + t_point**
-4. 转换到扫描结束时刻的统一坐标系：**p_corrected = R_end⁻¹ × (p_world - t_end)**
-5. 更新点坐标
+#### 3.1 Why De-distortion Is Needed
+- A point cloud scan takes ~100ms to complete one revolution
+- During this time the vehicle is moving; the vehicle pose is different at each point's scan time
+- Without correction, the point cloud would be "smeared" together
 
-### 阶段 4：IESKF 迭代优化（核心）
-1. 用去畸变后的点云来匹配之前累积起来的 SLAM 地图（ikd-Tree）
-2. 计算残差然后求出姿态修正量
-3. 使用修正量来修正预测到的姿态，得到矫正后的车辆本体坐标系相对于全局坐标系的姿态
-4. 检查姿态修正量是否足够小：
-   - 如果足够小（旋转 < 0.01°，平移 < 0.015cm）→ 退出迭代
-   - 如果修正量较大 → 回到步骤 4.1 用矫正过的姿态重新计算，重复迭代
+#### 3.2 De-distortion Process (executed for each point)
+1. Get the point's scan timestamp t_point (stored in the curvature field)
+2. Look up the corresponding IMU pose (R_point, t_point) from poses_cache
+3. Compute the point's world coordinates at its scan time: **p_world = R_point x p_local + t_point**
+4. Transform to a unified coordinate frame at scan end time: **p_corrected = R_end^(-1) x (p_world - t_end)**
+5. Update the point coordinates
 
-#### 4.1 点云转换到世界坐标系
-- 对每个点：**p_world = R_wi × (R_il × p_body + t_il) + t_wi**
-- 其中 R_wi, t_wi 是当前估计的姿态（迭代中不断修正）
+### Phase 4: IESKF Iterative Optimization (Core)
+1. Match the de-distorted point cloud against the previously accumulated SLAM map (ikd-Tree)
+2. Compute residuals and solve for the pose correction
+3. Apply the correction to the predicted pose, obtaining the corrected vehicle body frame pose relative to the global frame
+4. Check whether the pose correction is small enough:
+   - If sufficiently small (rotation < 0.01 deg, translation < 0.015 cm) -> exit iteration
+   - If the correction is large -> return to step 4.1, recompute with the corrected pose, repeat
 
-#### 4.2 在 ikd-Tree 中搜索最近邻
-- 对每个世界坐标系点，找到地图中最近的 5 个点
-- 公式：**neighbors = ikd_tree.nearest_search(p_world, k=5)**
+#### 4.1 Transform Point Cloud to World Frame
+- For each point: **p_world = R_wi x (R_il x p_body + t_il) + t_wi**
+- Where R_wi, t_wi are the current estimated pose (continuously corrected during iteration)
 
-#### 4.3 平面拟合 + 残差计算
-1. 用 5 个近邻点拟合局部平面：**ax + by + cz + d = 0**
-2. 获取平面法向量：**n = [a, b, c]**
-3. 计算点到平面的距离（残差）：**residual = n · p_world + d**
-   - residual = 0 表示点在平面上，完美匹配
-   - residual ≠ 0 表示存在误差
+#### 4.2 Nearest Neighbor Search in ikd-Tree
+- For each world-frame point, find the 5 nearest points in the map
+- Formula: **neighbors = ikd_tree.nearest_search(p_world, k=5)**
 
-#### 4.4 计算雅可比矩阵 + 构建方程
-1. 雅可比矩阵：残差对姿态的偏导数 **J = ∂residual / ∂[R_wi, t_wi]**
-2. 物理意义：姿态变化一点点，残差会变化多少
-3. 累加所有有效点的贡献：
-   - **H += Jᵀ × J**（海森矩阵）
-   - **b += Jᵀ × residual**（残差向量）
+#### 4.3 Plane Fitting + Residual Computation
+1. Fit a local plane using the 5 nearest neighbors: **ax + by + cz + d = 0**
+2. Get the plane normal vector: **n = [a, b, c]**
+3. Compute point-to-plane distance (residual): **residual = n . p_world + d**
+   - residual = 0 means the point is on the plane -- perfect match
+   - residual != 0 means there is error
 
-#### 4.5 求解修正量
-- 最小二乘求解：**Δx = -H⁻¹ × b**
-- Δx 包含：
-  - Δθ = [Δθx, Δθy, Δθz] 旋转修正量
-  - Δt = [Δtx, Δty, Δtz] 平移修正量
+#### 4.4 Compute Jacobian Matrix + Build Equation
+1. Jacobian matrix: partial derivative of residual with respect to pose: **J = d(residual) / d[R_wi, t_wi]**
+2. Physical meaning: how much does the residual change when the pose changes slightly
+3. Accumulate contributions from all valid points:
+   - **H += J^T x J** (Hessian matrix)
+   - **b += J^T x residual** (residual vector)
 
-#### 4.6 更新姿态
-- 旋转更新：**R_wi = R_wi × Exp(Δθ)**
-- 平移更新：**t_wi = t_wi + Δt**
-- 同时更新其他状态：速度 v、零偏 bg、ba 等
+#### 4.5 Solve for Correction
+- Least-squares solution: **delta_x = -H^(-1) x b**
+- delta_x contains:
+  - delta_theta = [delta_theta_x, delta_theta_y, delta_theta_z] rotation correction
+  - delta_t = [delta_t_x, delta_t_y, delta_t_z] translation correction
 
-#### 4.7 检查收敛
-- 收敛条件：**|Δθ| < 0.01° && |Δt| < 0.015 cm**
-- 未收敛 → 回到 4.1 继续迭代
-- 已收敛 → 退出迭代，输出最终姿态
+#### 4.6 Update Pose
+- Rotation update: **R_wi = R_wi x Exp(delta_theta)**
+- Translation update: **t_wi = t_wi + delta_t**
+- Also update other states: velocity v, biases bg, ba, etc.
 
-### 阶段 5：地图更新
-1. 裁剪局部地图：删除机器人周围太远的点，保持地图窗口跟随机器人移动
-2. 增量添加新点云：将去畸变后的点云转换到世界坐标系，添加到 ikd-Tree
+#### 4.7 Check Convergence
+- Convergence criteria: **|delta_theta| < 0.01 deg && |delta_t| < 0.015 cm**
+- Not converged -> return to 4.1, continue iterating
+- Converged -> exit iteration, output final pose
 
-### 阶段 6：结果发布
-1. 发布 TF 变换：world → body（位置 + 四元数姿态）
-2. 发布里程计：/lio_odom（pose + twist）
-3. 发布点云：
-   - /body_cloud → 机体坐标系点云（给 PGO 用），也就是相对于机器人本地坐标系的点云
-   - /world_cloud → 世界坐标系点云（可视化用），也就是从本地坐标系转化到全局坐标系后的点云
-4. 发布路径：/lio_path（历史轨迹）
+### Phase 5: Map Update
+1. Trim the local map: delete points too far from the robot, keeping the map window following the robot
+2. Incrementally add new points: transform the de-distorted point cloud to the world frame and add to the ikd-Tree
 
-### 关键理解：为什么只优化最终时刻的姿态？
-1. IMU 测量的是**相对变化**（很准），不是绝对姿态
-2. 所有中间时刻的姿态 = 最终姿态 - 相对变化
-3. 修正最终姿态后，所有中间姿态**自动被修正**
-4. 中间姿态被修正后，点云去畸变也**自动更准确**
-5. 这就是 IESKF "误差状态"的含义：只估计误差，不重新估计整个状态
+### Phase 6: Result Publication
+1. Publish TF transform: world -> body (position + quaternion pose)
+2. Publish odometry: /lio_odom (pose + twist)
+3. Publish point clouds:
+   - /body_cloud -> body-frame point cloud (for PGO), i.e., point cloud relative to the robot's local frame
+   - /world_cloud -> world-frame point cloud (for visualization), i.e., point cloud transformed from the local frame to the global frame
+4. Publish path: /lio_path (historical trajectory)
 
-### 算法核心总结
+### Key Insight: Why Only Optimize the Final Pose?
+1. IMU measures **relative changes** (very accurate), not absolute pose
+2. All intermediate poses = final pose - relative changes
+3. After correcting the final pose, all intermediate poses are **automatically corrected**
+4. Once intermediate poses are corrected, point cloud de-distortion is also **automatically more accurate**
+5. This is what "error state" means in IESKF: only estimate the error, not the entire state
+
+### Algorithm Core Summary
 ```
-每 ~100ms 执行一次:
-  收集数据 → IMU积分 → 点云去畸变 → IESKF迭代优化 → 更新地图 → 发布结果 → 循环
+Executed every ~100ms:
+  Collect data -> IMU integration -> Point cloud de-distortion -> IESKF iterative optimization -> Update map -> Publish results -> Loop
 ```
 
-**FASTLIO2 = IMU 高频积分预测 + LiDAR 每帧校正 + 迭代优化 + 增量建图**
+**FAST-LIO2 = IMU high-frequency integration prediction + LiDAR per-frame correction + iterative optimization + incremental mapping**
 
-## pgo 节点功能
-1. pgo 节点的基本功能就是收集关键帧、检测回环、图优化和发布 map 到 odom 的 TF 转换链
-2. pgo 节点的关键帧收集策略是这样的，首先提供点云关键帧的数据的是 fastlio2 的 body_cloud 话题，使用的点云数据全都是基于机器人本体坐标系下的点云数据，然后同时接收来自 fastlio2 的 odom 数据，这个数据就包含了这个关键帧点云数据所对应的全局位姿信息，然后关键帧的收集是基于车辆的移动和旋转来进行收集的，因为点云数据的数据量很大，所以大部分的点云数据都不需要保存，只需要保存最关键的几帧就可以了，**事实上 pgo 节点每一帧都接收但是只保存关键帧**
-3. 同时有了基于本地坐标系的点云数据和其对应的 odom 信息就能够保证在没有触发回环的时候保存地图也可以顺利的将本地点云数据转换到全局地图上从而保存完整的 slam 全局地图
-4. pgo 的全局 SLAM 地图由 `m_key_poses[]` 列表保存，每个元素包含：位姿信息（r_local, t_local, r_global, t_global）、时间戳、body_cloud 点云。回环搜索时会**临时构建** KdTree（只包含位置坐标 x, y, z）用于快速查找附近历史帧，用完即丢。保存地图时遍历这个列表，用优化后的位姿拼接点云。保存后的 patches 文件夹中每个 .pcd 文件就是一个关键帧的点云数据，map.pcd 就是所有关键帧拼接好的完整地图，poses.txt 文件中保存了每个关键帧的位姿信息
-5. pgo 的核心就是回环检测功能，这个功能的大致步骤分为三步
-   1. 第一步就是要能够识别到回环，这一步要处理一个很关键的问题就是机器人怎么知道自己来过这个地方，机器人只知道自己的当前位置、当前点云和历史关键帧（之前保存到的位置 + 点云），识别回环也分成三步
-      1. 第一步：位置粗筛，这里附近有没有历史帧，就是判断机器人自己现在的位置附近有没有以前来过的地方，具体做法就是把所有的历史关键陈保存成一棵 Kdtree（一个高效搜索结构），但是不包括这个最新的关键帧本身，然后用当前为位置去搜索，半径 15 米内有没有历史帧
-      2. 第二步：时间过滤，这个历史帧是不是很久之前的历史帧，这个是为了保证进行回环的时候是真的走了一大圈之后回来了，而不是以开始就回环
-      3. 第三步：点云确认，周围环境是不是一摸一样的，这一步就是回环的最终检测，因为位置近加上时间间隔久还不够，因为点云是要 odom 有时候也会漂移，位置也可能是错的，所以如果只看位置就会被判定成回环，点云的确认逻辑就是比较两个帧的点云扫描的形状是不是近似吻合的，这里 pgo 节点使用的算法还没有比较这一个选项，pgo 节点使用的是算法是 ICP 算法用来进行点云的重合操作，ICP 算法只对其当前最新帧和历史帧的点云，也就是这两个吻合帧的点云，只有两个帧参加，剩下把整个图拉正的优化多个帧的点云的位置的操作是由 GTSAM 图优化算法来做的事
-         1. ICP 的算法是通过对最新一帧的点云不断旋转和平移来的到一个能和历史中那一个帧点云吻合的姿态
-         2. ICP 算法会输出三个东西，第一个就是一个重合检测标准，这个变量告诉你重合是否成功，第二个就是一个重合分数，这个东西就是一个数值，表示的时 ICP 完成后源点云变换后每个点到目标点云最近点的平均距离，这个 score 值越小，两帧的点云越吻合，回环越可靠，对应 pgo yaml 中的 loop_score_tresh: 0.15 参数，第三个输出就是 T 变换矩阵，这个矩阵就是让源点云 “对齐” 到目标点云所需的变换，也就是当前帧和历史帧之间的相对位姿差，这个矩阵要被输出给 GTSAM 当作一个约束 **Loop Factor**
-   2. 下一步就是添加回环约束到因子图
-   3. 再下一步就是启动 GTSAM 图优化算法，这个算法的功能就是把整个图拉正，刚刚 ICP 算法是把历史帧和当前帧对齐，但是这个对齐只是局部的，整个图还是有误差的，这个图优化算法的功能就是把整个图拉正，让所有的关键帧都符合这些回环约束，从而让整个地图更加准确
-      1. 首先，因子图里面有什么，图上的节点是每个关键帧的位姿，边是约束，总共有三种约束
-         1. 第一种：先验因子，只连接第 0 帧，也就是说第一帧必须固定在原点
-         2. 第二种：里程计因子，第 i 帧到第 i + 1 帧，也就是相邻两帧之间的相对位姿，数据来源于 fastlio2 的 odom 数据输出
-         3. 第三种：回环因子，第 i 帧到第 j 帧之间的相对位姿，数据来源于 pgo 节点的回环检测结果，也就是来自历史帧和最新帧，这个数据来源于 ICP 算法
-      2. 总的来说 GTSAM 的目标就是想所有约束的误差总和最小，可以想象一下，里程计的约束就像一根根弹簧链接相邻帧，回环约束像一根新弹簧把当前帧和历史帧拉到一起，但是回环的弹簧拉的时候，不只是移动了当前帧，是整条弹簧链上的所有帧都会被拉动，每根弹簧都要被拉伸一点点，最终达到一个状态，所有的弹簧的总拉力最小
-      3. GTSAM 图优化算法的输出是所有关键帧的优化后的全局位姿，也就是一个 **列表**，这个列表里面包含了所有的关键帧优化有的旋转 **R_global** 和平移 **t_global**，这两个值可以用来代替原本 fastlio2 输出的每一帧的 odom 的值，然后节点使用这些值来更新每一帧的 r_global 和 t_global
-      4. 下一步就是计算 offset，这个就是总的漂移量，是针对最后一帧的，也就是机器人当前的最新位姿的，这个 **offset** 是针对已构建地图范围内的漂移矫正的，是通过回环检测发现的漂移，只能保证地图内部的一致性，不能保证地图外部的一致性，也就是说不能保证位置的绝对正确性
-      5. 最后一步就是发布 TF 转换链，从 map 到 odom 的转换，这个转换就是上一步计算的 offset，这个转换的作用就是把 fastlio2 输出的 odom 位姿进行矫正，从而得到一个更准确的 odom 位姿
+## PGO Node Functions
+1. The PGO node's basic functions are: collecting keyframes, detecting loop closures, performing graph optimization, and publishing the map-to-odom TF transform chain.
+2. The PGO node's keyframe collection strategy works as follows: point cloud keyframe data comes from FAST-LIO2's body_cloud topic, using point cloud data entirely in the robot's body frame. It simultaneously receives odom data from FAST-LIO2, which contains the global pose corresponding to each keyframe's point cloud. Keyframe collection is based on the vehicle's movement and rotation, since point cloud data volume is large and most frames do not need to be saved -- only the most critical ones. **In fact, the PGO node receives every frame but only saves keyframes.**
+3. Having both body-frame point cloud data and corresponding odom information ensures that even without loop closure triggering, the map can be saved by converting local point cloud data to the global map, thus saving a complete SLAM global map.
+4. The PGO global SLAM map is stored in the `m_key_poses[]` list, where each element contains: pose information (r_local, t_local, r_global, t_global), timestamp, and body_cloud point cloud. During loop closure search, a KdTree is **temporarily constructed** (containing only position coordinates x, y, z) for fast lookup of nearby historical frames, and discarded after use. When saving the map, this list is traversed and point clouds are stitched using optimized poses. In the saved patches folder, each .pcd file is a keyframe's point cloud data, map.pcd is the complete map with all keyframes stitched together, and poses.txt contains each keyframe's pose information.
+5. The core of PGO is the loop closure detection function. This roughly consists of three steps:
+   1. Step 1: Identify the loop closure. The key problem here is how the robot knows it has been to this location before. The robot only knows its current position, current point cloud, and historical keyframes (previously saved positions + point clouds). Loop closure identification has three sub-steps:
+      1. Sub-step 1: Position coarse filtering -- are there historical frames nearby? This checks whether there are previously visited locations near the robot's current position. The specific method is to store all historical keyframes in a KdTree (an efficient search structure), excluding the latest keyframe itself, then search using the current position to see if there are historical frames within a 15-meter radius.
+      2. Sub-step 2: Time filtering -- is the historical frame from a long time ago? This ensures that the loop closure represents actually having traveled a large loop and returned, rather than an immediate loop at the start.
+      3. Sub-step 3: Point cloud confirmation -- is the surrounding environment identical? This is the final loop closure check. Position proximity plus time gap is not enough, because odom can drift and the position may be wrong -- relying on position alone might produce a false loop closure. The point cloud confirmation logic compares whether the scanned point cloud shapes of the two frames approximately match. The PGO node uses the ICP (Iterative Closest Point) algorithm for point cloud alignment. ICP only aligns the latest frame with the historical frame -- just these two frames participate. The subsequent task of adjusting the positions of multiple frames to correct the entire graph is handled by the GTSAM graph optimization algorithm.
+         1. The ICP algorithm works by continuously rotating and translating the latest frame's point cloud to find a pose that matches the historical frame's point cloud.
+         2. ICP outputs three things: first, an alignment success flag indicating whether alignment succeeded; second, an alignment score -- a value representing the average distance from each transformed source point to its nearest target point after ICP completes (lower score means better alignment between the two frames, more reliable loop closure, corresponding to the `loop_score_tresh: 0.15` parameter in the PGO YAML); third, the transformation matrix T -- the transform needed to "align" the source point cloud to the target point cloud, i.e., the relative pose difference between the current frame and the historical frame. This matrix is output to GTSAM as a **Loop Factor** constraint.
+   2. The next step is adding loop closure constraints to the factor graph.
+   3. Then GTSAM graph optimization is launched. This algorithm's function is to straighten the entire graph. The ICP algorithm aligned the historical frame with the current frame, but this alignment is only local -- the overall graph still has errors. The graph optimization algorithm's function is to straighten the entire graph so that all keyframes satisfy these loop closure constraints, making the overall map more accurate.
+      1. First, what is in the factor graph? The graph's nodes are each keyframe's pose; the edges are constraints. There are three types of constraints:
+         1. Type 1: Prior factor -- only connected to frame 0, meaning the first frame must be fixed at the origin.
+         2. Type 2: Odometry factor -- from frame i to frame i+1, i.e., the relative pose between adjacent frames. Data comes from FAST-LIO2's odom output.
+         3. Type 3: Loop factor -- relative pose between frame i and frame j. Data comes from the PGO node's loop closure detection, i.e., between the historical frame and the latest frame, from the ICP algorithm.
+      2. Overall, GTSAM's objective is to minimize the total error of all constraints. Imagine: odometry constraints are like springs connecting adjacent frames; loop closure constraints are like a new spring pulling the current frame and historical frame together. But when the loop closure spring pulls, it does not only move the current frame -- all frames along the spring chain are pulled, each spring stretched slightly, until a state is reached where the total spring force is minimized.
+      3. GTSAM graph optimization outputs the optimized global poses of all keyframes -- a **list** containing optimized rotation **R_global** and translation **t_global** for each keyframe. These values can replace the original odom values output by FAST-LIO2 for each frame, and the node uses these values to update each frame's r_global and t_global.
+      4. The next step is computing the offset -- the total drift amount, specifically for the latest frame (the robot's current newest pose). This **offset** corrects drift within the built map scope, discovered through loop closure detection. It can only guarantee internal map consistency, not external consistency -- it cannot guarantee absolute position correctness.
+      5. The final step is publishing the TF transform chain from map to odom. This transform is the offset computed in the previous step. Its purpose is to correct the odom pose output by FAST-LIO2, yielding a more accurate odom pose.
 
-## TF 转换链
+## TF Transform Chain
 
-### 基本概念
-1. TF 的本质就是告诉你一个坐标系相对于另一个坐标系在哪里、朝向哪里
+### Basic Concepts
+1. The essence of TF is telling you where one coordinate frame is and which direction it faces relative to another coordinate frame.
 
 ### odom to base_link
-1. odom 到 base_link 的变换关系包含了两个信息
-2. 第一个信息就是本地坐标系到全局坐标系的相对位置，用 **t_wi** 位置矩阵表示
-3. 第二个信息就是本地坐标相对于全局坐标系的旋转，用 **R_wi** 旋转矩阵（四元数形式）表示
+1. The odom-to-base_link transform contains two pieces of information.
+2. First: the relative position from the local frame to the global frame, represented by the **t_wi** position vector.
+3. Second: the rotation of the local frame relative to the global frame, represented by the **R_wi** rotation matrix (in quaternion form).
 
 ### map to odom
-1. map 到 odom 的变换包含了 offset 信息，也就是机器人最新的 odom 位姿相对于全局地图的偏移量
-2. 这个 offset 信息是通过 pgo 节点的回环检测和图优化算法 GTSAM 计算出来的
+1. The map-to-odom transform contains the offset information -- the drift of the robot's latest odom pose relative to the global map.
+2. This offset is computed by the PGO node's loop closure detection and GTSAM graph optimization algorithm.
 
-***这两段 TF 链叠加之后就可以得到真正的最新全局位姿***
+***Combining these two TF chain segments yields the true latest global pose.***
 
-## fastlio2 和 pgo 节点的关联
-1. fastlio2 节点给 pgo 节点提供两种数据，分别是 body_cloud 和 odom，为 pgo 节点提供实时的点云数据和里程计数据
+## Relationship Between FAST-LIO2 and PGO Nodes
+1. The FAST-LIO2 node provides two types of data to the PGO node: body_cloud and odom, supplying real-time point cloud data and odometry data.
 
-## 控制台命令
+## Console Commands
 
-### 杂项
+### Miscellaneous
 1. cd /home/jetson/2025_FYP/car_ws && colcon build --packages-select fastlio2 pgo --symlink-install
 2. pcl_viewer /home/jetson/2025_FYP/car_ws/SLAM_saved_MAPs/<map_file_name.pcd>
 3. ros2 topic echo /scan > /dev/null &
-4. cd /home/jetson/2025_FYP/car_ws && source install/setup.bash && ros2 launch fastlio2_pointcloud_to_laserscan test_pointcloud_to_laserscan.py（点云转激光扫描节点）
+4. cd /home/jetson/2025_FYP/car_ws && source install/setup.bash && ros2 launch fastlio2_pointcloud_to_laserscan test_pointcloud_to_laserscan.py (point cloud to laser scan node)
 5. ros2 service call /pgo/save_maps interface/srv/SaveMaps "{file_path: '/home/jetson/2025_FYP/car_ws/SLAM_saved_MAPs', save_patches: true}"
 6. cd /home/jetson/2025_FYP/car_ws && source install/setup.bash && ros2 launch pgo pgo_launch.py
 7. ros2 service call /pgo/save_maps interface/srv/SaveMaps "{file_path: '/home/jetson/2025_FYP/all_kind_output_file/Other_File/SLAM_saved_MAPs/<file_dir>', save_patches: true}"
 8. pcl_viewer /home/jetson/2025_FYP/all_kind_output_file/Other_File/SLAM_saved_MAPs/3D/<file_dir>/map.pcd
-9. cd /home/jetson/2025_FYP/car_ws && colcon build --packages-select fastlio2_pointcloud_to_laserscan --symlink-install（转换节点编译）
-10. ros2 run nav2_map_server map_saver_cli -f /home/jetson/2025_FYP/all_kind_output_file/Other_File/SLAM_saved_MAPs/2D/<file_dir>/map（用来保存 SLAM 扫描好的 2D 栅格地图）
-11. ros2 topic hz /scan（检查 3D 点云转 2D 激光地图的节点的 scan topic 输出）
-12. ros2 topic echo /map_metadata --once（检查 SLAM tool box 是否输出地图）
-13. cd ~/2025_FYP/car_ws && colcon build --packages-select fastlio2_slam_toolbox ros2_launch_file --symlink-install --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3（编译 SLAM toolbox 节点）
+9. cd /home/jetson/2025_FYP/car_ws && colcon build --packages-select fastlio2_pointcloud_to_laserscan --symlink-install (compile conversion node)
+10. ros2 run nav2_map_server map_saver_cli -f /home/jetson/2025_FYP/all_kind_output_file/Other_File/SLAM_saved_MAPs/2D/<file_dir>/map (save the SLAM-scanned 2D occupancy grid map)
+11. ros2 topic hz /scan (check the scan topic output rate of the 3D-to-2D laser conversion node)
+12. ros2 topic echo /map_metadata --once (check whether SLAM toolbox is outputting a map)
+13. cd ~/2025_FYP/car_ws && colcon build --packages-select fastlio2_slam_toolbox ros2_launch_file --symlink-install --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 (compile SLAM toolbox node)
 14. cd /home/jetson/2025_FYP/car_ws && source install/setup.bash && ros2 launch fastlio2 lio_launch.py
 
-### 编译
+### Build
 1. cd /home/jetson/2025_FYP/car_ws && colcon build --symlink-install --packages-select pointcloud_to_laserscan && source install/setup.bash
 
-# 感知层开发日志
+# Perception Layer Development Log
 
 ## 2025.11.11
-1. 为 fastlio 节点添加了 log 文件写入功能，并检查了节点的消息发布时间戳，确认为已使用 ROS 系统标准时间
-2. 为 pgo 节点添加了日志写入功能，检查了节点的消息发布时间戳，确认其消息发布是使用的收到的消息的时间戳
-3. 对每个能产生 log 的节点都加上了是否要进行 log 文件写入的参数判断机制，这样可以在运行之前对 log 文件写入进行限制，减轻系统运行压力
-4. 将 pgo 的消息队列的深度提升至 50，解决了运行中因为队列满载而造成的消息丢失问题
-5. 目前观察到随着运行时间的累加，板子的 GPU 占用也是累加的，需要想个办法让 fastlio 和 pgo 在运行的时候可以抛弃不必要的内存占用
-6. 现在 pgo 节点长时间运行还是会产生报错 [rviz2-3] [INFO] [1763019376.264879975] [pgo.rviz2]: Message Filter dropping message: frame 'base_link' at time 1763019375.271 for reason 'discarding message because the queue is full' [rviz2-3] [INFO] [1763019376.265166398] [pgo.rviz2]: Message Filter dropping message: frame 'odom' at time 1763019375.271 for reason 'discarding message because the queue is full'
+1. Added log file writing functionality to the FAST-LIO node and verified that the node's message publication timestamps use ROS system standard time
+2. Added logging functionality to the PGO node and verified that its message publication uses the received message's timestamp
+3. Added a parameter-based toggle for log file writing to each logging-capable node, allowing log writing to be disabled before runtime to reduce system load
+4. Increased the PGO message queue depth to 50, resolving message loss caused by queue overflow during operation
+5. Observed that GPU usage accumulates over runtime; need to find a way to allow FAST-LIO2 and PGO to discard unnecessary memory during operation
+6. The PGO node still produces errors during extended operation: [rviz2-3] [INFO] [1763019376.264879975] [pgo.rviz2]: Message Filter dropping message: frame 'base_link' at time 1763019375.271 for reason 'discarding message because the queue is full' [rviz2-3] [INFO] [1763019376.265166398] [pgo.rviz2]: Message Filter dropping message: frame 'odom' at time 1763019375.271 for reason 'discarding message because the queue is full'
 
 ## 2025.11.13
-1. 更新 fastlio2 节点的执行频率为 50 hz，提高了消息发布的频率以为更快的 costmap 地图更新做基础
-2. 降低 pgo 节点的消息发布频率为 20 hz，缓解不必要的消息发布压力
+1. Updated FAST-LIO2 node execution frequency to 50 Hz, increasing message publication rate to support faster costmap updates
+2. Reduced PGO node message publication frequency to 20 Hz to alleviate unnecessary publication overhead
 
 ## 2025.11.18
-1. copilot 中新增 FASTLIO2 development 对话 session，专门用来处理 FASTLIO2 感知包中的代码开发问题
-2. 目前要再回过头看一下 localizer 包怎么使用
+1. Created a new "FASTLIO2 development" conversation session in Copilot, dedicated to handling code development issues in the FASTLIO2 perception package
+2. Need to revisit how the localizer package is used
 
 ## 2025.11.23
-1. 当激光雷达贴的和墙壁太近的时候，数据会产生退化的现象
-2. 将 pgo 的关键帧采集角度和关键帧采集距离分别调整至 5 和 0.1，让其更频繁的保存关键帧
-3. 目前扫描出一个 CB 工作室附近的走廊地图，效果不错
-4. 准备采用 SLAM_toolbox 来进行建图，用来获取当前场景的 2D 地图
-5. 修改 pointcloud_to_laserscan 的节点的 QoS 参数为 Best Effort 以匹配
-6. 在 launch 文件中显式将 scan 的 topic 输出的 QoS 参数设置为 Best Effort 以匹配
-7. 现在 scan 能够成功输出了
-8. SLAM_toolbox 节点的参数也需要和 Nav2 一样来配置 TF 才能正常运行
-9. 通过 SLAM toolbox 成功生成了 2D 栅格地图，验证地图效果不错
-10. 不要让自己创建的包的名称和系统中自带的包名称一样，这样会导致系统无法识别
-11. 现已创建 fastlio2_slam_toolbox 包，其中保存了对应的 yaml 文件
-12. slam_toolbox 和 pointcloud_to_laserscan 包均以使用 clone 的源代码，不再使用 humble 预编译好的代码
-13. 刚刚出去用 slam 扫了一圈，扫到一半爆内存了
-14. 经过分析，slam_toolbox 无法替代 pgo 节点
-15. 目前能做的就是尝试把 scan 话题对接进 Nav2 中来查看是不是效果会比直接把 pointcloud 塞进 Nav2 要好一点
+1. LiDAR data degrades when the sensor is too close to a wall
+2. Adjusted PGO keyframe collection angle and distance thresholds to 5 degrees and 0.1 meters respectively, enabling more frequent keyframe saving
+3. Successfully scanned a corridor map near the CB studio with good results
+4. Planning to use SLAM_toolbox for mapping to obtain 2D maps of the current scene
+5. Modified the pointcloud_to_laserscan node's QoS parameters to Best Effort for compatibility
+6. Explicitly set the scan topic output QoS to Best Effort in the launch file for compatibility
+7. The scan topic now outputs successfully
+8. The SLAM_toolbox node parameters also need TF configuration matching Nav2 to work correctly
+9. Successfully generated a 2D occupancy grid map via SLAM toolbox; verified the map quality is good
+10. Do not name your own packages the same as system packages, as this prevents the system from identifying them correctly
+11. Created the fastlio2_slam_toolbox package, which stores the corresponding YAML files
+12. Both slam_toolbox and pointcloud_to_laserscan packages now use cloned source code instead of the Humble pre-compiled binaries
+13. Went out to scan with SLAM; ran out of memory halfway through
+14. After analysis, slam_toolbox cannot replace the PGO node
+15. The current option is to try connecting the scan topic into Nav2 to see if it performs better than feeding point clouds directly into Nav2
 
 ## 2025.11.27
-1. fastlio2 的 rviz 配置已改动，现在已经能正常显示点云图像
-2. 需不需要把 gps 信息，点云信息和 IMU 信息进行紧耦合呢？这个需要思考一下
-3. 接下来记录一点对于这个新的系统框架的坐标系位置校准的思考
-   1. 当 Nav2 进行长距离的单向导航的时候，pgo 节点便会很难触发回环检测特性
-   2. pgo 节点只能保证地图的相对一致性，也就是说其只可以保证地图自洽一致，优化轨迹的相对形状，但是其不能做到得是**其不能保证这个地图是百分之一百贴合真实世界坐标系的**，也就是说其不能确定轨迹的绝对位置
-   3. 这种问题在超长距离的单向导航的时候会非常的严重
-   4. 所以说需要有一个绝对准确的数据参考才行，在这种长距离导航的时候，这个数据就是 gps 数据
-   5. 当进行长距离导航的时候，首先这条路径的 gps 初始点，也就是和 Nav2 的全局地图的初始位姿 [0,0,0] 进行对齐的 gps 点，这个数据必须要是绝对精准的，而且必须在这条路径没有导航完之前这个 gps 数据点和 Nav2 全局地图的初始位姿 [0,0,0] 的绑定位姿关系和具体值要是被一直保存的，因为这个对于当前无人车位置的实时反馈校准至关重要
-   6. 因为无人车是通过 Nav2 的全局坐标系来进行全局的导航的，那么一旦这个全局坐标系与真实世界的物理坐标系产生了偏差，那么无人车的导航就不再和真实世界的物理特征吻合了
-   7. 那么这时候可以使用这样一种方法来进行全局坐标系实时位置的校准，利用 gps 的精准卫星数据
-   8. 首先我们必须先要先做一个假设，就是这个 gps 数据是绝对精准的，不会产生偏差的，这样我们才能够开始进行推导，如果 gps 数据是绝对精准的，那么原始的 gps 的地图上面的被标定过的点的 gps 数值也都是绝对精准的，这就意味着我们的初始位姿的 gps 值和目标位姿的 gps 值都是绝对精准的，这样我们的全局路径的起点和终点就是完全确定的，当然这时候这条全局路径中间的所有航点的位置也都是完全确定且精准的，然后这时候就根据其实位姿的 gps 的数据值来反推所有航点和终点的位姿，这样我们就可以得到一个全局坐标系，然后这个全局坐标系就可以和 Nav2 的全局坐标系进行对齐了
-   9. 然后现在就来到了一个关键性的问题，就是无人车在 Nav2 的全局坐标系中的位置可能会产生漂移，这就会导致 Nav2 的全局坐标系和真实世界的物理坐标系产生偏差，这时候产生偏差的会导致无人车当前在全局坐标系中的坐标的 gps 反推值和无人车当前实际的 gps 值产生偏差，这就像你在开汽车，但是蒙上了这个汽车的所有的车窗和玻璃，只给你一块内置的显示屏，屏幕上有虚拟的路线，然后告诉你了一条路，也告诉你了该怎么开，你可以在汽车的内置屏幕上看到自己在这条路上开了多远，但是你不能确保你在真实世界中也开了这么远，这时候正确的做法就是至少隔一段时间把蒙着车的布拿掉然后看看自己当前屏幕上的位置是不是和自己真实世界上的位置是吻合的，这就相当于用当前车子自身位置的实时 gps 值基于全局地图的初始位姿和初始 gps 位置信息的绑定基准点来倒推当前 Nav2 全局地图的实时位姿
-   10. 目前这个想法还是很理想化的，因为 gps 本身就有误差，而且误差还不小，所以说这个方法只能作为一个参考，不能作为一个绝对精准的校准手段
-4. 目前就是两种方案，第一种改现有的，第二种拉库，第一种会有超大的工作量感觉
+1. Modified the FAST-LIO2 RViz configuration; point cloud images now display correctly
+2. Should we tightly couple GPS, point cloud, and IMU information? This needs further thought
+3. Recording some thoughts on coordinate frame position calibration for the new system architecture:
+   1. During long-distance one-way navigation with Nav2, the PGO node has difficulty triggering loop closure detection
+   2. PGO can only guarantee relative map consistency -- it can ensure the map is self-consistent and optimize the relative trajectory shape, but it **cannot guarantee that the map perfectly aligns with the real-world coordinate frame** -- it cannot determine the trajectory's absolute position
+   3. This problem becomes severe during ultra-long-distance one-way navigation
+   4. Therefore, an absolutely accurate data reference is needed. For long-distance navigation, this data is GPS
+   5. During long-distance navigation, the GPS start point of the route -- the GPS point aligned with Nav2's global map initial pose [0,0,0] -- must be absolutely precise. Before the route is completed, the binding relationship and specific values between this GPS point and Nav2's global map initial pose [0,0,0] must be persistently maintained, as this is critical for real-time position feedback calibration
+   6. Since the vehicle navigates through Nav2's global coordinate frame, any deviation between this global frame and the real-world physical frame means the vehicle's navigation no longer matches real-world physical features
+   7. At this point, the following method can be used for real-time global coordinate position calibration, leveraging precise GPS satellite data
+   8. First, we must make an assumption: the GPS data is absolutely precise with no error. Only then can we begin the derivation. If GPS data is perfectly accurate, then all marked points on the original GPS map have perfectly accurate GPS values. This means our initial pose GPS value and target pose GPS value are both perfectly accurate, making the global path's start and end points fully determined. At this point, all intermediate waypoints along the global path are also fully determined and precise. Then, based on the initial pose GPS value, the poses of all waypoints and the endpoint are back-calculated, yielding a global coordinate frame that can be aligned with Nav2's global frame.
+   9. Now comes a critical issue: the vehicle's position in Nav2's global frame may drift, causing Nav2's global frame to deviate from the real-world physical frame. This drift means the GPS back-calculated value from the vehicle's current global-frame coordinates differs from the vehicle's actual GPS value. Think of it like driving a car with all windows covered, given only a built-in screen showing a virtual route -- you are told the path and how to drive. You can see on the screen how far you have driven along the route, but you cannot be sure you have driven that far in the real world. The correct approach is to periodically uncover the car to check whether your screen position matches your real-world position -- this is equivalent to using the vehicle's real-time GPS value, referenced against the binding anchor point between the global map's initial pose and initial GPS position, to back-calculate the current real-time pose on Nav2's global map.
+   10. This idea is still quite idealistic, because GPS itself has non-trivial error. Therefore this method can only serve as a reference, not as an absolutely precise calibration means.
+4. Currently there are two approaches: first, modify the existing system; second, pull in an external library. The first approach would involve a very large workload.
 
 ## 2025.11.28
-1. 学习 odom 数据的计算
-2. 总结出了目前最关键的融合算法的思路
-3. Rviz 中的 Decay time 决定了你能看到怎么样的地图，这个值设的越大视觉叠加效果越好
-4. fastlio2 中的 ikd-tree 保存着局部的点云数据，用于 IESKF 点云匹配，滑动窗口机制，跟随机器人移动
-5. fastlio2 的 body_cloud 和 world_cloud 的唯一差别就是各自的坐标系不一样
-6. 目前的 SLAM 增量式地图不是 fastlio2 的 world_cloud 构建的，而是 pgo 节点中一个名称叫 m_key_poses[] 的关键帧列表构建的，faslio2 节点的 world_cloud 只给 rviz 做了可视化的操作
+1. Studied odom data computation
+2. Summarized the most critical fusion algorithm approach so far
+3. The Decay Time parameter in RViz determines what the map looks like; a larger value produces a better visual stacking effect
+4. The ikd-tree in FAST-LIO2 stores local point cloud data for IESKF point cloud matching; uses a sliding window mechanism that follows robot movement
+5. The only difference between FAST-LIO2's body_cloud and world_cloud is their respective coordinate frames
+6. The current SLAM incremental map is not built from FAST-LIO2's world_cloud, but from the keyframe list called m_key_poses[] in the PGO node. FAST-LIO2's world_cloud only serves RViz visualization
 
 ## 2025.11.30
-1. 长距离单向导航时，PGO 没法触发回环，漂移无法被修正
-2. 回环把地图拉正的时候是不会考虑地图的真实物理场景的，就在这个时候构建的地图有可能会被拉偏一点，从而和物理地图产生偏差，整条轨迹可能整体偏移或旋转
-3. 回环让地图"闭合"了，但"闭合"的方式不一定和真实物理场景完全吻，误差被分摊，地图可能整体有微小的形变
-4. 完成了 fastlio2 和 pgo 节点算法的所有算法逻辑解析
-5. 完成了三融合算法的 gps 部分的部分算法逻辑链路搭建
+1. During long-distance one-way navigation, PGO cannot trigger loop closure, so drift cannot be corrected
+2. When loop closure straightens the map, it does not consider the actual physical scene. At this point, the constructed map may be pulled slightly off, deviating from the physical map -- the entire trajectory may shift or rotate as a whole
+3. Loop closure makes the map "close," but the way it closes does not necessarily perfectly match the real physical scene. Error is distributed across the map, which may have slight overall deformation
+4. Completed the full algorithm logic analysis for the FAST-LIO2 and PGO node algorithms
+5. Completed partial algorithm logic chain construction for the GPS portion of the three-way fusion algorithm
 
 ## 2025.12.01
-1. pgo 算法理解纠正：所有的关键帧始终都是用一个 vector 列表 m_key_poses[] 来保存的，这个列表保存了所有关键帧的位姿信息，新接收到了关键帧就往里面 push
-2. pgo 的 kdtree 里面只保存了位置信息，连姿态信息都没有，这个数据结构的意义就是用来搜索附近的历史关键帧的
-3. GPS Factor 约束的是：关键帧节点的 (x, y, z) 位置，目前 pgo 用来触发 GTSAM 优化的是只有当回环触发的时候才会使用
+1. PGO algorithm understanding correction: all keyframes are always stored in a vector list m_key_poses[]; this list stores all keyframes' pose information, with new keyframes pushed as they are received
+2. The PGO KdTree only stores position information (not even orientation). This data structure's purpose is solely to search for nearby historical keyframes
+3. GPS Factor constrains: keyframe node (x, y, z) position. Currently, PGO triggers GTSAM optimization only when loop closure is detected

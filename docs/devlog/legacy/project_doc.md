@@ -1,212 +1,212 @@
-# 项目开发备忘
+# Project Development Memo
 
-## 开发板块
+## Development Backlog
 
-### 最高优先级（需要立马解决的问题，对系统运行有直接影响）
+### Highest Priority (Issues requiring immediate resolution, directly impacting system operation)
 
-### 中等优先级（短时间内需要解决，对系统运行无直接影响）
+### Medium Priority (To be resolved in the short term, no direct impact on system operation)
 
-### 低优先级（解决了更优，不解决亦可）
+### Low Priority (Nice to have, not essential)
 
-## 杂项
-1. ps2 遥控器电池是 7 号电池
-2. 看代码不要优先去看数学原理，看懂代码的整体运行逻辑之后如果有必要的话再去看数学原理
-3. 开发中不论遇到什么问题（不论是大问题还是小问题）请一定记录在《***开发中遇到的问题与解决方案***》文档中，记录格式详见该文档内容
-4. 重启系统了之后记得打开网口
-5. 非必要请尽量不要再去掀开车辆顶层的绿盖子了，在当前排线没有完全安全的情况下少去做干扰，不然到时候传感器哪里连接又出问题就麻烦了
-6. Log 文件中的时间戳请统一使用 ROS 系统时间戳，时间格式为纳秒格式
-7. rviz 配置由 rviz 文档中的参数来决定，如 pgo.rviz
-8. 改动 ROS 包中的文件之后要相对应的来改动该包的 Cmake 文件，并确保 Cmake 文件中添加了该包的依赖
-9. -b humble 克隆 humble 分支，请确保你克隆的代码仓都是 humble 分支
+## Miscellaneous
+1. The PS2 controller uses AAA batteries
+2. When reading code, do not prioritize understanding the math first; understand the overall code logic first, then study the math if necessary
+3. Record every problem encountered during development (whether major or minor) in the ***Problems and Solutions During Development*** document; see that document for the recording format
+4. Remember to enable the network port after rebooting the system
+5. Avoid lifting the green cover on top of the vehicle unless absolutely necessary. Given that the ribbon cables are not fully secured, minimize interference -- otherwise sensor connection issues will be a hassle
+6. Timestamps in log files should uniformly use ROS system timestamps in nanosecond format
+7. RViz configuration is determined by the parameters in the RViz config files, e.g., pgo.rviz
+8. After modifying files in a ROS package, update the corresponding CMakeLists.txt file accordingly and ensure the package dependencies are included
+9. Use `-b humble` to clone the humble branch; make sure all cloned repositories are on the humble branch
 10. pcl_viewer -bc 1,1,1 -ps 3 "/home/jetson/2025_FYP/all_kind_output_file/Other_File/SLAM_saved_MAPs/map.pcd"
 
-## ROS2 基本功
-1. ROS2 的 topic 对接的时候需要确认三个东西是一致的，第一个是消息格式，第二个是数据内容的语义，第三个是 QoS 的策略
-2. 使用 --symlink-install 来编译会保证之后在改动源代码的时候可以直接将源代码复制到 install 文件夹，就不用再复制到 install 了，这样会快很多
-3. SDK 是 software development kit（软件开发包）的缩写，是开发特定平台/服务所需要的全套工具的集合
+## ROS2 Fundamentals
+1. When connecting ROS2 topics, three things must be verified to match: first, the message type; second, the data content semantics; third, the QoS policy
+2. Using `--symlink-install` during compilation ensures that subsequent source code changes are directly symlinked to the install folder, eliminating the need to copy to install again -- this is much faster
+3. SDK stands for Software Development Kit -- a complete collection of tools needed to develop for a specific platform/service
 
-## 备忘和 log 书写
-1. log 中可以记录任何信息，包括问题、代办和任何想法
-2. log 中记录的问题解决了之后请总结该问题和解决方法并在备忘中记录下来
+## Memo and Log Writing
+1. Logs can record any information, including problems, to-do items, and any thoughts
+2. After a problem recorded in the log is resolved, summarize the problem and solution and record them in the memo
 
-## AI agent 使用
-1. 请妥善保管每一个与 AI agent 的聊天记录，每个聊天记录就是一个工作情景
+## AI Agent Usage
+1. Properly maintain every chat record with AI agents; each chat record represents a work context
 
-## 传感器调试
-1. 所有的传感器运行指令请查阅 cmd_collection.md 文件
-2. 传感器的日志名称规范请参考 serial_twistctl_node 的第 55 - 63 行
-3. 其他的我暂时也不想想了，准则请参考下方《代码书写与改动》module
+## Sensor Debugging
+1. For all sensor operation commands, refer to the cmd_collection.md file
+2. For sensor log naming conventions, refer to lines 55-63 of serial_twistctl_node
+3. I cannot think of anything else for now; refer to the "Code Writing and Modification" section below for guidelines
 
-## 代码书写与改动
-1. 首先不论你怎么改代码，请记住一点，不要在你不知道原本代码的本身逻辑的情况下让 AI 直接在你的文件中改动，这样对于项目的代码管理和你自己的代码理解都是极其不好的
-2. 代码上注释 AI 提示词：帮我给这个文件重新上注释 每行代码都要详细用中文注释 然后删除原本所有的注释 最重要的一点 不要改动我的任何原本的代码内容和代码结构 然后注释添加到每行代码的上面一行 不要和代码同一行 最后帮我把这个文件里面的的代码空行和代码缩进规范化
-3. 对于算法的使用，首先要明白，你自己在写个东西之前先去看看有没有开源的能直接用的
-4. 代码中写注释的时候 ***不要用*** 多行注释，用单行注释！！！！！！不然到时候编译报错你就老实了
-5. 当改动一个文件的代码会对整体的系统运行造成影响的时候，请务必先做一份代码备份然后再在新的文件中进行改动
-6. 在做关键性代码改动的时候请按照格式标上注释，注释的格式内容为 1. 原因 2. 内容 3. 影响，请务必在写代码的时候遵守这个框架，如果有暂时不知道该填的内容，请打 # 占位，当然，如果你在改代码之前都没有想好这三点，那么你也没有必要去改动
-7. 如果要使用 AI agent 帮你改代码，请你在 AI 改动好之后注释清楚，这里由 <哪个 AI 模型> 进行了改动
-8. 要进行批量重复性的代码改动的时候最好给 AI agent 搭建工作流，描述详细之后就可以在人工监督下进行改动了
-9. 请妥善保管每一个 copilot 对话，建议手动命名
+## Code Writing and Modification
+1. First and foremost, regardless of how you modify code, remember: never let AI make changes directly in your files without understanding the original code logic yourself. This is extremely bad for project code management and your own code comprehension.
+2. AI prompt for code commenting: "Re-comment this entire file. Add detailed Chinese comments for every line of code. Delete all existing comments. Most importantly, do not modify any of my original code content or structure. Place comments on the line above each code line, not on the same line. Finally, normalize code blank lines and indentation in this file."
+3. Regarding algorithm usage: first understand that before writing something yourself, check whether there is an open-source solution you can use directly
+4. When writing comments in code, ***do not use*** multi-line comments -- use single-line comments!!! Otherwise you will regret it when compilation errors arise
+5. When modifying code that would impact overall system operation, always make a backup first, then make changes in the new file
+6. When making critical code changes, annotate them according to the following format: 1. Reason 2. Content 3. Impact. Follow this framework when writing code. If you do not know what to fill in temporarily, use # as a placeholder. Of course, if you have not thought through these three points before modifying code, there is no need to make the change.
+7. If using an AI agent to modify code, clearly annotate what was changed by <which AI model> after the modification
+8. When making batch repetitive code changes, it is best to build a workflow for the AI agent; after providing detailed descriptions, the changes can proceed under human supervision
+9. Properly maintain every Copilot conversation; manual naming is recommended
 
-## 如何开大组会
-1. 组会汇报之前要先起草一下草案，别慌着直接去说
-2. 大组会开始之前请务必先开启录音，不然百分之一百记不住说了什么东西
+## How to Run Group Meetings
+1. Draft an outline before presenting at group meetings; do not rush in to speak unprepared
+2. Always start recording before the group meeting begins -- you will absolutely not remember what was said otherwise
 
-## 如何小组会
-1. 我也不知道，好久没讨论过了
+## How to Run Sub-group Meetings
+1. I do not know either; it has been a while since we had one
 
-## GitHub 代码推送
-1. 请在晚上工作结束之前把代码推送到 GitHub 上面，一定记得，不然哪天一到工作室发现板子暴毙了代码没了就老实了
-2. 请不要对所有的 add 都做统一 comment，请仔细检查每一个/多个文件的改动内容然后再来写 comment，请不要偷懒谢谢
-3. GitHub 上传代码时的 comment 统一用英文进行描述
+## GitHub Code Pushing
+1. Push code to GitHub before finishing work for the night. Remember this without fail -- otherwise the day you arrive at the lab and find the board dead with all code lost, you will regret it
+2. Do not use a blanket commit message for all additions. Carefully review the changes in each file/group of files before writing the commit message. Do not be lazy.
+3. GitHub commit messages should be written uniformly in English
 
-## 车辆参数调节
-1. 调整参数之前请务必确认自己知道为什么要调节这个参数
-2. 对少量参数进行调节的时候，请注释掉原本的参数设定而不要直接删除整行代码
-3. 对大量参数进行调节的时候，请先对原本的参数文件进行备份后在新文件中进行调节
+## Vehicle Parameter Tuning
+1. Before adjusting parameters, make sure you understand why the parameter needs adjustment
+2. When adjusting a small number of parameters, comment out the original parameter settings rather than deleting the entire line
+3. When adjusting a large number of parameters, make a backup of the original parameter file first, then make adjustments in the new file
 
-## 车辆外出调试
-1. 小车 ps2 手柄使用方式：1. 左边十字键上下是调节小车车轮转速的 2. 左摇杆进行线速度映射 3. 右摇杆进行角速度映射 4. L2 键切换到上位机串口控制模式 5. R2 键切换到手柄控制模式 6. Y 键使能电机，按下之后不能用手推动小车进行运动 7. X 键关闭电机，按下之后小车进入自由滑行状态，可以用手推动 8. B 键紧急停止小车，按下之后小车会立即停止（***目前请不要使用，该按键会让小车车轮进行严重倒转***），然后在使用 L2 键切换到上位机串口模式之后仍然需要按动 Y 键来给小车的电机使能，不然下层板无法收到来自上层板的速度指令，同理，这时候的 X 键和 B 键同样生效，因为手柄对于小车控制有着最高的优先控制权
-2. 车自动驾驶的时候需要一个人始终准备按下手柄的 x 键，以准备随时急停
-3. 情急时需要踢下车身上的红色急停按钮，这个按钮按下之后会一直保持按下状态，需要手动旋转释放之后系统才能再次上电
-4. 请在发布第一条路径之前将车辆进入串口遥控模式，然后打开电机使能，不然你就等着车辆原地旋转起飞吧
-5. 请在 rviz2 中发布目标点之前确认 fix_framed 的选择为 map，而不是 odom 或者 base_link，选择 map 的原因为这时候你去设定目标点就是针对无人车的全局地图去设定的目标点，这时候车才会朝你想走的地方去走，总结来说就是这个 fix_framed 的参数就是你目标点设定的基准坐标系
+## Vehicle Field Testing
+1. PS2 controller usage for the car: 1. D-pad up/down adjusts wheel speed 2. Left stick maps to linear velocity 3. Right stick maps to angular velocity 4. L2 switches to onboard serial control mode 5. R2 switches to controller mode 6. Y button enables motors -- after pressing, the car cannot be pushed by hand 7. X button disables motors -- after pressing, the car enters free-rolling state and can be pushed 8. B button emergency stops the car (***do not use currently -- this button causes severe wheel reversal***). After switching to onboard serial mode with L2, you still need to press Y to enable the motors, otherwise the lower-level board cannot receive speed commands from the upper-level board. Similarly, X and B buttons still function in this mode, as the controller has the highest control priority over the car.
+2. During autonomous driving, one person must always be ready to press the X button on the controller for immediate emergency stop
+3. In emergencies, kick the red emergency stop button on the car body. This button stays pressed once activated and requires manual twist-release before the system can power up again
+4. Before publishing the first path, switch the vehicle to serial remote control mode and enable the motors -- otherwise the vehicle will spin in place
+5. Before publishing a goal point in RViz2, confirm that fix_frame is set to map, not odom or base_link. Selecting map means goal points are set relative to the vehicle's global map, so the car will drive to where you intend. In summary, the fix_frame parameter is the reference coordinate frame for goal point setting.
 
-## 工作空间使用与文件保存
-1. 顶层启动的 launch 文件请统一保存在 ros2_launch_file 库中
-2. 任何 log 文件请在 All_Log 目录下单开一个目录进行保存，单开的目录请简单描述这个 log 的内容，如：reader_log，log 文件连接到了 HuggingFace 的 Git 仓库，请保证及时推送
-3. 任何描述性文字文件（包括但不限于 .md、.txt、.csv、......）请统一保存在 text_file 中，除非这个文件会直接对节点的源代码运行造成直接影响，这种情况可以保存在节点包内
-4. 任何不是 log 文件的文件请统一保存在 Other_File 中，这个目录是连接了 GitHub 的 Git 仓库的，请保证及时推送
-5. 任何没有想好如何分类的文件请统一存放至这个路径下面 /home/jetson/2025_FYP/all_kind_output_file/thing_unknown
+## Workspace Usage and File Storage
+1. Top-level launch files should be stored uniformly in the ros2_launch_file repository
+2. All log files should be saved in a dedicated subdirectory under the All_Log directory. Name the subdirectory to briefly describe the log content, e.g., reader_log. The log file directory is linked to a HuggingFace Git repository; ensure timely pushes.
+3. All descriptive text files (including but not limited to .md, .txt, .csv, ...) should be stored uniformly in text_file, unless the file directly impacts node source code execution, in which case it may be stored within the node package
+4. All non-log files should be stored uniformly in Other_File. This directory is linked to a GitHub Git repository; ensure timely pushes.
+5. Any files without a clear category should be stored at: /home/jetson/2025_FYP/all_kind_output_file/thing_unknown
 
-## 工作室使用准则
-1. 离开工作室之前请务必检查确认小车的充电电源是否关闭和小车的电池是否关闭
-2. 请在一天工作结束之前记录当天的工作日志到项目开发日志中，最晚 21:15 必须要开始写
+## Lab Usage Guidelines
+1. Before leaving the lab, always check that the car's charging power supply is off and the car's battery is disconnected
+2. Record the day's work log in the project development log before the end of the workday; start writing by 21:15 at the latest
 
-## Linux 系统使用
-1. ssh 密码：Kk761201
-2. 频繁使用的控制台代码请查找 /home/jetson/2025_FYP/all_kind_output_file/Other_File/text_file/cmd_collection.md 文件
-3. 如果要不在局域网内连接 ssh，请在电脑上下载 tailscale，URL：https://tailscale.com/download
-4. 下载后之后请登录，账号请联系 Kevin
-5. 测试非局域网连通性，ping 100.97.227.24，能 ping 通说明就可以远程 ssh 了，然后 vscode 中 ssh jetson@100.97.227.24
+## Linux System Usage
+1. SSH password: Kk761201
+2. For frequently used console commands, refer to the file /home/jetson/2025_FYP/all_kind_output_file/Other_File/text_file/cmd_collection.md
+3. To connect via SSH outside the LAN, download Tailscale on your computer. URL: https://tailscale.com/download
+4. After downloading, log in. Contact Kevin for the account credentials
+5. Test non-LAN connectivity by pinging 100.97.227.24. If the ping succeeds, remote SSH is available. Then in VS Code: ssh jetson@100.97.227.24
 
-## Linux 翻墙
-1. 
+## Linux VPN/Proxy Setup
+1.
 
-## 控制台命令
+## Console Commands
 
-### 杂项
+### Miscellaneous
 1. pkill -f ros2
 2. ros2 daemon stop && sleep 2 && ros2 daemon start && sleep 2
 3. ros2 daemon status
 4. cd /home/jetson/2025_FYP/car_ws && colcon build --packages-select <pkg_name> --symlink-install
 5. cd /home/jetson/2025_FYP/car_ws && source install/setup.bash && rviz2
-6. cd /home/jetson/2025_FYP/car_ws && colcon build --symlink-install（编译整个工作空间）
-7. cat /etc/nv_tegra_release（检查系统 jetpack 版本）
-8. cd /home/jetson/2025_FYP/software_DL/'Clash for Windows-0.20.39-arm64-linux'（前往 clash 下载目录）
-9. deactivate（用来退出虚拟环境）
-10. cd /home/jetson && cat /proc/device-tree/model（检查开发板型号）
+6. cd /home/jetson/2025_FYP/car_ws && colcon build --symlink-install (compile entire workspace)
+7. cat /etc/nv_tegra_release (check system JetPack version)
+8. cd /home/jetson/2025_FYP/software_DL/'Clash for Windows-0.20.39-arm64-linux' (navigate to Clash download directory)
+9. deactivate (exit virtual environment)
+10. cd /home/jetson && cat /proc/device-tree/model (check development board model)
 
-# 项目开发日志
+# Project Development Log
 
 ## 2025.11.10
-1. 为整个项目撰写了规范的开发文档和开发备忘
+1. Wrote standardized development documentation and development memos for the entire project
 
 ## 2025.11.11
-1. 车辆目前还是出现自身转动的时候自己构建的 map 随着其转动的情况，这个是不应该发生的，问题应该是出在 pgo 和 IMU 这两个问题上，也就是说这个车现在的 SLAM 功能有问题，需要进行深究，这个问题很关键，如果不能正常 SLAM，车辆压根就不能正常运行
+1. The vehicle still exhibits the issue where the constructed map rotates along with the vehicle during self-rotation. This should not happen. The problem likely lies with PGO and IMU -- meaning the vehicle's SLAM functionality is broken and requires in-depth investigation. This issue is critical: without functional SLAM, the vehicle cannot operate at all.
 
 ## 2025.11.12
-1. 已查明为什么车辆目前还是出现自身转动的时候自己构建的 map 随着其转动的情况的问题，为 rviz2 中 fix_framed 的参数设定的问题
+1. Identified the cause of the map rotating with the vehicle during self-rotation: it was a fix_frame parameter setting issue in RViz2
 
 ## 2025.11.13
-1. 车辆硬件排线可能不牢固，需要对排线进行检查
-2. 需要对整个系统中的每一个运行部件的传感器时间戳进行对齐
-3. 参数调整太频繁了，需要新建一个 yaml 文件来存储所有的 Nav2 之外的节点的有关参数调整（这个最好晚一点再做，目前还是对哪些参数需要调整不太清晰）
-4. 项目开发准则和项目总 log 文件已转移到 car_ws 目录下
-5. 下位机的 PID 调速存在问题，电机急停按键触发之后会让小车车轮进行严重倒转
-6. 更新了项目描述性文件的分类方式并总结了目前的项目文件
+1. Vehicle hardware ribbon cables may be loose; cables need inspection
+2. Need to align sensor timestamps across all running components in the entire system
+3. Parameter adjustments are too frequent; need to create a new YAML file to store all tunable parameters for non-Nav2 nodes (better to do this later, as it is still unclear which parameters need tuning)
+4. Project development guidelines and master log files have been moved to the car_ws directory
+5. The lower-level board's PID speed control has an issue: the emergency stop button trigger causes severe wheel reversal
+6. Updated the classification scheme for project descriptive files and summarized current project files
 
 ## 2025.11.19
-1. 今天没干活，要写课内作业，再不写就完蛋了
+1. Did not work today; need to complete coursework assignments -- running out of time
 
 ## 2025.11.20
-1. 写作业，再不写要没分了
+1. Doing assignments; will lose marks if not submitted
 
 ## 2025.11.21
-1. 继续写作业
+1. Continuing assignments
 
 ## 2025.11.25
-1. 重新检查了控制台的工作空间配置
-2. 在包内做更改之后需要对 cmake 文件来进行改动，不然不能正确编译
-3. 思考出了重要的开发思路，从这里开始记录
-4. 首先，全局地图是一个 gps 地图，然后一段全局路径是从一个 gps 点到另一个 gps 点
-5. 此时这种全局路径一般比较远，所以需要分割成几个航点
-6. 这几个航点的原始数据就是 gps 数据，这时候全局的路径就由几个 gps 点组成了，其中包含起点，多个中间航点，和一个终点
-7. 这些所有的 gps 点按顺序存入一个数据结构来，合适的数据结构就可以了，这样子在每个航点有了特定的 index 的情况下就可以完美地描绘出一条合理的全局路径
-8. 但是请注意，这些只是 gps 点，gps 点的数据是不能直接用作 Nav2 的目标点数据的，需要转化成 Nav2 的目标点格式的数据，Nav2 的目标点格式参考 Nav2_doc.md 备忘
-9. 所以这时候就涉及一个目标点数据的转换 这个东西相当关键，直接涉及到这个整套导航系统能不能成功部署
-10. 这时候有很重要的两个转化，第一个是要用初始的 gps 位置来转化的到 Nav2 的初始位姿，第二个就是要用目标点的 gps 位置来转化得到 Nav2 的目标位姿，没有这两个位姿 Nav2 就不能够从起点导航到终点
-11. 我突然想到了我操，这个转化可以这样写，当 Nav2 上电的时候把自身的全局地图的初始位姿（也就是 [0,0,?] 差不多是这么个玩也打个例子）反馈给上层 gps 全局规划系统，然后 gps 全局规划系统将当前的 gps 位置和当前 Nav2 反馈回来的初始位姿信息进行绑定（x，y 分别和经度和纬度进行绑定，假设），然后 gps 全局规划系统基于 Nav2 初始位姿的绑定 gps 初始位置点的信息将下一航点的 gps 信息，反向推算出 Nav2 的目标位姿，然后依次类推推算出一条路径中所有的 gps 航点所对应的 Nav2 的目标位姿，然后相对因的也按照对应顺序将这些 Nav2 的目标位姿信息点存储到一个数据结构中，然后依次发送给 Nav2 进行导航
-12. 针对这个系统，Nav2 只需要进行从初始位姿到目标位姿的导航就可以了，也就是是 **Nav2 范畴下的全局地图就是整个系统框架下的局部地图导航**
-13. 当然有一个问题必须要进行讨论，就是如果整个系统框架下的全局路径过长，这样子 Nav2 完成从一个航点到另一个航点的导航之后可能需要刷新自身的全局地图位姿，也就是重新初始化位姿，抛弃自身之前存储的全局地图坐标系，重新在当前航点初始化自身的位姿为 [0,0,?]，然后重新开始新一次的全局地图存储，这样有利于内存刷新，不会导致内存爆炸，如果要进行这个操作那后面的所有的 gps 航点的对应的 Nav2 的目标位姿又需要进行重新的推算，或者说就是每次只推算下一个航点的对应 Nav2 的目标位姿，这样貌似也可行
-14. 当导航到一个航点之后上层的 gps 全局导航系统再给 Nav2 发送下一个航点对应的目标位姿，这样依次类推就可以导航完整个全局 gps 路径
-15. 好了说回 Nav2，那么现在 Nav2 就需要只针对点到点的导航了，那么现在 Nav2 就只需要启用一个代价地图来进行导航了
-16. 我们现在进行一个思考，就是 Nav2 该如何规划这两个点之间的自身的 Nav2 全局路径，也就是两个 gps 航点之间的，我们可以假设一下，如果两个 gps 航点之间什么都没有，那么这条路径就是一条直线，因为两点之间直线最短，当代价地图上出现了障碍物的时候，这条路径就需要去绕开障碍物，所以这时候我们就可以不用再考虑这个障碍物是动态的还是静态的，因为这个路径是在高频刷新的，这个路径就是要保证小车可以安全的绕开所有的障碍物，至此所有的理论都形成了闭环
-17. 当然 Nav2 的原生代码是不支持仅仅通过一个代价地图来进行导航的，所以这里涉及相当大的工作量，一定会涉及源码级的改动
-18. 该思路以由 grok 验证可行，并以生成详细的 markdown 文档
+1. Re-checked the console workspace configuration
+2. After making changes within a package, the CMakeLists.txt file must be updated accordingly; otherwise compilation will fail
+3. Came up with an important development concept; recording from here onward
+4. First, the global map is a GPS map, and a global path segment goes from one GPS point to another
+5. Such global paths are generally long and need to be divided into multiple waypoints
+6. The raw data for these waypoints is GPS data. The global path is then composed of several GPS points: a start point, multiple intermediate waypoints, and an endpoint
+7. All these GPS points are stored in order in a suitable data structure. With each waypoint having a specific index, a reasonable global path can be perfectly described
+8. However, note that these are just GPS points. GPS point data cannot be directly used as Nav2 goal point data -- it needs to be converted to Nav2's goal point format. Refer to Nav2_doc.md for Nav2's goal point format
+9. This involves a goal point data conversion that is absolutely critical -- it directly determines whether the entire navigation system can be successfully deployed
+10. There are two important conversions: first, using the initial GPS position to derive Nav2's initial pose; second, using the target GPS position to derive Nav2's target pose. Without these two poses, Nav2 cannot navigate from start to finish
+11. I suddenly realized -- the conversion can work like this: when Nav2 starts up, it feeds back its global map initial pose (roughly [0,0,?] as an example) to the upper-layer GPS global planning system. The GPS global planning system then binds the current GPS position to the Nav2 initial pose feedback (binding x,y to longitude and latitude respectively, for example). Then the GPS global planning system back-calculates the Nav2 target pose for the next waypoint based on the binding between Nav2's initial pose and its bound GPS starting point. By extension, it derives the Nav2 target poses for all GPS waypoints along the route, stores them in a data structure in the corresponding order, and sends them to Nav2 sequentially for navigation
+12. Under this system, Nav2 only needs to navigate from initial pose to target pose -- meaning **Nav2-scoped global map navigation is effectively local map navigation within the overall system framework**
+13. Of course, there is an issue that must be discussed: if the overall system's global path is too long, Nav2 may need to reset its global map pose after completing navigation from one waypoint to the next -- re-initialize its pose, discard the previously stored global map coordinate frame, re-initialize its pose to [0,0,?] at the current waypoint, and begin new global map storage. This helps refresh memory and prevents memory overflow. If this operation is performed, all subsequent GPS waypoints' corresponding Nav2 target poses would need to be recalculated. Alternatively, computing only the next waypoint's Nav2 target pose each time seems viable too.
+14. After navigating to a waypoint, the upper-layer GPS global navigation system sends the next waypoint's corresponding target pose to Nav2. Repeating this process navigates the entire global GPS path.
+15. Returning to Nav2: it now only needs point-to-point navigation, meaning Nav2 only needs a single costmap for navigation.
+16. Let us consider how Nav2 should plan its own global path between two GPS waypoints. If there is nothing between them, the path is a straight line (shortest distance between two points). When obstacles appear on the costmap, the path needs to go around them. At this point, we no longer need to distinguish between dynamic and static obstacles, because the path is refreshed at high frequency -- it just needs to ensure the vehicle can safely avoid all obstacles. With this, all the theory forms a closed loop.
+17. Of course, Nav2's stock code does not support navigation with only a single costmap, so this involves significant work -- definitely requiring source-level modifications.
+18. This approach has been validated as feasible by Grok, which generated detailed markdown documentation
 
 ## 2025.11.26
-1. 可以尝试一次性把所有的 gps 航点都转化成 Nav2 的一个个航点，因为 Nav2 也是带有航点功能的，意味着可以在一条路径中插入多个航点，这样可以直接把 gps 的所有航点映射成 Nav2 的一一对应的航点，然后让 Nav2 直接走完一整条全局路径而非仅做航点到航点的导航
-2. 这个暂时还只是一个实验性的想法，如果能直接这样子那确实很好做，关键就在于怕如果直接把整条路径的全局导航塞入 Nav2 可能会导致内存爆炸
-3. 今天要做一个项目阶段性总结，做完之后要和各位老师预约开会时间
+1. Could try converting all GPS waypoints to Nav2 waypoints at once, since Nav2 has waypoint functionality -- meaning multiple waypoints can be inserted into a single path. This would directly map all GPS waypoints to one-to-one Nav2 waypoints, letting Nav2 traverse the entire global path rather than navigating only waypoint-to-waypoint
+2. This is still an experimental idea. If this works directly, it would be very simple. The concern is that feeding the entire global path into Nav2 might cause memory overflow
+3. Need to do a project milestone summary today, then schedule meetings with supervisors
 
-### 项目总结
-1. 当前系统框架下车辆如果长时间运行可能会出现当重新设定目标点之后车辆沿着路径运行到一半停止但是此时代价地图和全局规划路径仍然在更新
-   1. 改问题未解决，这个问题产生的频率不高，所以暂时没有去专门排查
-   2. 可能的原因，串口输出节点没有正常输出速度指令，或者是 Nav2 的速度平滑器节点或者控制器节点卡死但是地图层仍然在运行
-2. Nav2 的代价地图消散慢的情况，就是有时候会出现障碍物在代价地图上移动了但是障碍物之前的地方出现了残留的障碍代价区域，这部分应该按照理论上来讲是不应该出现残留的，应该立马转化为可行区域
-   1. 这个问题相当的麻烦，涉及的因素太多了，目前还不能保证百分之一百的代价地图可以进行精准地高频刷新
-   2. 从目前来讲这个问题可能涉及的因素有 fastlio2，pgo 和 Nav2 自身的代价地图节点的配置
-3. 全局地图滚动窗口导致地图丢失问题，这个问题目前来说已经不算是问题了，因为在新的系统框架里面就是要求 Nav2 进行这样一个配置
-4. gps 坐标到 Nav2 目标位姿的转换，这个问题相当关键，直接涉及到上层的全局导航系统能不能顺利接入 Nav2 的导航系统中
-   1. 这个可能需要重新设计一个转换节点，这部分工作量可能会很大
-5. Nav2 的倒车功能，之前尝试过开启 Nav2 的倒车行驶功能，但是开启之后 Nav2 有时候直接倾向于让车辆倒着行驶来跟踪路径，这是不合理的，开启倒车功能的目的是来解决车辆有时候行驶进入死胡同且原地转向困难的情况下必须要通过倒车来脱困的这个特殊场景
-   1. 目前的方案为暂时没有开启倒车功能，禁用了倒车，只允许 Nav2 来进行原地转向来进行路径的重新跟踪
-   2. 但是只用这个小车的倒车功能来进行脱困就会有很大的问题，因为这个小车进行自转的时候的旋转轨迹不是完美的圆形，这是因为这个小车在进行原地旋转的时候其的两侧轮胎不是均等出力，所以导致这个车在进行自转的时候其旋转中心不是两轮轮轴的中心投影，这种情况就会导致这个车在进行自转脱困的时候可能会刮蹭到两侧的障碍物
-   3. 这个需要进行很多次的调整可能才能做到合理的使用倒车
-6. 有时候代价地图会把天花板中的某些指示牌也识别成障碍物
-   1. 这个问题已经解决了，原因是 Nav2 中的点云处理的高度问题
-7. Nav2 中的速度平滑器（velocity_smoother）节点的闭环控制目前有点问题，尝试过将两种输入接入来进行对线速度和角速度的闭环控制，第一种输入就是 C 板的原始轮速计的反馈的线速度和角速度数据，这个接上之后小车大体是可以正常行驶的但是会颤颤巍巍的，但是有可能出现行驶了一段路之后突然就发生疯狂自转的现象，第二种就是 fastlio2 的里程计数据，这个数据按道理来说应该是很准确的，但是目前如果把 fastlio2 的输出接入闭环控制会导致车辆压根就不能正常行驶
-   1. 这个问题也需要时间来进行排查
-8. Nav2 原生不只是单代价地图来进行导航，需要进行特殊配置，可能会涉及相当大的改动工作量和参数调整
-   1. 这个问题相当麻烦，目前的情况是只需要使用全局地图的坐标系和 TF 链，但是不需要使用全局的代价地图和静态栅格地图来进行导航，这个需要特殊进行配置
-9. pgo 全局规划节点会出现消息队列满载问题，长时间运行会出现消息丢弃的问题，然后就会导致 TF 链断裂
-   1.  该问题暂时解决，通过将队列深度提升至 50 来解决，但是这样的代价就是会提升内存占用
-10. fastlio2 和 pgo 节点长时间运行之后内存占用会增加，但是增加的不明显，整套系统刚刚启动的时候内存占用在 5g 左右，运行 20 分钟之后提升至 7g
-    1.  可以对节点的源代码进行再次优化，添加内存实时释放机制
-11. SLAM_toolbox 内存严重溢出，在工作室外层走廊进行了手动建图，最后内存直接占满
-    1.  该问题还没进行详细分析
-12. 激光雷达数据退化问题，当激光雷达过于贴近墙面的时候会产生数据退化，这个对于狭窄过道的避障很致命
-    1.  能上 fastlivo2 就上 fastlivo2
-13. fastlio2 输出丢失会导致代价地图丢失，这个问题主要是有时候代价地图会直接消失，此时经过测试重新启动 fastlio2 节点是有效的
-14. 未找到这个车辆的 urdf 文件，没有这个文件就搭建不了仿真平台，调试的效率会下降，因为每次做一点调整就需要手动测试，而且目前场地也受限
-    1.  这个问题很关键，需要仿真测试平台来进行高效的车辆参数测试
-15. Nav2 的航点系统还没启用，需要开始开发了
-16. 需要一个新的板子来开发摄像头，最好的方式就是使用一个更好的开发板，实在不行就再拿一块一样的板子然后刷成 ROS1
+### Project Summary
+1. Under the current system framework, extended vehicle operation may result in the vehicle stopping mid-path after a new goal point is set, while the costmap and global planning path continue updating
+   1. Unresolved; this issue occurs infrequently, so no dedicated investigation has been conducted
+   2. Possible causes: serial output node not sending velocity commands properly, or Nav2's velocity smoother or controller node freezing while the map layer continues running
+2. Slow costmap dissipation: obstacle cost regions sometimes linger on the costmap after the obstacle has moved. These residual cost zones should theoretically disappear immediately and transition to traversable areas.
+   1. This problem is quite troublesome, involving too many factors. Currently cannot guarantee 100% accurate high-frequency costmap refresh.
+   2. Factors potentially involved: FAST-LIO2, PGO, and Nav2's own costmap node configuration
+3. Global map sliding window causing map loss: this is no longer considered an issue, as the new system framework requires Nav2 to be configured this way
+4. GPS coordinate to Nav2 target pose conversion: this is extremely critical -- directly determines whether the upper-layer global navigation system can interface with Nav2's navigation system
+   1. May require designing a new conversion node; this could involve significant work
+5. Nav2 reverse driving: previously attempted enabling Nav2's reverse driving feature, but after enabling it, Nav2 sometimes directly prefers driving the vehicle in reverse to track the path. This is unreasonable. The purpose of enabling reverse was to handle the special scenario where the vehicle enters a dead end and turning in place is difficult, requiring reverse to escape.
+   1. Current solution: reverse driving is disabled; Nav2 is only allowed to turn in place for path re-tracking
+   2. However, using only in-place rotation for escaping creates significant problems. The vehicle's rotation trajectory is not a perfect circle because the wheels do not produce equal force on both sides during in-place rotation, so the rotation center is not at the midpoint of the wheel axis projection. This could cause the vehicle to scrape obstacles on either side during in-place rotation escape maneuvers.
+   3. Many rounds of tuning may be needed to achieve reasonable reverse driving
+6. The costmap sometimes identifies certain signs on the ceiling as obstacles
+   1. This issue has been resolved; the cause was the point cloud processing height parameter in Nav2
+7. Nav2's velocity_smoother node closed-loop control currently has issues. Two input sources were tested for linear and angular velocity closed-loop control: first, raw wheel odometry feedback (linear and angular velocity data) from the C board -- the car mostly drives normally with this but is wobbly, and may suddenly spin wildly after driving for a while; second, FAST-LIO2 odometry data -- this should theoretically be very accurate, but currently connecting FAST-LIO2 output to closed-loop control prevents the vehicle from driving at all
+   1. This issue also requires time to investigate
+8. Nav2 does not natively support navigation with only a single costmap; special configuration is required, potentially involving significant modification work and parameter tuning
+   1. This is quite troublesome. The current situation requires only the global map's coordinate frame and TF chain, without needing the global costmap or static grid map for navigation -- this requires special configuration
+9. The PGO global planning node experiences message queue overflow during extended operation, causing message drops and subsequent TF chain breakage
+   1. Temporarily resolved by increasing queue depth to 50, at the cost of increased memory usage
+10. FAST-LIO2 and PGO node memory usage increases during extended operation, though not dramatically -- total system memory is around 5GB at startup, rising to 7GB after 20 minutes of operation
+    1. Node source code could be further optimized by adding real-time memory release mechanisms
+11. SLAM_toolbox severe memory overflow: manual mapping in the corridor outside the lab caused memory to fill completely
+    1. Detailed analysis has not yet been conducted
+12. LiDAR data degradation: when the LiDAR is too close to a wall, data degrades. This is critical for obstacle avoidance in narrow corridors.
+    1. Switch to FAST-LIVO2 if possible
+13. FAST-LIO2 output loss causes costmap loss. Sometimes the costmap disappears entirely; testing confirmed that restarting the FAST-LIO2 node resolves it
+14. No URDF file found for this vehicle. Without it, the simulation platform cannot be built, reducing debugging efficiency -- every small adjustment requires manual testing, and the current testing area is limited
+    1. This is a critical issue; a simulation testing platform is needed for efficient vehicle parameter testing
+15. Nav2's waypoint system has not been enabled yet; development needs to begin
+16. A new board is needed for camera development. Ideally a better development board; if not feasible, get another identical board and flash it with ROS1
 
-17. 针对目前的系统开发大致可以分成两大板块，第一就是【**车辆感知** + **Nav2 避障**】，第二部分就是【**上层 Gps 定位校准** + **全局 Gps 路径规划** + **Gps_to_Nav2 航点转换**】
-18. 目前还处于一个系统的搭建状态，个人的工作量确实必须要比较大，因为涉及到一个逻辑耦合的问题
-19. 可以使用仿真平台来进行进行车辆算法的仿真
+17. Current system development can be roughly divided into two major tracks: first, [**Vehicle Perception** + **Nav2 Obstacle Avoidance**]; second, [**Upper-layer GPS Position Calibration** + **Global GPS Path Planning** + **GPS-to-Nav2 Waypoint Conversion**]
+18. Still in the system building phase; personal workload must be large due to logical coupling issues
+19. A simulation platform can be used for vehicle algorithm simulation
 
 ## 2025.11.27
-1. 接下来的开发需要进行详细的模块话，特别是写日志的时候，这样就很清楚每个细微模块的开发进度如何了
-2. 下午记得问以下 poster 的事情，然后报销的事情
-3. 最好是一个特定的开发场景使用一个 agent 对话
-4. 然后每个开发场景基本就是等效成一个特定的开发问题，然后需要记录在当前 doc 文件的备忘中的一个特定栏中，这里面就记录所有遇到的问题，然后在写日志的时候最好是每一天的日志的内容就按照解决问题的格式来写，就是一天日志的内容也分成问题来写
-5. Global_cognition_and_Navigation_layer 库已克隆到 src 目录下，已新增 Global_doc.md 开发文件
-6. 开了一次大组会然后正在进行组会总结
+1. Going forward, development needs to be modular in detail, especially when writing logs, so that each fine-grained module's development progress is clearly tracked
+2. Remember to ask about the poster and reimbursement matters this afternoon
+3. Ideally use one agent conversation per specific development scenario
+4. Each development scenario essentially corresponds to a specific development problem, which should be recorded in a dedicated section of the current doc file's memo. Record all encountered problems there. When writing daily logs, organize each day's content by problem -- write daily logs in a problem-solving format.
+5. The Global_cognition_and_Navigation_layer repository has been cloned to the src directory; Global_doc.md development file has been created
+6. Had a group meeting and currently working on the meeting summary
 
 ## 2025.12.1
-1. 在每个 doc 文件中的开发板块中需要记录非常详细的开发问题
-2. 项目开发板块已分类至最高优先级、中等优先级和低优先级三大类
-3. Kevin 出现低烧状态，开发效率下降
+1. The development backlog in each doc file needs to record very detailed development issues
+2. Project development backlog has been categorized into three priorities: highest, medium, and low
+3. Kevin has a low-grade fever; development efficiency is reduced
