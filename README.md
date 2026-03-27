@@ -44,7 +44,8 @@ src/
 ├── bringup/          launch files, Nav2 configs, maps, RViz assets
 └── third_party/      vendored dependencies from dependencies.repos
 
-docs/                 Active engineering documentation
+docs-CN/              Active engineering documentation (Chinese)
+docs-EN/              Active engineering documentation (English)
 scripts/              Runtime helpers and data-collection tools
 ```
 
@@ -63,16 +64,20 @@ All four `make launch-*` targets go through `scripts/launch_with_logs.sh`, which
 
 ## Documentation
 
-The active project docs live under [`docs/`](docs/index.md).
+Project docs are maintained in two languages:
+- **Chinese**: [`docs-CN/`](docs-CN/index.md)
+- **English**: [`docs-EN/`](docs-EN/index.md)
 
-- [Documentation Index](docs/index.md)
-- [System Architecture](docs/architecture.md)
-- [Command Reference](docs/commands.md)
-- [Development Conventions](docs/conventions.md)
-- [Workflow Guide](docs/workflow.md)
-- [Known Issues](docs/known_issues.md)
-- [PGO Notes](docs/knowledge/pgo.md)
-- [GPS Planning Notes](docs/knowledge/gps_planning.md)
+Both directories have identical structure. When updating docs, update both.
+
+- [Documentation Index](docs-EN/index.md)
+- [System Architecture](docs-EN/architecture.md)
+- [Command Reference](docs-EN/commands.md)
+- [Development Conventions](docs-EN/conventions.md)
+- [Workflow Guide](docs-EN/workflow.md)
+- [Known Issues](docs-EN/known_issues.md)
+- [PGO Notes](docs-EN/knowledge/pgo.md)
+- [GPS Planning Notes](docs-EN/knowledge/gps_planning.md)
 
 ## Development Workflow
 
@@ -82,9 +87,9 @@ The active project docs live under [`docs/`](docs/index.md).
 4. `source install/setup.bash` after every build.
 5. Push the branch and open a PR to `main`.
 6. Merge through PR, then sync Jetson back to `main`.
-7. Update affected docs before the session is considered complete.
+7. Update affected docs in **both** `docs-CN/` and `docs-EN/` before the session is considered complete.
 
-See [`docs/workflow.md`](docs/workflow.md) for the full executor workflow and documentation trigger rules.
+See [`docs-EN/workflow.md`](docs-EN/workflow.md) for the full executor workflow and documentation trigger rules.
 
 ## Hardware Snapshot
 

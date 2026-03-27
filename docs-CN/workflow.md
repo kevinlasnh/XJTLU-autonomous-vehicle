@@ -1,0 +1,187 @@
+# 项目工作流指南
+
+> 当前标准: 代码与文档改动都走分支 + PR，`main` 只接收已验证结果。
+
+## 1. 角色分工
+
+| 角色 | 责任 |
+|------|------|
+| kevinlasnh | 提需求、做最终决策、执行实车测试 |
+| Claude | 架构、调研、方案设计、结果复审 |
+| Codex | 执行实现、构建验证、提交、PR、文档同步 |
+| 团队开发者 | 按同样分支和 PR 规则协作 |
+
+## 2. 标准开发流
+
+### 2.1 会话开始
+
+```bash
+ssh jetson@100.97.227.24
+cd ~/fyp_autonomous_vehicle
+git status
+git checkout main
+git pull --ff-only
+git branch -v
+git log --oneline -5
+```
+
+如果上次已经构建过并准备继续调试：
+
+```bash
+source install/setup.bash
+```
+
+### 2.2 创建分支
+
+```bash
+git checkout -b gps
+```
+
+分支命名直接用描述名，不加前缀：
+
+- 示例: `gps`、`nav-tuning`、`lidar-fix`、`docs-sync`
+
+### 2.3 研究与实施
+
+1. 先核对真实代码状态、launch 链和当前参数。
+2. 再做改动，不凭历史记忆直接写。
+3. 如果改动涉及系统行为，先确认影响的运行模式。
+4. 新增 launch / mode / 参数 profile 时，同步更新文档，不留到后面补猜。
+
+### 2.4 构建
+
+```bash
+colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
+source install/setup.bash
+```
+
+规则：
+
+1. `--parallel-workers 1` 是硬性要求。
+2. 每次构建后都要重新 `source install/setup.bash`。
+3. Python 包虽可借助 `--symlink-install` 免重编，但仍要做运行验证。
+4. `build-navigation` 当前包含 `waypoint_collector`、`waypoint_nav_tool`、`gps_waypoint_dispatcher`。
+
+### 2.5 启动与验证
+
+按改动范围选择合适模式：
+
+```bash
+make launch-slam
+make launch-explore
+make launch-explore-gps
+make launch-nav-gps
+make launch-travel
+```
+
+验证时至少检查：
+
+- 相关节点是否都在线
+- 关键 topic / action 是否有数据
+- `map -> odom -> base_link` TF 是否完整
+- session 日志是否落到 `~/fyp_runtime_data/logs/latest/`
+
+实车相关改动需要补上人工现场测试结论。
+
+### 2.6 GPS 导航专项验证
+
+如果改动涉及 `nav-gps`，至少补下面这些检查：
+
+1. `build_scene_runtime.py` 是否成功生成 `current_scene/` 编译产物
+2. `gps_anchor_localizer` 是否进入 `NAV_READY`
+3. `gps_waypoint_dispatcher` 是否成功读取 `scene_points.yaml`
+4. `/compute_route` / `/follow_path` / `/navigate_to_pose` action 是否在线
+5. `goto_name` / `list_destinations` / `stop` 是否行为正确
+6. 室内无 live fix 时，是否可用 mock / replay `/fix` 做软件 smoke
+
+## 3. AI 协作流
+
+当任务由 Claude + Codex 共同执行时，控制面不在这个仓库内，而在 PC command-center 仓库中维护：
+
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+这个 Jetson 仓库负责真实实现、构建、运行和归档文档。
+
+## 4. 提交与 PR
+
+### 4.1 提交
+
+```bash
+git add path/to/file1 path/to/file2
+git commit -m "Explain what changed and why"
+git push -u origin feature/your-topic
+```
+
+要求：
+
+1. 只添加具体文件。
+2. 不提交无关改动。
+3. Commit message 用英文。
+
+### 4.2 PR 与合并
+
+```bash
+gh auth status
+gh pr create
+gh pr merge --merge --delete-branch
+git checkout main
+git pull --ff-only
+git fetch --prune
+```
+
+如果 Jetson 上 `gh auth status` 返回 token 无效，可以在已登录 GitHub CLI 的本地工作站上对同一分支执行 `gh pr create` / `gh pr merge`，然后再让 Jetson 回拉 `main`。
+
+## 5. 文档触发规则
+
+以下变化发生时，不允许只改代码不改文档：
+
+| 变化类型 | 最少要同步的文档 |
+|----------|------------------|
+| 节点源码 | `devlog`、相关 `knowledge`、必要时 `architecture.md` |
+| launch 文件 | `devlog`、`commands.md`、`workflow.md`、必要时 `architecture.md` |
+| YAML 参数 | `devlog`、对应知识文档 |
+| 脚本与工具 | `devlog`、`commands.md`、必要时 `workflow.md` |
+| bug 修复 / 新 bug | `devlog`、`known_issues.md` |
+| 系统环境变化 | `devlog`、`commands.md`、`workflow.md` |
+| 工作流变化 | `workflow.md`、`conventions.md` |
+
+## 6. 会话结束检查表
+
+会话在以下项目全部完成前不算收口：
+
+1. 改动已验证。
+2. 相关文档已同步。
+3. 分支已推送。
+4. PR 已创建并合并，或者明确记录为什么本次只停在 feature 分支。
+5. Jetson 已回到最新 `main`，或者明确记录当前停留分支和原因。
+6. 如果有新的系统事实、问题或阻塞，已写入开发日志和问题追踪。
+
+
+## 2.7 Fixed-Launch GPS Corridor 工作流
+
+当任务目标收缩成”固定启动位 → GPS 路线终点”的 corridor 验证时，优先使用：
+
+1. 采集 corridor 多点路线：
+   - `python3 scripts/collect_gps_route.py`
+2. 将车停回固定 Launch Pose，朝向摆正
+3. 直接启动：
+   - `make launch-corridor`
+   - 或 `bash scripts/launch_with_logs.sh corridor`
+4. 观察：
+   - `/gps_corridor/status`
+5. 由 `gps_global_aligner_node` + `gps_route_runner_node` 自动：
+   - 独立 aligner 估计平滑 `ENU→map` 变换
+   - 检查当前 `/fix` 是否靠近 `start_ref`
+   - Bootstrap 启动（`yaw0 + launch_yaw_deg`）
+   - GPS waypoints → ENU → map 转换
+   - Waypoint 内冻结 alignment，按段切 subgoals
+   - 串行 `NavigateToPose`
+
+这���工作流不再需要：
+- `nav_gps_menu.py`
+- `goto_name`
+- `route_server`
+- `scene_gps_bundle.yaml`
+

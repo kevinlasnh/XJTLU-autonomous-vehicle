@@ -95,15 +95,16 @@ git fetch --prune
 ## 文档要求
 
 代码、launch、参数、系统配置、工作流发生变化时，必须同步更新相关文档。
+文档分 CN（中文）和 EN（英文）两个目录，**两个目录必须同时更新**。
 
 最常见的同步目标：
 
-- `docs/devlog/YYYY-MM.md`
-- `docs/commands.md`
-- `docs/workflow.md`
-- `docs/architecture.md`
-- `docs/known_issues.md`
-- `docs/knowledge/*.md`
+- `docs-CN/devlog/YYYY-MM.md` + `docs-EN/devlog/YYYY-MM.md`
+- `docs-CN/commands.md` + `docs-EN/commands.md`
+- `docs-CN/workflow.md` + `docs-EN/workflow.md`
+- `docs-CN/architecture.md` + `docs-EN/architecture.md`
+- `docs-CN/known_issues.md` + `docs-EN/known_issues.md`
+- `docs-CN/knowledge/*.md` + `docs-EN/knowledge/*.md`
 
 ## 不变规则
 
