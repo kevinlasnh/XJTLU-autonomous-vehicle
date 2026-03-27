@@ -40,3 +40,11 @@ src/third_party/
 
 # Claude Code
 .claude/
+
+# Local-only project management files
+AGENTS.md
+CLAUDE.md
+WORKFLOW.md
+findings.md
+progress.md
+task_plan.md
