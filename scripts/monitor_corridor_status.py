@@ -121,6 +121,7 @@ def main() -> int:
     start_mono = time.monotonic()
     last_raw = ""
     last_line = ""
+    last_status_text = ""
     running_route = False
     offset = 0
 
@@ -134,6 +135,7 @@ def main() -> int:
                 if not raw or dedupe_key == last_raw:
                     continue
                 last_raw = dedupe_key
+                last_status_text = f"{node_name}: {raw}"
                 line, running, terminal_code = _format_status(node_name, raw)
                 if line and line != last_line:
                     print(line, flush=True)
@@ -151,9 +153,14 @@ def main() -> int:
                 return 1
 
             if not running_route and time.monotonic() - start_mono > args.startup_timeout_s:
+                last_status_suffix = (
+                    f" 最后状态: {last_status_text}."
+                    if last_status_text
+                    else ""
+                )
                 print(
-                    "[Corridor] 启动超时：%.0f 秒内未进入 GPS 路线，系统将退出。完整日志见: %s"
-                    % (args.startup_timeout_s, args.launch_log),
+                    "[Corridor] 启动超时：%.0f 秒内未进入 GPS 路线，系统将退出。%s 完整日志见: %s"
+                    % (args.startup_timeout_s, last_status_suffix, args.launch_log),
                     flush=True,
                 )
                 if args.launch_pid > 0:

@@ -101,12 +101,38 @@ if [[ "$MODE" == "corridor" ]]; then
 fi
 
 if [[ "$MODE" == "corridor" && "${FYP_CORRIDOR_CONSOLE_MODE:-quiet}" != "raw" ]]; then
-  STARTUP_TIMEOUT_S="${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-45}"
+  ROUTE_FILE="$HOME/fyp_runtime_data/gnss/current_route.yaml"
+  ROUTE_FIX_TIMEOUT_S=""
+  if [[ -f "$ROUTE_FILE" ]]; then
+    ROUTE_FIX_TIMEOUT_S="$(
+      awk -F: '
+        /^[[:space:]]*startup_fix_timeout_s[[:space:]]*:/ {
+          value=$2
+          gsub(/[[:space:]]/, "", value)
+          if (value != "") {
+            print value
+          }
+        }
+      ' "$ROUTE_FILE" | tail -n 1
+    )"
+  fi
+
+  if [[ -n "${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-}" ]]; then
+    STARTUP_TIMEOUT_S="${FYP_CORRIDOR_STARTUP_TIMEOUT_S}"
+  elif [[ -n "$ROUTE_FIX_TIMEOUT_S" ]]; then
+    STARTUP_TIMEOUT_S="$(awk "BEGIN { printf \"%.0f\", (${ROUTE_FIX_TIMEOUT_S} + 30.0) }")"
+  else
+    STARTUP_TIMEOUT_S="45"
+  fi
+
   LAUNCH_STDOUT_LOG="$SESSION_DIR/system/launch_stdout.log"
   echo "=== Corridor Console: quiet ==="
   echo "  Status: foreground concise monitor"
   echo "  Full launch output: $LAUNCH_STDOUT_LOG"
   echo "  Startup timeout: ${STARTUP_TIMEOUT_S}s"
+  if [[ -n "$ROUTE_FIX_TIMEOUT_S" && -z "${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-}" ]]; then
+    echo "  Route stable-fix timeout: ${ROUTE_FIX_TIMEOUT_S}s (+30s buffer)"
+  fi
 
   ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}" >"$LAUNCH_STDOUT_LOG" 2>&1 &
   LAUNCH_PID=$!
