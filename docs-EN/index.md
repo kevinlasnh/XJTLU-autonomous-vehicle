@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-03-27
+> Last updated: 2026-03-30
 
 ## Current System Summary
 
@@ -8,9 +8,12 @@
 - GPS fusion mode deployed: `make launch-explore-gps`
 - GPS goal navigation mode software deployment completed on `feature/gps-navigation-v4`, passed indoor smoke test: `make launch-nav-gps`
 - **GPS Corridor v2 standalone Global Aligner architecture deployed on `gps-rpp` branch**: `make launch-corridor`
-  - Waypoint 1 reached reliably; runtime fine-tuning closed out (Nav2 parameters + waypoint alignment guard)
-  - Translation-only aligner attempted but failed to correct startup anchoring error (commit `94862d7`)
+  - Waypoint 1 reached reliably; runtime fine-tuning closed out
+  - Odom divergence watchdog deployed and verified effective (commit `308fe77`; session `2026-03-27-18-43-20` correctly triggered safe abort)
+  - ESKF degradation protection deployed (`effect_feat_num < 50` skip + `m_P` clamp + H regularization)
+  - Calibration handshake mechanism deployed, but wp1 calibration failed due to 30m GPS deviation
   - Current primary bottleneck: GPS route anchoring method (startup GPS ~2.5--4.75 m error) + FAST-LIO2 odom divergence
+  - Status: **Awaiting CC Step 8 architecture-level re-review**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2
 - Runtime data root directory: `~/fyp_runtime_data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`

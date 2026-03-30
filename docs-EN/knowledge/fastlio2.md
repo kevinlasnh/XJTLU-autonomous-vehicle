@@ -406,3 +406,52 @@ FASTLIO2 = High-frequency IMU integration prediction + Per-frame LiDAR correctio
 - **Per-frame LiDAR correction**: 10Hz corrects accumulated IMU integration errors through point cloud matching
 - **Iterative optimization (IESKF)**: Multiple iterations drive the pose estimate to converge to the optimal value
 - **Incremental mapping (ikd-Tree)**: Real-time maintenance of a local map with efficient nearest-neighbor queries
+
+---
+
+## 7. Corridor Mode ESKF Safety Guards (commit `308fe77`)
+
+During GPS corridor on-vehicle testing, FAST-LIO2 local odom was found to diverge after sustained recovery/backup maneuvers (`odom->base_link` single-step jumps of up to 2.43m/0.11s). The following ESKF-level safety guards were deployed:
+
+### 7.1 Effective Feature Point Threshold Check
+
+**Files**: `lidar_processor.cpp`, `ieskf.cpp`
+
+When the number of effectively matched feature points in a frame `effect_feat_num < 50`, the entire IESKF update step is skipped. IMU integration continues to provide pose prediction, but low-quality point cloud observations are not used to correct the state.
+
+### 7.2 Invalid Measurement Protection
+
+**File**: `ieskf.cpp`
+
+In the original code, even when observations were invalid (NaN / Inf), they would still overwrite the covariance matrix `m_P`. After modification, invalid measurements no longer update `m_P`, preventing covariance pollution that could cause rapid divergence in subsequent frames.
+
+### 7.3 Covariance Matrix Diagonal Clamping
+
+**File**: `ieskf.cpp`
+
+After each IESKF update, diagonal elements of `m_P` are clamped:
+- Lower bound: prevents covariance from becoming too small, which would make the filter overconfident and unresponsive to new observations
+- Upper bound: prevents covariance explosion (e.g., in degenerate scenarios)
+
+### 7.4 Degenerate Direction Regularization
+
+**File**: `ieskf.cpp`
+
+Eigenvalue analysis is performed on `shared_data.H` (the information matrix of the observation Jacobian). When an eigenvalue in a certain direction is too small (degenerate direction), a regularization term is injected in that direction to prevent excessively large corrections that would cause pose jumps.
+
+### 7.5 Detection Range Correction
+
+**File**: `lio.yaml`
+
+`det_range: 60 -> 30`. Reduces the effective detection range, decreasing the participation of low-quality distant points in matching and improving near-range matching quality.
+
+### 7.6 Odom Divergence Watchdog
+
+**File**: `gps_route_runner_node.py`
+
+Added odom divergence detection on the runner side:
+- Each control cycle queries the `odom->base_link` TF and compares with the previous frame
+- Single-step displacement > 0.5m: `WARNING` log
+- Single-step displacement > 1.0m: executes `ODOM_DIVERGENCE_ABORT`, safely terminating navigation
+
+On-vehicle verification (session `2026-03-27-18-43-20`): the watchdog detected a 2.45m jump within 22ms and correctly triggered safe termination.

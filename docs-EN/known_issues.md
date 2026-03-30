@@ -138,7 +138,7 @@
     - Fix: Commit `d075c6b` moved the parameter to the correct `bt_navigator` node
     - Status: Fixed (2026-03-26)
 
-24. **[Known] Late-segment `lio_odom` / `odom->base_link` divergence**
+24. **[Mitigated] Late-segment `lio_odom` / `odom->base_link` divergence**
     - Description: In multiple on-vehicle runs, `odom->base_link` starts making continuous large jumps in the second half of the second segment, causing pose divergence and navigation failure
     - Latest evidence (session `2026-03-27-13-43-46`):
       - `map->odom` maximum single-step change was only on the order of 1e-11 (stable)
@@ -146,7 +146,11 @@
       - Drift occurs strictly in the local pose chain, not from global aligner drift
     - Trigger condition: After prolonged `collision ahead` + multiple recoveries
     - Root cause: Pending investigation; possibly related to FAST-LIO2 degradation during sustained recovery/backup maneuvers
-    - Impact: Directly prevents completion of the second segment's latter half
+    - Mitigation (commit `308fe77`):
+      - Added odom divergence watchdog: single-step >0.5m warns, >1.0m triggers safe abort
+      - Session `2026-03-27-18-43-20` verified watchdog correctly triggered `ODOM_DIVERGENCE_ABORT` (2.45m jump in 22ms)
+      - ESKF degradation protection deployed: skip update when `effect_feat_num < 50`, `m_P` diagonal clamping, H degenerate direction regularization
+    - Impact: Watchdog prevents vehicle from continuing to move erratically after odom divergence, but the root cause of divergence is not yet resolved
 
 25. **[Important] GPS route collection/anchoring method insufficient for physical precision**
     - Description: Current corridor GPS route relies on a single `start_ref` + `launch_yaw_deg` for anchoring. Startup GPS itself has ~2.5 m error, and route geometry is defined only in the ENU domain, causing map-projected targets to systematically deviate from the user's intended physical path
@@ -154,6 +158,10 @@
       - `distance_to_start_ref=4.75m` (tolerance 15.0 m allowed an excessively large deviation at start)
       - Under frozen alignment, second segment map projection dx=+3.28 m lateral offset
       - Translation-only aligner continuously rejected corrections (delta 8.88~9.50 m > 8.0 m threshold)
+    - Calibration handshake attempt (commit `308fe77`):
+      - Deployed waypoint progressive calibration mechanism: runner requests aligner to recalibrate using static GPS samples upon reaching a waypoint
+      - Session `2026-03-27-18-22-31` result: wp1 calibration failed; GPS mean was 30.35m from recorded waypoint; executed `CALIBRATION_FALLBACK`
+      - Conclusion: wp1 in the current route does not serve as a reliable calibration anchor
     - Status: 2026-03-27, re-confirmed as the current primary bottleneck; needs to return to Step 8 for anchoring approach re-review
     - Candidate directions: multi-point rigid-body registration / map physical waypoint route / continuous trajectory collection
 

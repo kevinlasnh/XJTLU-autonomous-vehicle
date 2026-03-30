@@ -382,7 +382,26 @@ After v2 deployment, multiple rounds of real-vehicle tuning converged:
   2. Route redefined as `map` physical waypoints, with GPS only responsible for startup localization
   3. Continuous trajectory collection + centerline/corner fitting
 
-### 12.5 Comparison with v1
+### 12.5 Calibration Handshake Mechanism (commit `308fe77`)
+
+To address the insufficiency of single-point `start_ref` anchoring, a waypoint progressive calibration (calibration handshake) was designed:
+
+**Workflow**:
+1. Runner reaches waypoint -> sends `CALIBRATION_STARTED` request
+2. Aligner waits stationary at waypoint, collecting a stable GPS sample window
+3. Aligner computes a new alignment revision using the new GPS sample mean and the waypoint's recorded position
+4. If revision is trustworthy (deviation within threshold) -> publishes new alignment; runner passes through once then freezes
+5. If revision is untrustworthy -> `CALIBRATION_FAILED`; runner executes `CALIBRATION_FALLBACK`, continuing with old alignment
+
+**On-vehicle results (session `2026-03-27-18-22-31`)**:
+- wp1 calibration failed: 60 GPS sample mean `(31.2780464, 120.7327560)` was 30.35m from recorded waypoint
+- Under current alignment: GPS mean projects to map at approximately `(14.19, 1.02)`, while recorded wp1 map position is approximately `(44.43, -0.12)`
+- Conclusion: this waypoint currently does not serve as a reliable calibration anchor
+- Second segment continued using stale alignment, with target line inherently offset dx=+2.87m
+
+**Lesson learned**: the calibration handshake mechanism itself operates correctly, but its effectiveness depends on consistency between the waypoint's recorded position and the actual position observable by GPS. When startup anchoring error is already large, the vehicle believes it has reached the waypoint in map frame, but GPS indicates a completely different location -- calibration naturally fails.
+
+### 12.6 Comparison with v1
 
 | | Corridor v1 | Corridor v2 |
 |--|-------------|-------------|

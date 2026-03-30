@@ -382,7 +382,26 @@ v2 部署后经多轮实车微调收敛：
   2. 路线改为 `map` 物理点位，GPS 只负责启动定位
   3. 连续轨迹采集 + 中心线/拐角拟合
 
-### 12.5 与 v1 对比
+### 12.5 Calibration Handshake 机制（commit `308fe77`）
+
+为解决单点 `start_ref` 锚定不足的问题，设计了航点渐进标定（calibration handshake）：
+
+**流程**：
+1. Runner 到达 waypoint → 发送 `CALIBRATION_STARTED` 请求
+2. Aligner 在 waypoint 处静止等待，收集 GPS 稳定样本窗口
+3. Aligner 用新 GPS 样本均值与 waypoint 记录位置计算新的 alignment revision
+4. 若 revision 可信（偏差在阈值内）→ 发布新 alignment，runner 单次放行后冻结
+5. 若 revision 不可信 → `CALIBRATION_FAILED`，runner 执行 `CALIBRATION_FALLBACK`，继续沿用旧 alignment
+
+**实车结果（session `2026-03-27-18-22-31`）**：
+- wp1 标定失败：60 个 GPS 样本均值 `(31.2780464, 120.7327560)` 距记录航点 30.35m
+- 在当前 alignment 下：GPS 均值投到 map 约 `(14.19, 1.02)`，记录 wp1 map 位置约 `(44.43, -0.12)`
+- 结论：该 waypoint 当前不具备可靠 calibration 锚点价值
+- 第二段继续沿用 stale alignment，目标线本体侧偏 dx=+2.87m
+
+**启示**：calibration handshake 机制本身运转正常，但其有效性取决于 waypoint 记录位置与实际 GPS 能观测到的位置之间的一致性。当启动锚定误差已经很大时，车辆在 map 中认为到达了 waypoint，但 GPS 认为自己在完全不同的位置，标定自然失败。
+
+### 12.6 与 v1 对比
 
 | | Corridor v1 | Corridor v2 |
 |--|-------------|-------------|
