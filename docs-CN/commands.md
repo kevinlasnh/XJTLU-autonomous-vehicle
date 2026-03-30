@@ -5,7 +5,7 @@
 ## 1. 构建与 Source
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 # 首次依赖初始化
 make setup
@@ -24,13 +24,13 @@ colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 
 # 每次构建后必须重新 source
 source /opt/ros/humble/setup.bash
-source ~/fyp_autonomous_vehicle/install/setup.bash
+source ~/XJTLU-autonomous-vehicle/install/setup.bash
 ```
 
 ## 2. 初始化运行时数据
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 bash scripts/init_runtime_data.sh
 
 ls ~/fyp_runtime_data
@@ -39,7 +39,7 @@ ls ~/fyp_runtime_data
 ## 3. 启动五种运行模式
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 make launch-slam
 make launch-explore
@@ -88,10 +88,10 @@ ros2 run gnss_calibration gps_anchor_localizer_node \
   --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
 
 # FAST-LIO2
-ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # PGO + FAST-LIO2
-ros2 launch pgo pgo_launch.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch pgo pgo_launch.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # 兼容旧平铺 PGO 配置
 ros2 launch pgo pgo_launch.py pgo_config:=pgo_no_gps.yaml
@@ -207,7 +207,7 @@ pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 
 ```bash
 # 系统结束后做一次干净清理，确保下次从空状态启动
-cd ~/fyp_autonomous_vehicle && make kill-runtime
+cd ~/XJTLU-autonomous-vehicle && make kill-runtime
 ```
 
 硬件层面的急停优先级：
@@ -271,12 +271,12 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 sudo -n true && echo sudo_ok
 
 # 切换 Jetson WiFi，并在 Jetson 侧重启 ToDesk（Linux 本机直接执行）
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh Pixel
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh --status
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh outdoor
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh indoor
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh Pixel
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
 
 # GPS dispatcher 依赖
 apt list --installed | grep ros-humble-geographic-msgs
@@ -294,12 +294,12 @@ python3 -c "import pyproj; print(pyproj.__version__)"
 最短两行启动命令：
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_scene.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_scene.py
 ```
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 python3 scripts/collect_gps_scene.py
@@ -329,7 +329,7 @@ python3 scripts/collect_gps_scene.py
 采集后编译运行时文件：
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 python3 scripts/build_scene_runtime.py
@@ -369,7 +369,7 @@ ros2 action list | grep -E 'compute_route|follow_path|navigate_to_pose'
 ros2 run gps_waypoint_dispatcher stop
 
 # 一键拉起 nav-gps，等待 NAV_READY，并按编号选择 destination
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
 ```
 
 ## 14. Fixed-Launch GPS Corridor
@@ -377,7 +377,7 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 ### GPS 路线采集（踩点）
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
 ```
 
 交互流程：
@@ -394,19 +394,19 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 ### 自动 corridor 导航
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
 ```
 
 结束后清理残留进程：
 
 ```bash
-cd ~/fyp_autonomous_vehicle && make kill-runtime
+cd ~/XJTLU-autonomous-vehicle && make kill-runtime
 ```
 
 Makefile 快捷启动：
 
 ```bash
-cd ~/fyp_autonomous_vehicle && make launch-corridor
+cd ~/XJTLU-autonomous-vehicle && make launch-corridor
 ```
 
 调试观察：

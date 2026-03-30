@@ -2,9 +2,9 @@
 
 ## 1. Deployment Locations
 
-- Jetson code repository: `~/fyp_autonomous_vehicle`
+- Jetson code repository: `~/XJTLU-autonomous-vehicle`
 - Runtime data root directory: `~/fyp_runtime_data`
-- GitHub remote: `kevinlasnh/fyp_autonomous_vehicle`
+- GitHub remote: `kevinlasnh/XJTLU-autonomous-vehicle`
 - AI collaboration control plane: located in a separate PC repository, not within this code repository
 
 ## 2. Hardware Platform

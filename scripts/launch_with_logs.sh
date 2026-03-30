@@ -59,8 +59,8 @@ cat > "$SESSION_DIR/system/session_info.yaml" <<EOF
 mode: $MODE
 start_time: $(date -Iseconds)
 session_dir: $SESSION_DIR
-git_branch: $(cd ~/fyp_autonomous_vehicle && git branch --show-current 2>/dev/null || echo unknown)
-git_commit: $(cd ~/fyp_autonomous_vehicle && git rev-parse --short HEAD 2>/dev/null || echo unknown)
+git_branch: $(cd ~/XJTLU-autonomous-vehicle && git branch --show-current 2>/dev/null || echo unknown)
+git_commit: $(cd ~/XJTLU-autonomous-vehicle && git rev-parse --short HEAD 2>/dev/null || echo unknown)
 ros_log_dir: $SESSION_DIR/console
 data_log_dir: $SESSION_DIR/data
 system_log_dir: $SESSION_DIR/system
@@ -76,7 +76,7 @@ cleanup_runtime_nodes
 
 set +u
 source /opt/ros/humble/setup.bash
-source ~/fyp_autonomous_vehicle/install/setup.bash
+source ~/XJTLU-autonomous-vehicle/install/setup.bash
 set -u
 
 case "$MODE" in
@@ -138,7 +138,7 @@ if [[ "$MODE" == "corridor" && "${FYP_CORRIDOR_CONSOLE_MODE:-quiet}" != "raw" ]]
   LAUNCH_PID=$!
 
   set +e
-  python3 ~/fyp_autonomous_vehicle/scripts/monitor_corridor_status.py \
+  python3 ~/XJTLU-autonomous-vehicle/scripts/monitor_corridor_status.py \
     --startup-timeout-s "$STARTUP_TIMEOUT_S" \
     --launch-log "$LAUNCH_STDOUT_LOG" \
     --launch-pid "$LAUNCH_PID"

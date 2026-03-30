@@ -9,7 +9,7 @@
 - Current primary entry point:
 
 ```bash
-ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 ```
 
 - Current parameter source is primarily `src/bringup/config/master_params.yaml`; `lio_no_rviz.py` retains legacy `fastlio2/config/lio.yaml` fallback capability.

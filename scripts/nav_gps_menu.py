@@ -197,7 +197,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--repo-root",
-        default=str(Path.home() / "fyp_autonomous_vehicle"),
+        default=str(Path.home() / "XJTLU-autonomous-vehicle"),
         help="Workspace root used for launching nav-gps",
     )
     parser.add_argument(

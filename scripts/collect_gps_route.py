@@ -34,7 +34,7 @@ except Exception:
 
 OUTPUT_DIR = Path.home() / "fyp_runtime_data" / "gnss"
 OUTPUT_FILE = OUTPUT_DIR / "current_route.yaml"
-REPO_ROOT = Path.home() / "fyp_autonomous_vehicle"
+REPO_ROOT = Path.home() / "XJTLU-autonomous-vehicle"
 MASTER_PARAMS_FILE = REPO_ROOT / "src" / "bringup" / "config" / "master_params.yaml"
 GNSS_DRIVER_LOG = OUTPUT_DIR / "collect_gps_route_nmea.log"
 SAMPLE_COUNT = 10

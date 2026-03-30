@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKSPACE_ROOT="${WORKSPACE_ROOT:-$HOME/fyp_autonomous_vehicle}"
+WORKSPACE_ROOT="${WORKSPACE_ROOT:-$HOME/XJTLU-autonomous-vehicle}"
 OUTPUT_ROOT="${1:-$HOME/fyp_runtime_data/bags/run_$(date +%Y%m%d_%H%M%S)}"
 BAG_PATH="$OUTPUT_ROOT/rosbag2"
 

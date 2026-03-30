@@ -25,7 +25,7 @@
 ## 编译
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 colcon build --packages-select waypoint_collector --symlink-install
 source install/setup.bash
 ```
@@ -37,7 +37,7 @@ source install/setup.bash
 确保你的 Nav2 系统已正常运行，包括 `waypoint_follower` 节点：
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source install/setup.bash
 make launch-explore
 ```
@@ -47,7 +47,7 @@ make launch-explore
 在新终端中运行：
 
 ```bash
-source ~/fyp_autonomous_vehicle/install/setup.bash
+source ~/XJTLU-autonomous-vehicle/install/setup.bash
 ros2 run waypoint_collector waypoint_node
 ```
 

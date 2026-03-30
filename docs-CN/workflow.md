@@ -17,7 +17,7 @@
 
 ```bash
 ssh jetson@100.97.227.24
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 git status
 git checkout main
 git pull --ff-only

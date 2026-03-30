@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RUNTIME_ROOT="${FYP_RUNTIME_ROOT:-$HOME/fyp_runtime_data}"
-WORKSPACE_ROOT="${WORKSPACE_ROOT:-$HOME/fyp_autonomous_vehicle}"
+WORKSPACE_ROOT="${WORKSPACE_ROOT:-$HOME/XJTLU-autonomous-vehicle}"
 LEGACY_ROOT="${LEGACY_ROOT:-$HOME/2025_FYP}"
 
 mkdir -p "$RUNTIME_ROOT/config" "$RUNTIME_ROOT/gnss" "$RUNTIME_ROOT/planning" "$RUNTIME_ROOT/maps"

@@ -5,7 +5,7 @@ This document only records commands confirmed to be executable in the current re
 ## 1. Build and Source
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 # Initial dependency setup
 make setup
@@ -24,13 +24,13 @@ colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 
 # Must re-source after every build
 source /opt/ros/humble/setup.bash
-source ~/fyp_autonomous_vehicle/install/setup.bash
+source ~/XJTLU-autonomous-vehicle/install/setup.bash
 ```
 
 ## 2. Initialize Runtime Data
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 bash scripts/init_runtime_data.sh
 
 ls ~/fyp_runtime_data
@@ -39,7 +39,7 @@ ls ~/fyp_runtime_data
 ## 3. Launch Five Operating Modes
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 make launch-slam
 make launch-explore
@@ -88,10 +88,10 @@ ros2 run gnss_calibration gps_anchor_localizer_node \
   --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
 
 # FAST-LIO2
-ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # PGO + FAST-LIO2
-ros2 launch pgo pgo_launch.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch pgo pgo_launch.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # Compatible with legacy flat PGO config
 ros2 launch pgo pgo_launch.py pgo_config:=pgo_no_gps.yaml
@@ -207,7 +207,7 @@ pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 
 ```bash
 # Clean up after system shutdown to ensure a clean state for the next launch
-cd ~/fyp_autonomous_vehicle && make kill-runtime
+cd ~/XJTLU-autonomous-vehicle && make kill-runtime
 ```
 
 Hardware-level emergency stop priority:
@@ -271,12 +271,12 @@ nmcli -t -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY,DEVICE connection show --activ
 sudo -n true && echo sudo_ok
 
 # Switch Jetson WiFi and restart ToDesk on the Jetson side (execute directly on the Linux host)
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh --status
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh outdoor
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh indoor
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh Pixel
-cd ~/fyp_autonomous_vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh --status
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh outdoor
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh indoor
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh Pixel
+cd ~/XJTLU-autonomous-vehicle && bash scripts/switch_jetson_wifi.sh XJTLU
 
 # GPS dispatcher dependencies
 apt list --installed | grep ros-humble-geographic-msgs
@@ -294,12 +294,12 @@ Notes:
 Minimum two-line launch commands:
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_scene.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py params_file:=/home/jetson/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_scene.py
 ```
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 python3 scripts/collect_gps_scene.py
@@ -329,7 +329,7 @@ Interactive commands:
 Compile runtime files after collection:
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 python3 scripts/build_scene_runtime.py
@@ -369,7 +369,7 @@ ros2 action list | grep -E 'compute_route|follow_path|navigate_to_pose'
 ros2 run gps_waypoint_dispatcher stop
 
 # One-command launch nav-gps, wait for NAV_READY, and select destination by number
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/nav_gps_menu.py
 ```
 
 ## 14. Fixed-Launch GPS Corridor
@@ -377,7 +377,7 @@ cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source insta
 ### GPS Route Collection (Waypoint Survey)
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && python3 scripts/collect_gps_route.py
 ```
 
 Interactive workflow:
@@ -394,19 +394,19 @@ Interactive workflow:
 ### Automatic Corridor Navigation
 
 ```bash
-cd ~/fyp_autonomous_vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
+cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source install/setup.bash && bash scripts/launch_with_logs.sh corridor
 ```
 
 Clean up residual processes after completion:
 
 ```bash
-cd ~/fyp_autonomous_vehicle && make kill-runtime
+cd ~/XJTLU-autonomous-vehicle && make kill-runtime
 ```
 
 Makefile shortcut launch:
 
 ```bash
-cd ~/fyp_autonomous_vehicle && make launch-corridor
+cd ~/XJTLU-autonomous-vehicle && make launch-corridor
 ```
 
 Debug observation:

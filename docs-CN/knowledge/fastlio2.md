@@ -9,7 +9,7 @@
 - 当前主入口:
 
 ```bash
-ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 ```
 
 - 当前参数来源以 `src/bringup/config/master_params.yaml` 为主；`lio_no_rviz.py` 保留 legacy `fastlio2/config/lio.yaml` 回退能力。
