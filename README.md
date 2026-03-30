@@ -18,7 +18,7 @@
 ssh jetson@100.97.227.24
 
 # Enter workspace
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 # First-time setup
 make setup

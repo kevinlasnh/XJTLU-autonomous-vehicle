@@ -2,9 +2,9 @@
 
 ## 1. 运行位置
 
-- Jetson 代码仓: `~/fyp_autonomous_vehicle`
+- Jetson 代码仓: `~/XJTLU-autonomous-vehicle`
 - 运行时数据根目录: `~/fyp_runtime_data`
-- GitHub 远端: `kevinlasnh/fyp_autonomous_vehicle`
+- GitHub 远端: `kevinlasnh/XJTLU-autonomous-vehicle`
 - AI 协作控制面: 位于独立 PC 仓库，不在本代码仓内
 
 ## 2. 硬件平台

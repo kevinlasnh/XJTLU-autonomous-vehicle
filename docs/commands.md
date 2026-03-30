@@ -5,7 +5,7 @@
 ## 1. 构建与 Source
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 # 首次依赖初始化
 make setup
@@ -24,13 +24,13 @@ colcon build --packages-select <pkg> --symlink-install --parallel-workers 1
 
 # 每次构建后必须重新 source
 source /opt/ros/humble/setup.bash
-source ~/fyp_autonomous_vehicle/install/setup.bash
+source ~/XJTLU-autonomous-vehicle/install/setup.bash
 ```
 
 ## 2. 初始化运行时数据
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 bash scripts/init_runtime_data.sh
 
 ls ~/fyp_runtime_data
@@ -39,7 +39,7 @@ ls ~/fyp_runtime_data
 ## 3. 启动四种运行模式
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 
 make launch-slam
 make launch-explore
@@ -81,10 +81,10 @@ ros2 launch nmea_navsat_driver nmea_serial_driver.launch.py
 timeout 100 ros2 launch gnss_calibration gnss_calibration_launch.py
 
 # FAST-LIO2
-ros2 launch fastlio2 lio_no_rviz.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # PGO + FAST-LIO2
-ros2 launch pgo pgo_launch.py params_file:=~/fyp_autonomous_vehicle/src/bringup/config/master_params.yaml
+ros2 launch pgo pgo_launch.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
 
 # 兼容旧平铺 PGO 配置
 ros2 launch pgo pgo_launch.py pgo_config:=pgo_no_gps.yaml
@@ -260,7 +260,7 @@ sudo -n true && echo sudo_ok
 make launch-explore-gps
 
 # 终端 2: 运行交互式 GPS 点位采集脚本 (v2)
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 source install/setup.bash
 python3 scripts/collect_gps_points.py
 ```

@@ -19,7 +19,7 @@
 ## 编译
 
 ```bash
-cd ~/fyp_autonomous_vehicle
+cd ~/XJTLU-autonomous-vehicle
 colcon build --packages-select gnss_global_path_planner --symlink-install --parallel-workers 1
 source install/setup.bash
 ```
