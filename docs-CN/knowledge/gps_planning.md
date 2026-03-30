@@ -21,7 +21,7 @@
 
 ### 2.1 唯一 source of truth
 
-- `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/scene_gps_bundle.yaml`
 
 该文件同时保存：
 - `scene_name`
@@ -40,9 +40,9 @@ python3 scripts/build_scene_runtime.py
 ```
 
 生成：
-- `~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_points.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_route_graph.geojson`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/master_params_scene.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_points.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_route_graph.geojson`
 
 这些文件分别服务于：
 - PGO fixed origin

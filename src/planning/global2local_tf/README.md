@@ -11,7 +11,7 @@
 
 ## 当前实现要点
 
-- 运行时会读取 `~/fyp_runtime_data/planning/angle_offset.txt` 作为航向偏置；文件不存在时回退到 `0.0`。
+- 运行时会读取 `~/XJTLU-autonomous-vehicle/runtime-data/planning/angle_offset.txt` 作为航向偏置；文件不存在时回退到 `0.0`。
 - 节点初始化完成的条件是:
   - 收到 3 个 `/gnss` 样本，用它们的平均值锁定原点。
   - 收到 3 个 IMU 样本，锁定初始朝向。

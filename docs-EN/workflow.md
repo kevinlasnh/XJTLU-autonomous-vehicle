@@ -79,7 +79,7 @@ At minimum, verify the following:
 - All relevant nodes are online
 - Key topics / actions have data
 - `map -> odom -> base_link` TF chain is complete
-- Session logs are landing in `~/fyp_runtime_data/logs/latest/`
+- Session logs are landing in `~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/`
 
 Changes related to on-vehicle behavior require a follow-up with manual on-site test conclusions.
 

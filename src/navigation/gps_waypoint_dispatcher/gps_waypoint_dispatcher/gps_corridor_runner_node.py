@@ -22,7 +22,7 @@ from tf2_ros import Buffer, TransformException, TransformListener
 
 
 def default_corridor_file() -> FSPath:
-    return FSPath.home() / 'fyp_runtime_data' / 'gnss' / 'two_point_corridor.yaml'
+    return FSPath.home() / 'XJTLU-autonomous-vehicle/runtime-data' / 'gnss' / 'two_point_corridor.yaml'
 
 
 def valid_fix(msg: NavSatFix | None) -> bool:

@@ -16,7 +16,7 @@ from pathlib import Path
 from pyproj import Transformer
 import yaml
 
-RUNTIME_ROOT = Path.home() / "fyp_runtime_data"
+RUNTIME_ROOT = Path.home() / "XJTLU-autonomous-vehicle/runtime-data"
 DEFAULT_BUNDLE = RUNTIME_ROOT / "gnss" / "scene_gps_bundle.yaml"
 CURRENT_SCENE_DIR = RUNTIME_ROOT / "gnss" / "current_scene"
 REPO_ROOT = Path(__file__).resolve().parents[1]

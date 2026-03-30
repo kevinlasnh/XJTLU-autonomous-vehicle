@@ -15,7 +15,7 @@
   - Current primary bottleneck: GPS route anchoring method (startup GPS ~2.5--4.75 m error) + FAST-LIO2 odom divergence
   - Status: **Awaiting CC Step 8 architecture-level re-review**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2
-- Runtime data root directory: `~/fyp_runtime_data`
+- Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
 - Unified logging entry point: `scripts/launch_with_logs.sh`
 

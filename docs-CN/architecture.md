@@ -3,7 +3,7 @@
 ## 1. 运行位置
 
 - Jetson 代码仓: `~/XJTLU-autonomous-vehicle`
-- 运行时数据根目录: `~/fyp_runtime_data`
+- 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - GitHub 远端: `kevinlasnh/XJTLU-autonomous-vehicle`
 - AI 协作控制面: 位于独立 PC 仓库，不在本代码仓内
 
@@ -91,7 +91,7 @@ goto_name -> gps_waypoint_dispatcher(goal manager) ------------+
 - 当前位姿统一使用 `gps_anchor_localizer` 发布的 `/gnss`
 - PGO、localizer、goal manager 读取同一 fixed ENU origin
 - `scene_gps_bundle.yaml` 是唯一 source of truth
-- 运行时只读取 `~/fyp_runtime_data/gnss/current_scene/` 下的编译产物
+- 运行时只读取 `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/` 下的编译产物
 - `goto_name` 是主入口；用户只输入英文目标名
 
 ## 6. TF 链
@@ -114,20 +114,20 @@ map -> odom -> base_link
 - `src/bringup/config/nav2_explore.yaml`
 - `src/bringup/config/nav2_gps.yaml`
 - `src/bringup/config/nav2_travel.yaml`
-- `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_points.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_route_graph.geojson`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/scene_gps_bundle.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/master_params_scene.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_points.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_route_graph.geojson`
 - `src/sensor_drivers/gnss/gnss_calibration/config/calibration_points.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo.yaml`
 - `src/perception/pgo_gps_fusion/config/pgo_no_gps.yaml`
 
 ## 8. 日志与运行时数据
 
-`~/fyp_runtime_data/` 与代码仓解耦，当前主要包含：
+`~/XJTLU-autonomous-vehicle/runtime-data/` 位于工作区内部，当前主要包含：
 
 ```text
-~/fyp_runtime_data/
+~/XJTLU-autonomous-vehicle/runtime-data/
 ├── config/
 │   └── log_switch.yaml
 ├── gnss/
@@ -251,7 +251,7 @@ current_route.yaml
 - **Bootstrap 启动**: 用 `yaw0 - radians(launch_yaw_deg)` 立即计算初始对齐，不等 GPS
 
 该模式的数据面：
-- `~/fyp_runtime_data/gnss/current_route.yaml`（`collect_gps_route.py` 生成）
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml`（`collect_gps_route.py` 生成）
 - `start_ref` + 多个 `waypoints[]` 的 GPS 坐标
 - `launch_yaw_deg` 为必填字段
 

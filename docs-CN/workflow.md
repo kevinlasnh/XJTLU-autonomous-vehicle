@@ -79,7 +79,7 @@ make launch-travel
 - 相关节点是否都在线
 - 关键 topic / action 是否有数据
 - `map -> odom -> base_link` TF 是否完整
-- session 日志是否落到 `~/fyp_runtime_data/logs/latest/`
+- session 日志是否落到 `~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/`
 
 实车相关改动需要补上人工现场测试结论。
 

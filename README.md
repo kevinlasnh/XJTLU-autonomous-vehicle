@@ -7,7 +7,7 @@
 - Main deployment target: Jetson Orin NX running Ubuntu 22.04 and ROS 2 Humble
 - Main operating mode: `make launch-explore`
 - GPS-assisted mode available: `make launch-explore-gps`
-- Runtime data lives outside the repo under `~/fyp_runtime_data`
+- Runtime data lives inside the workspace under `~/XJTLU-autonomous-vehicle/runtime-data`
 - Runtime parameters are centralized in `src/bringup/config/master_params.yaml`
 - Session logs are created by `scripts/launch_with_logs.sh`
 
@@ -60,7 +60,7 @@ scripts/              Runtime helpers and data-collection tools
 4. `make launch-travel`
    Static-map navigation workflow, currently paused
 
-All four `make launch-*` targets go through `scripts/launch_with_logs.sh`, which creates a per-session log directory under `~/fyp_runtime_data/logs/`.
+All four `make launch-*` targets go through `scripts/launch_with_logs.sh`, which creates a per-session log directory under `~/XJTLU-autonomous-vehicle/runtime-data/logs/`.
 
 ## Documentation
 

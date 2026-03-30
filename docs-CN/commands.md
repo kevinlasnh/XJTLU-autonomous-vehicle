@@ -33,7 +33,7 @@ source ~/XJTLU-autonomous-vehicle/install/setup.bash
 cd ~/XJTLU-autonomous-vehicle
 bash scripts/init_runtime_data.sh
 
-ls ~/fyp_runtime_data
+ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
 ## 3. 启动五种运行模式
@@ -85,7 +85,7 @@ ros2 launch gnss_calibration gnss_calibration_launch.py
 
 # GNSS scene-ready localizer（新 GPS 路网架构）
 ros2 run gnss_calibration gps_anchor_localizer_node \
-  --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
+  --ros-args --params-file ~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/master_params_scene.yaml
 
 # FAST-LIO2
 ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
@@ -160,19 +160,19 @@ ros2 run tf2_tools tf2_echo map base_link
 
 ```bash
 # 查看当前 latest 指向
-readlink -f ~/fyp_runtime_data/logs/latest
+readlink -f ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest
 
 # 查看当前 session 元信息
-cat ~/fyp_runtime_data/logs/latest/system/session_info.yaml
+cat ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/system/session_info.yaml
 
 # 查看 tegrastats
-tail -f ~/fyp_runtime_data/logs/latest/system/tegrastats.log
+tail -f ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/system/tegrastats.log
 
 # 查看 console 日志目录
-ls ~/fyp_runtime_data/logs/latest/console
+ls ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/console
 
 # 查看 data 日志目录
-ls ~/fyp_runtime_data/logs/latest/data
+ls ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/data
 ```
 
 ## 7. 数据采集与评测
@@ -180,24 +180,24 @@ ls ~/fyp_runtime_data/logs/latest/data
 ```bash
 # 录制 rosbag
 bash scripts/data_collection/record_bag.sh
-bash scripts/data_collection/record_bag.sh ~/fyp_runtime_data/bags/my_run
+bash scripts/data_collection/record_bag.sh ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run
 
 # 单独录 tegrastats
 bash scripts/data_collection/record_perf.sh
-bash scripts/data_collection/record_perf.sh ~/fyp_runtime_data/perf/my_run.log
+bash scripts/data_collection/record_perf.sh ~/XJTLU-autonomous-vehicle/runtime-data/perf/my_run.log
 
 # 导出 TUM 轨迹
-python3 scripts/data_collection/bag_to_tum.py   ~/fyp_runtime_data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
+python3 scripts/data_collection/bag_to_tum.py   ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run/pgo_optimized.tum
 ```
 
 ## 8. 地图保存
 
 ```bash
 # 保存 3D 点云地图
-ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
+ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
 
 # 保存 2D 栅格地图
-ros2 run nav2_map_server map_saver_cli -f ~/fyp_runtime_data/maps/2d/<dir>/map
+ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-data/maps/2d/<dir>/map
 
 # 查看 PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
@@ -309,7 +309,7 @@ python3 scripts/collect_gps_scene.py
 - 坐标源: **仅使用 /fix**
 - 采样: 每点 10 个样本取平均
 - 质量门槛: 样本散布 < 2m，否则拒绝采集
-- 输出文件: `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- 输出文件: `~/XJTLU-autonomous-vehicle/runtime-data/gnss/scene_gps_bundle.yaml`
 - 单文件同时维护：
   - fixed origin
   - graph nodes
@@ -389,7 +389,7 @@ cd ~/XJTLU-autonomous-vehicle && source /opt/ros/humble/setup.bash && source ins
    - 高度异常（> 10m 跳变）会自动告警
 4. 确认 `launch_yaw_deg`（首段 > 5m 自动建议，否则手动输入）
 5. 保存前显示路线摘要表格（各段距离、方位角、ENU 坐标）
-6. 确认保存 → `~/fyp_runtime_data/gnss/current_route.yaml`
+6. 确认保存 → `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml`
 
 ### 自动 corridor 导航
 
@@ -420,18 +420,18 @@ ros2 topic echo /gps_corridor/enu_to_map
 
 说明：
 - 该模式假定车辆已经摆在固定 Launch Pose，并且车头朝向摆正
-- `collect_gps_route.py` 会采 `start_ref + 多个关键 waypoint`，并生成 `~/fyp_runtime_data/gnss/current_route.yaml`
+- `collect_gps_route.py` 会采 `start_ref + 多个关键 waypoint`，并生成 `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml`
 - `collect_gps_route.py` 若未检测到 `/fix`，会自动后台拉起 `nmea_navsat_driver`，采完后自动收掉
 - 采集时会显式确认 `launch_yaw_deg`；如果起点到第一个 waypoint 太近，会要求手工输入
 - 子目标间距默认 30m（基于 global costmap 半径 35m - 5m buffer），采集时自动写入路线文件
 - 运行时不会再弹出 menu，也不会等待额外命令
-- wrapper 会把日志和 bag 写入 `~/fyp_runtime_data/logs/<session>/`
+- wrapper 会把日志和 bag 写入 `~/XJTLU-autonomous-vehicle/runtime-data/logs/<session>/`
 - 启动阶段若当前 `/fix` 与 `start_ref` 偏差超限，`gps_route_runner` 会直接 abort，不动车
 - **Ctrl+C 会自动清理全部节点、ros2 daemon、串口占用**，无需手动 `make kill-runtime`
 
 **Quiet 模式**（默认）:
 - 前台只显示简化中文状态
-- 完整 launch 输出写入 `~/fyp_runtime_data/logs/<session>/system/launch_stdout.log`
+- 完整 launch 输出写入 `~/XJTLU-autonomous-vehicle/runtime-data/logs/<session>/system/launch_stdout.log`
 - 启动超时默认 45s，可通过 `FYP_CORRIDOR_STARTUP_TIMEOUT_S` 环境变量调整
 
 **Raw 模式**（调试用）:

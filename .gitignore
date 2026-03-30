@@ -38,6 +38,9 @@ Thumbs.db
 # Third-party repos pulled by vcs import
 src/third_party/
 
+# Runtime data (logs, GPS routes, bags, maps)
+runtime-data/
+
 # Claude Code
 .claude/
 

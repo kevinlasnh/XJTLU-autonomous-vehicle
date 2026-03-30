@@ -14,8 +14,8 @@
 
 - 节点会解析 WIT 串口帧中的加速度、角速度、姿态角和磁力计原始值。
 - 发布给 ROS 的主输出只有 `Imu` 消息，没有单独发布磁力计话题。
-- 日志开关由 `~/fyp_runtime_data/config/log_switch.yaml` 控制。
-- 通过 `scripts/launch_with_logs.sh` 启动时，日志会落入当前 session 目录；否则回退到 `~/fyp_runtime_data/logs/wit_imu_log/`。
+- 日志开关由 `~/XJTLU-autonomous-vehicle/runtime-data/config/log_switch.yaml` 控制。
+- 通过 `scripts/launch_with_logs.sh` 启动时，日志会落入当前 session 目录；否则回退到 `~/XJTLU-autonomous-vehicle/runtime-data/logs/wit_imu_log/`。
 
 ## 当前限制
 

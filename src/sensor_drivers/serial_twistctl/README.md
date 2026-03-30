@@ -12,8 +12,8 @@
 
 - 无 ROS 话题输出，数据直接写入串口
 - 可选日志:
-  - session 模式下写入 `~/fyp_runtime_data/logs/latest/...`
-  - 非 session 模式下回退到 `~/fyp_runtime_data/logs/twist_log/`
+  - session 模式下写入 `~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/...`
+  - 非 session 模式下回退到 `~/XJTLU-autonomous-vehicle/runtime-data/logs/twist_log/`
 
 ## 当前串口协议
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RUNTIME_ROOT="${FYP_RUNTIME_ROOT:-$HOME/fyp_runtime_data}"
+RUNTIME_ROOT="${FYP_RUNTIME_ROOT:-$HOME/XJTLU-autonomous-vehicle/runtime-data}"
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$HOME/XJTLU-autonomous-vehicle}"
 LEGACY_ROOT="${LEGACY_ROOT:-$HOME/2025_FYP}"
 

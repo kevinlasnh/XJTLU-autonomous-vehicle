@@ -30,8 +30,8 @@ from std_msgs.msg import Empty, String
 import yaml
 
 
-DEFAULT_SCENE_POINTS = Path.home() / "fyp_runtime_data" / "gnss" / "current_scene" / "scene_points.yaml"
-DEFAULT_LATEST_LOG_DIR = Path.home() / "fyp_runtime_data" / "logs" / "latest"
+DEFAULT_SCENE_POINTS = Path.home() / "XJTLU-autonomous-vehicle/runtime-data" / "gnss" / "current_scene" / "scene_points.yaml"
+DEFAULT_LATEST_LOG_DIR = Path.home() / "XJTLU-autonomous-vehicle/runtime-data" / "logs" / "latest"
 
 
 def load_destinations(scene_points_file: Path) -> list[tuple[int, str]]:

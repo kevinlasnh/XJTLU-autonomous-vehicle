@@ -8,7 +8,7 @@ import yaml
 
 
 def default_runtime_root() -> Path:
-    return Path.home() / "fyp_runtime_data"
+    return Path.home() / "XJTLU-autonomous-vehicle/runtime-data"
 
 
 def default_scene_points_file() -> Path:

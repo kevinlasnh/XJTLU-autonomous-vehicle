@@ -15,7 +15,7 @@
   - 当前主瓶颈：GPS 路线锚定方法（startup GPS 2.5~4.75m 误差）+ FAST-LIO2 odom 发散
   - 状态：**等待 CC Step 8 架构级复审**
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
-- 运行时数据根目录: `~/fyp_runtime_data`
+- 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`
 - 日志统一入口: `scripts/launch_with_logs.sh`
 

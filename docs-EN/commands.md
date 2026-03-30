@@ -33,7 +33,7 @@ source ~/XJTLU-autonomous-vehicle/install/setup.bash
 cd ~/XJTLU-autonomous-vehicle
 bash scripts/init_runtime_data.sh
 
-ls ~/fyp_runtime_data
+ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
 ## 3. Launch Five Operating Modes
@@ -85,7 +85,7 @@ ros2 launch gnss_calibration gnss_calibration_launch.py
 
 # GNSS scene-ready localizer (new GPS route-graph architecture)
 ros2 run gnss_calibration gps_anchor_localizer_node \
-  --ros-args --params-file ~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml
+  --ros-args --params-file ~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/master_params_scene.yaml
 
 # FAST-LIO2
 ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/bringup/config/master_params.yaml
@@ -160,19 +160,19 @@ Common diagnostic focus points:
 
 ```bash
 # Check what latest points to
-readlink -f ~/fyp_runtime_data/logs/latest
+readlink -f ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest
 
 # View current session metadata
-cat ~/fyp_runtime_data/logs/latest/system/session_info.yaml
+cat ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/system/session_info.yaml
 
 # View tegrastats
-tail -f ~/fyp_runtime_data/logs/latest/system/tegrastats.log
+tail -f ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/system/tegrastats.log
 
 # View console log directory
-ls ~/fyp_runtime_data/logs/latest/console
+ls ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/console
 
 # View data log directory
-ls ~/fyp_runtime_data/logs/latest/data
+ls ~/XJTLU-autonomous-vehicle/runtime-data/logs/latest/data
 ```
 
 ## 7. Data Collection and Evaluation
@@ -180,24 +180,24 @@ ls ~/fyp_runtime_data/logs/latest/data
 ```bash
 # Record rosbag
 bash scripts/data_collection/record_bag.sh
-bash scripts/data_collection/record_bag.sh ~/fyp_runtime_data/bags/my_run
+bash scripts/data_collection/record_bag.sh ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run
 
 # Record tegrastats separately
 bash scripts/data_collection/record_perf.sh
-bash scripts/data_collection/record_perf.sh ~/fyp_runtime_data/perf/my_run.log
+bash scripts/data_collection/record_perf.sh ~/XJTLU-autonomous-vehicle/runtime-data/perf/my_run.log
 
 # Export TUM trajectory
-python3 scripts/data_collection/bag_to_tum.py   ~/fyp_runtime_data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/fyp_runtime_data/bags/my_run/pgo_optimized.tum
+python3 scripts/data_collection/bag_to_tum.py   ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run/rosbag2   /pgo/optimized_odom   ~/XJTLU-autonomous-vehicle/runtime-data/bags/my_run/pgo_optimized.tum
 ```
 
 ## 8. Map Saving
 
 ```bash
 # Save 3D point cloud map
-ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/fyp_runtime_data/maps/3d/<dir>', save_patches: true}"
+ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
 
 # Save 2D occupancy grid map
-ros2 run nav2_map_server map_saver_cli -f ~/fyp_runtime_data/maps/2d/<dir>/map
+ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-data/maps/2d/<dir>/map
 
 # View PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
@@ -309,7 +309,7 @@ Script description:
 - Coordinate source: **uses /fix only**
 - Sampling: 10 samples per point, averaged
 - Quality threshold: sample spread < 2 m, otherwise collection is rejected
-- Output file: `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- Output file: `~/XJTLU-autonomous-vehicle/runtime-data/gnss/scene_gps_bundle.yaml`
 - A single file simultaneously maintains:
   - fixed origin
   - graph nodes
@@ -389,7 +389,7 @@ Interactive workflow:
    - Altitude anomalies (> 10 m jump) trigger automatic warnings
 4. Confirm `launch_yaw_deg` (auto-suggested if first segment > 5 m, otherwise manual input)
 5. Route summary table displayed before saving (segment distances, bearings, ENU coordinates)
-6. Confirm save -> `~/fyp_runtime_data/gnss/current_route.yaml`
+6. Confirm save -> `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml`
 
 ### Automatic Corridor Navigation
 
@@ -420,18 +420,18 @@ ros2 topic echo /gps_corridor/enu_to_map
 
 Notes:
 - This mode assumes the vehicle is already placed at the fixed Launch Pose with the heading aligned
-- `collect_gps_route.py` collects `start_ref + multiple key waypoints` and generates `~/fyp_runtime_data/gnss/current_route.yaml`
+- `collect_gps_route.py` collects `start_ref + multiple key waypoints` and generates `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml`
 - If `collect_gps_route.py` does not detect `/fix`, it automatically launches `nmea_navsat_driver` in the background and stops it after collection
 - The collection process explicitly confirms `launch_yaw_deg`; if the start point is too close to the first waypoint, manual input is required
 - Default subgoal spacing is 30 m (based on global costmap radius 35 m - 5 m buffer), automatically written to the route file during collection
 - At runtime, no menu appears and no additional commands are awaited
-- The wrapper writes logs and bags to `~/fyp_runtime_data/logs/<session>/`
+- The wrapper writes logs and bags to `~/XJTLU-autonomous-vehicle/runtime-data/logs/<session>/`
 - During startup, if the current `/fix` deviates from `start_ref` beyond tolerance, `gps_route_runner` will abort immediately without moving the vehicle
 - **Ctrl+C automatically cleans up all nodes, ros2 daemon, and serial port occupancy** -- no need for manual `make kill-runtime`
 
 **Quiet mode** (default):
 - Only simplified status messages are shown in the foreground
-- Full launch output is written to `~/fyp_runtime_data/logs/<session>/system/launch_stdout.log`
+- Full launch output is written to `~/XJTLU-autonomous-vehicle/runtime-data/logs/<session>/system/launch_stdout.log`
 - Default startup timeout is 45 s, adjustable via the `FYP_CORRIDOR_STARTUP_TIMEOUT_S` environment variable
 
 **Raw mode** (for debugging):

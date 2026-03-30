@@ -12,7 +12,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     bringup_share = get_package_share_directory("bringup")
-    runtime_scene_dir = os.path.expanduser("~/fyp_runtime_data/gnss/current_scene")
+    runtime_scene_dir = os.path.expanduser("~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene")
 
     default_scene_params = os.path.join(runtime_scene_dir, "master_params_scene.yaml")
     default_scene_points = os.path.join(runtime_scene_dir, "scene_points.yaml")

@@ -32,7 +32,7 @@ try:
 except Exception:
     FixedENUProjector = None  # type: ignore[assignment]
 
-OUTPUT_DIR = Path.home() / "fyp_runtime_data" / "gnss"
+OUTPUT_DIR = Path.home() / "XJTLU-autonomous-vehicle/runtime-data" / "gnss"
 OUTPUT_FILE = OUTPUT_DIR / "current_route.yaml"
 REPO_ROOT = Path.home() / "XJTLU-autonomous-vehicle"
 MASTER_PARAMS_FILE = REPO_ROOT / "src" / "bringup" / "config" / "master_params.yaml"

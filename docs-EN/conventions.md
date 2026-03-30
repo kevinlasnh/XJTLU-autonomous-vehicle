@@ -39,10 +39,10 @@
 
 ## 5. Runtime Data and Logging Rules
 
-Runtime data is separated from the code repository in `~/fyp_runtime_data/`:
+Runtime data lives inside the workspace at `~/XJTLU-autonomous-vehicle/runtime-data/`:
 
 ```text
-~/fyp_runtime_data/
+~/XJTLU-autonomous-vehicle/runtime-data/
 ├── config/
 ├── gnss/
 ├── logs/
@@ -69,7 +69,7 @@ Additional rules:
 1. The current GNSS stack operates at basic GPS accuracy level, not maintained as an RTK workflow.
 2. Indoors without satellite reception, `/fix` showing `status=-1` or `NaN` is expected behavior.
 3. `gnss_calibration` does not write a valid `gnss_offset.txt` under no-fix conditions.
-4. On the current Jetson runtime, `~/fyp_runtime_data/gnss/` may contain `gnss_offset.invalid_*.txt` as invalid sample traces.
+4. On the current Jetson runtime, `~/XJTLU-autonomous-vehicle/runtime-data/gnss/` may contain `gnss_offset.invalid_*.txt` as invalid sample traces.
 
 ## 7. On-Vehicle Safety Rules
 

@@ -39,10 +39,10 @@
 
 ## 5. 运行时数据与日志规则
 
-运行时数据与代码仓分离在 `~/fyp_runtime_data/`：
+运行时数据位于工作区内部的 `~/XJTLU-autonomous-vehicle/runtime-data/`：
 
 ```text
-~/fyp_runtime_data/
+~/XJTLU-autonomous-vehicle/runtime-data/
 ├── config/
 ├── gnss/
 ├── logs/
@@ -69,7 +69,7 @@
 1. 当前 GNSS 栈按基础 GPS 精度使用，不按 RTK 工作流维护。
 2. 室内无卫星条件下，`/fix` 为 `status=-1` 或 `NaN` 是预期现象。
 3. `gnss_calibration` 在 no-fix 情况下不会写有效 `gnss_offset.txt`。
-4. 当前 Jetson 运行时 `~/fyp_runtime_data/gnss/` 中可出现 `gnss_offset.invalid_*.txt` 作为无效样本留痕。
+4. 当前 Jetson 运行时 `~/XJTLU-autonomous-vehicle/runtime-data/gnss/` 中可出现 `gnss_offset.invalid_*.txt` 作为无效样本留痕。
 
 ## 7. 实车安全规则
 

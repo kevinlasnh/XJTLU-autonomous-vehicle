@@ -3,7 +3,7 @@ set -euo pipefail
 
 MODE="${1:-explore}"
 SESSION=$(date +%Y-%m-%d-%H-%M-%S)
-SESSION_DIR="$HOME/fyp_runtime_data/logs/$SESSION"
+SESSION_DIR="$HOME/XJTLU-autonomous-vehicle/runtime-data/logs/$SESSION"
 TEGRA_PID=""
 LAUNCH_PID=""
 CLEANUP_DONE=0
@@ -11,7 +11,7 @@ CLEANUP_DONE=0
 mkdir -p "$SESSION_DIR/console"
 mkdir -p "$SESSION_DIR/data"
 mkdir -p "$SESSION_DIR/system"
-ln -sfn "$SESSION_DIR" "$HOME/fyp_runtime_data/logs/latest"
+ln -sfn "$SESSION_DIR" "$HOME/XJTLU-autonomous-vehicle/runtime-data/logs/latest"
 
 export ROS_LOG_DIR="$SESSION_DIR/console"
 export FYP_LOG_SESSION_DIR="$SESSION_DIR/data"
@@ -101,7 +101,7 @@ if [[ "$MODE" == "corridor" ]]; then
 fi
 
 if [[ "$MODE" == "corridor" && "${FYP_CORRIDOR_CONSOLE_MODE:-quiet}" != "raw" ]]; then
-  ROUTE_FILE="$HOME/fyp_runtime_data/gnss/current_route.yaml"
+  ROUTE_FILE="$HOME/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml"
   ROUTE_FIX_TIMEOUT_S=""
   if [[ -f "$ROUTE_FILE" ]]; then
     ROUTE_FIX_TIMEOUT_S="$(

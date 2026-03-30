@@ -13,7 +13,7 @@ def get_runtime_root():
     runtime_root = os.environ.get("FYP_RUNTIME_ROOT")
     if runtime_root:
         return Path(runtime_root).expanduser()
-    return Path.home() / "fyp_runtime_data"
+    return Path.home() / "XJTLU-autonomous-vehicle/runtime-data"
 
 
 def get_runtime_path(*parts):

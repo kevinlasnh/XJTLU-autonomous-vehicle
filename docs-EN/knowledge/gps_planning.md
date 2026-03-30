@@ -21,7 +21,7 @@ GPS navigation currently has two parallel pipelines:
 
 ### 2.1 Single Source of Truth
 
-- `~/fyp_runtime_data/gnss/scene_gps_bundle.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/scene_gps_bundle.yaml`
 
 This file stores:
 - `scene_name`
@@ -40,9 +40,9 @@ python3 scripts/build_scene_runtime.py
 ```
 
 This generates:
-- `~/fyp_runtime_data/gnss/current_scene/master_params_scene.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_points.yaml`
-- `~/fyp_runtime_data/gnss/current_scene/scene_route_graph.geojson`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/master_params_scene.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_points.yaml`
+- `~/XJTLU-autonomous-vehicle/runtime-data/gnss/current_scene/scene_route_graph.geojson`
 
 These files serve:
 - PGO fixed origin

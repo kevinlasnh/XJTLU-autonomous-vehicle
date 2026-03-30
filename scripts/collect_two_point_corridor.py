@@ -17,7 +17,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import NavSatFix
 import yaml
 
-OUTPUT_DIR = Path.home() / 'fyp_runtime_data' / 'gnss'
+OUTPUT_DIR = Path.home() / 'XJTLU-autonomous-vehicle/runtime-data' / 'gnss'
 OUTPUT_FILE = OUTPUT_DIR / 'two_point_corridor.yaml'
 REPO_ROOT = Path.home() / 'XJTLU-autonomous-vehicle'
 MASTER_PARAMS_FILE = REPO_ROOT / 'src' / 'bringup' / 'config' / 'master_params.yaml'
