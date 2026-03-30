@@ -138,19 +138,14 @@
     - Fix: Commit `d075c6b` moved the parameter to the correct `bt_navigator` node
     - Status: Fixed (2026-03-26)
 
-24. **[Mitigated] Late-segment `lio_odom` / `odom->base_link` divergence**
+24. **[Root Cause Fixed] Late-segment `lio_odom` / `odom->base_link` divergence**
     - Description: In multiple on-vehicle runs, `odom->base_link` starts making continuous large jumps in the second half of the second segment, causing pose divergence and navigation failure
-    - Latest evidence (session `2026-03-27-13-43-46`):
-      - `map->odom` maximum single-step change was only on the order of 1e-11 (stable)
-      - `odom->base_link` showed single-step jumps of 2.43 m/0.11 s starting from `1774590467s`
-      - Drift occurs strictly in the local pose chain, not from global aligner drift
-    - Trigger condition: After prolonged `collision ahead` + multiple recoveries
-    - Root cause: Pending investigation; possibly related to FAST-LIO2 degradation during sustained recovery/backup maneuvers
-    - Mitigation (commit `308fe77`):
-      - Added odom divergence watchdog: single-step >0.5m warns, >1.0m triggers safe abort
-      - Session `2026-03-27-18-43-20` verified watchdog correctly triggered `ODOM_DIVERGENCE_ABORT` (2.45m jump in 22ms)
-      - ESKF degradation protection deployed: skip update when `effect_feat_num < 50`, `m_P` diagonal clamping, H degenerate direction regularization
-    - Impact: Watchdog prevents vehicle from continuing to move erratically after odom divergence, but the root cause of divergence is not yet resolved
+    - **Root cause confirmed (2026-03-30)**: `lidar_processor.cpp:245` point-to-plane Jacobian `hat()` argument incorrectly uses `state.t_wi` (world position, ~50m) instead of `state.t_il` (extrinsic offset, ~0.04m)
+      - Origin: fork changed original FAST-LIO2 `SKEW_SYM_MATRX` macro to `Sophus::SO3d::hat()` with wrong variable name
+      - Impact: rotation Jacobian scales with distance from origin (hundreds of times too large) -> incorrect IESKF rotation correction -> map rotation -> odom divergence
+    - Fix: commit `e4945f4` -- one-line fix `state.t_wi` -> `state.t_il`
+    - Mitigations retained (commit `308fe77`): odom watchdog + ESKF degradation protection kept as general safety measures
+    - Status: root cause fixed; awaiting on-vehicle verification to confirm divergence is fully eliminated
 
 25. **[Important] GPS route collection/anchoring method insufficient for physical precision**
     - Description: Current corridor GPS route relies on a single `start_ref` + `launch_yaw_deg` for anchoring. Startup GPS itself has ~2.5 m error, and route geometry is defined only in the ENU domain, causing map-projected targets to systematically deviate from the user's intended physical path

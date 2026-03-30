@@ -138,19 +138,14 @@
    - 修复: commit `d075c6b` 将参数移到正确的 `bt_navigator` 节点下
    - 状态: 已修复（2026-03-26）
 
-24. **[已缓解] 后段 `lio_odom` / `odom→base_link` 发散**
+24. **[根因已修复] 后段 `lio_odom` / `odom→base_link` 发散**
    - 描述: 多轮实车中第二段后半程 `odom→base_link` 开始连续大跳，导致位姿发散、导航失败
-   - 最新证据（session `2026-03-27-13-43-46`）:
-     - `map→odom` 最大单步变化仅 1e-11 量级（稳定）
-     - `odom→base_link` 从 `1774590467s` 起单步跃迁达 2.43m/0.11s
-     - 漂移严格发生在本地位姿链，不是 global aligner 漂移
-   - 触发条件: 长时间 `collision ahead` + 多次 recovery 后
-   - 根因: 待查，可能与 FAST-LIO2 在持续 recovery/backup 中的退化有关
-   - 缓解措施（commit `308fe77`）:
-     - 新增 odom 发散 watchdog：单步 > 0.5m 告警，> 1.0m 安全终止
-     - session `2026-03-27-18-43-20` 验证 watchdog 正确触发 `ODOM_DIVERGENCE_ABORT`（22ms 内跳变 2.45m）
-     - ESKF 退化保护已部署：`effect_feat_num < 50` 跳过更新、`m_P` 对角线 clamp、H 退化方向正则化
-   - 影响: watchdog 防止车辆在 odom 发散后继续乱跑，但发散根因仍未根治
+   - **根因已确认（2026-03-30）**: `lidar_processor.cpp:245` 点到平面 Jacobian 中 `hat()` 参数错误使用 `state.t_wi`（世界位置，~50m）而非 `state.t_il`（外参偏移，~0.04m）
+     - 来源：fork 将原始 FAST-LIO2 的 `SKEW_SYM_MATRX` 宏改为 `Sophus::SO3d::hat()` 时变量名写错
+     - 影响：旋转 Jacobian 随距离从原点增长被放大数百倍 → IESKF 旋转修正错误 → 地图旋转 → odom 发散
+   - 修复: commit `e4945f4` — 一行修复 `state.t_wi` → `state.t_il`
+   - 缓解措施保留（commit `308fe77`）: odom watchdog + ESKF 退化保护仍作为通用安全机制
+   - 状态: 根因已修复，等待实车验证确认发散是否完全消除
 
 25. **[重要] GPS 路线采集/锚定方法不足以保证物理精度**
    - 描述: 当前 corridor GPS 路线依赖单个 `start_ref` + `launch_yaw_deg` 锚定。startup GPS 本身带 ~2.5m 误差，加上路线几何只在 ENU 域定义，导致 map 中生成的目标线系统性偏离用户期望的物理路径

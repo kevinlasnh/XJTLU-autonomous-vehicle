@@ -413,6 +413,31 @@ FASTLIO2 = High-frequency IMU integration prediction + Per-frame LiDAR correctio
 
 During GPS corridor on-vehicle testing, FAST-LIO2 local odom was found to diverge after sustained recovery/backup maneuvers (`odom->base_link` single-step jumps of up to 2.43m/0.11s). The following ESKF-level safety guards were deployed:
 
+## 7. Corridor Mode ESKF Safety Guards and Jacobian Bug Fix
+
+### 7.0 Fatal Jacobian Bug Fix (commit `e4945f4`)
+
+**This is the root cause of odom divergence**, taking priority over all safety guards below.
+
+**Bug location**: `lidar_processor.cpp:245`
+
+```cpp
+// Before fix (wrong):
+hat(state.r_il * laser_p_vec + state.t_wi)   // t_wi = world position, ~50m
+// After fix (correct):
+hat(state.r_il * laser_p_vec + state.t_il)   // t_il = extrinsic offset, ~0.04m
+```
+
+**Root cause**: fork changed original HKU-Mars FAST-LIO2 `SKEW_SYM_MATRX` macro to `Sophus::SO3d::hat()` with wrong variable — `state.t_wi` (IMU world position) instead of `state.t_il` (LiDAR-to-IMU extrinsic translation).
+
+**Mathematical derivation**: point-to-plane residual Jacobian w.r.t. rotation (right perturbation):
+```
+dh/dtheta = -n^T * R_wi * hat(R_il * p_lidar + t_il)
+```
+The `hat()` argument is the point position in IMU frame (the rotation "lever arm"), unrelated to world position `t_wi`. Using `t_wi` causes the lever arm to grow linearly with travel distance, amplifying the rotation Jacobian by hundreds of times.
+
+**Impact chain**: wrong Jacobian -> incorrect IESKF rotation correction -> `r_wi` estimate drifts -> accumulated point cloud map rotates with vehicle -> odom divergence
+
 ### 7.1 Effective Feature Point Threshold Check
 
 **Files**: `lidar_processor.cpp`, `ieskf.cpp`

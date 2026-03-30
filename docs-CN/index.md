@@ -9,11 +9,10 @@
 - GPS 目标导航模式已在 `feature/gps-navigation-v4` 完成软件部署并通过室内 smoke: `make launch-nav-gps`
 - **GPS Corridor v2 独立 Global Aligner 架构已在 `gps-rpp` 分支部署**: `make launch-corridor`
   - waypoint 1 已稳定到达，运行期微调已收口
-  - Odom 发散 watchdog 已部署并验证生效（commit `308fe77`，session `2026-03-27-18-43-20` 正确触发安全终止）
-  - ESKF 退化保护已部署（`effect_feat_num < 50` 跳过 + `m_P` clamp + H 正则化）
+  - **FAST-LIO2 Jacobian 致命 bug 已修复**（commit `e4945f4`）：`lidar_processor.cpp:245` 的 `hat(t_wi)` → `hat(t_il)`，消除旋转估计随距离发散的根因
+  - Odom 发散 watchdog + ESKF 退化保护已部署并保留为通用安全机制
   - Calibration handshake 机制已部署，但 wp1 标定因 GPS 偏差 30m 而失败
-  - 当前主瓶颈：GPS 路线锚定方法（startup GPS 2.5~4.75m 误差）+ FAST-LIO2 odom 发散
-  - 状态：**等待 CC Step 8 架构级复审**
+  - 当前状态：**Jacobian 修复等待实车验证；GPS 锚定问题待 Jacobian 修复验证后重新评估**
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`
