@@ -440,7 +440,7 @@ local_costmap:
         cost_scaling_factor: 2.0
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        inflation_radius: 0.65
+        inflation_radius: 0.43
       # STVL 参数块；负责把 3D 点云写入体素层，并通过时间衰减清除陈旧障碍。
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
@@ -464,8 +464,8 @@ local_costmap:
           marking: true
           clearing: false
           obstacle_range: 5.0
-          min_obstacle_height: 0.0
-          max_obstacle_height: 2.0
+          min_obstacle_height: -0.33
+          max_obstacle_height: 0.30
           expected_update_rate: 0.0
           observation_persistence: 0.0
           inf_is_valid: false
@@ -478,8 +478,8 @@ local_costmap:
           topic: /fastlio2/body_cloud
           marking: false
           clearing: true
-          max_z: 6.0
-          min_z: 0.0
+          max_z: 0.30
+          min_z: -0.33
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
@@ -544,7 +544,7 @@ global_costmap:
         cost_scaling_factor: 1.0
         # 代价场参数；决定障碍物周围代价衰减和安全边界形状。
         # 调大：代价场变化更明显或更保守；调小：更激进或更平缓。
-        inflation_radius: 0.95
+        inflation_radius: 0.63
       # STVL 参数块；负责让全局图中的近场动态障碍自动衰减，避免人走开后仍残留。
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
@@ -568,8 +568,8 @@ global_costmap:
           marking: true
           clearing: false
           obstacle_range: 4.0
-          min_obstacle_height: 0.0
-          max_obstacle_height: 2.0
+          min_obstacle_height: -0.33
+          max_obstacle_height: 0.30
           expected_update_rate: 0.0
           observation_persistence: 0.0
           inf_is_valid: false
@@ -582,8 +582,8 @@ global_costmap:
           topic: /fastlio2/body_cloud
           marking: false
           clearing: true
-          max_z: 5.0
-          min_z: 0.0
+          max_z: 0.30
+          min_z: -0.33
           vertical_fov_angle: 1.03
           vertical_fov_padding: 0.05
           horizontal_fov_angle: 6.29
