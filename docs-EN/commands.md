@@ -36,13 +36,14 @@ bash scripts/init_runtime_data.sh
 ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
-## 3. Launch Five Operating Modes
+## 3. Launch Six Operating Modes
 
 ```bash
 cd ~/XJTLU-autonomous-vehicle
 
 make launch-slam
 make launch-explore
+make launch-indoor-nav
 make launch-explore-gps
 make launch-nav-gps
 make launch-travel
@@ -53,6 +54,7 @@ Equivalent wrapper direct invocation:
 ```bash
 bash scripts/launch_with_logs.sh slam
 bash scripts/launch_with_logs.sh explore
+bash scripts/launch_with_logs.sh indoor-nav
 bash scripts/launch_with_logs.sh explore-gps
 bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
@@ -67,6 +69,17 @@ ros2 launch bringup system_explore_gps.launch.py
 ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
 ```
+
+One-line command for indoor click-to-go navigation without GPS:
+
+```bash
+cd ~/XJTLU-autonomous-vehicle && FYP_USE_RVIZ=true bash scripts/launch_with_logs.sh indoor-nav
+```
+
+Notes:
+- `indoor-nav` does not start the GNSS driver, `gps_global_aligner`, or `gps_route_runner`
+- It keeps Livox, FAST-LIO2, PGO, Nav2, and the serial control chain running
+- In RViz, use `2D Goal Pose` to publish goals to `/goal_pose` for indoor click-to-go navigation
 
 ## 4. Launch Individual Core Components
 

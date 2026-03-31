@@ -36,13 +36,14 @@ bash scripts/init_runtime_data.sh
 ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
-## 3. 启动五种运行模式
+## 3. 启动六种运行模式
 
 ```bash
 cd ~/XJTLU-autonomous-vehicle
 
 make launch-slam
 make launch-explore
+make launch-indoor-nav
 make launch-explore-gps
 make launch-nav-gps
 make launch-travel
@@ -53,6 +54,7 @@ make launch-travel
 ```bash
 bash scripts/launch_with_logs.sh slam
 bash scripts/launch_with_logs.sh explore
+bash scripts/launch_with_logs.sh indoor-nav
 bash scripts/launch_with_logs.sh explore-gps
 bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
@@ -67,6 +69,17 @@ ros2 launch bringup system_explore_gps.launch.py
 ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
 ```
+
+室内无 GPS 点击点导航的一整行命令：
+
+```bash
+cd ~/XJTLU-autonomous-vehicle && FYP_USE_RVIZ=true bash scripts/launch_with_logs.sh indoor-nav
+```
+
+说明：
+- `indoor-nav` 不启动 GNSS driver、`gps_global_aligner`、`gps_route_runner`
+- 会保留 Livox、FAST-LIO2、PGO、Nav2、串口控制链路
+- 在 RViz 中使用 `2D Goal Pose` 向 `/goal_pose` 发目标即可做室内点击点导航
 
 ## 4. 单独启动核心组件
 
