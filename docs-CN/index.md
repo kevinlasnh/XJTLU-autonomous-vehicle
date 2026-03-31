@@ -1,6 +1,6 @@
 # FYP 自主导航车辆文档索引
 
-> 最后更新: 2026-03-30
+> 最后更新: 2026-03-31
 
 ## 当前系统摘要
 
@@ -10,9 +10,11 @@
 - **GPS Corridor v2 独立 Global Aligner 架构已在 `gps-rpp` 分支部署**: `make launch-corridor`
   - waypoint 1 已稳定到达，运行期微调已收口
   - **FAST-LIO2 Jacobian 致命 bug 已修复**（commit `e4945f4`）：`lidar_processor.cpp:245` 的 `hat(t_wi)` → `hat(t_il)`，消除旋转估计随距离发散的根因
+  - **syncPackage 空点云段错误已修复**（commit `9a193af`，Issue #4）：空帧守卫防止 FAST-LIO2 崩溃
   - Odom 发散 watchdog + ESKF 退化保护已部署并保留为通用安全机制
   - Calibration handshake 机制已部署，但 wp1 标定因 GPS 偏差 30m 而失败
-  - 当前状态：**Jacobian 修复等待实车验证；GPS 锚定问题待 Jacobian 修复验证后重新评估**
+  - **Startup GPS spread 门槛已从 3.0m 放宽到 5.0m**（commit `d9b63dc`）：首轮实车中 GPS 60 点窗口 spread 典型 ~4.8m，原门槛过严
+  - 当前状态：**Issue #4 和 startup gate 已修复；Jacobian 修复 + 放宽后的 startup gate 待下次晴天实车复测验证**
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`

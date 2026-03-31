@@ -101,6 +101,18 @@
 
 ## Recently Fixed
 
+27. **[Fixed] syncPackage empty point cloud segfault (Issue #4)**
+    - Symptom: When LiDAR is occluded or all points are out of range, `livox2PCL()` returns an empty cloud; `syncPackage()` calls `.back()` on empty `points`, triggering a segfault
+    - Impact chain: FAST-LIO2 crash -> `odom -> base_link` TF lost -> system localization failure
+    - Fix: commit `9a193af` -- added empty point cloud guard in `syncPackage()`; empty frames are discarded
+    - Status: Fixed, deployed, GitHub Issue #4 closed (2026-03-31)
+
+28. **[Fixed] Startup GPS spread threshold too strict, preventing corridor startup**
+    - Symptom: In first on-vehicle re-test, `gps_global_aligner` / `gps_route_runner` stuck at `WAITING_FOR_STABLE_FIX`; rest of system running normally
+    - Root cause: Route default `startup_fix_spread_max_m: 3.0`, but current GPS device's 60-point window spread is typically ~4.8m, failing to meet the threshold
+    - Fix: commit `d9b63dc` -- route collection script default relaxed from `2.0` to `5.0`; current running route changed from `3.0` to `5.0`
+    - Status: Fixed, awaiting next clear-weather re-test for verification (2026-03-31)
+
 1. **[Fixed] PGO does not establish `map -> odom` after startup**
    - Symptom: Continuously prints `Received out of order message` after startup, no keyframes, no stable `map -> odom`; RViz under the `map` fixed frame appears blank.
    - Root cause: `last_message_time` sync state in `pgo_node.cpp` was uninitialized; the first pair of synced messages was incorrectly flagged as out-of-order.
@@ -145,7 +157,8 @@
       - Impact: rotation Jacobian scales with distance from origin (hundreds of times too large) -> incorrect IESKF rotation correction -> map rotation -> odom divergence
     - Fix: commit `e4945f4` -- one-line fix `state.t_wi` -> `state.t_il`
     - Mitigations retained (commit `308fe77`): odom watchdog + ESKF degradation protection kept as general safety measures
-    - Status: root cause fixed; awaiting on-vehicle verification to confirm divergence is fully eliminated
+    - 2026-03-31 update: Jetson smoke test passed; first on-site test showed system started normally (no odom divergence triggered), but startup GPS gate was too strict so navigation phase was never reached; divergence fix effect not yet verified over long distances
+    - Status: root cause fixed; awaiting long-distance on-vehicle verification
 
 25. **[Important] GPS route collection/anchoring method insufficient for physical precision**
     - Description: Current corridor GPS route relies on a single `start_ref` + `launch_yaw_deg` for anchoring. Startup GPS itself has ~2.5 m error, and route geometry is defined only in the ENU domain, causing map-projected targets to systematically deviate from the user's intended physical path

@@ -101,6 +101,18 @@
 
 ## 最近已修复
 
+27. **[已修复] syncPackage 空点云段错误 (Issue #4)**
+   - 现象: 雷达被遮挡或所有点超出范围时，`livox2PCL()` 返回空 cloud，`syncPackage()` 对空 `points` 调用 `.back()` 触发段错误
+   - 影响链: FAST-LIO2 崩溃 → `odom → base_link` TF 丢失 → 系统定位失效
+   - 修复: commit `9a193af` — `syncPackage()` 中增加空点云守卫，空帧直接丢弃
+   - 状态: 已修复，已部署，GitHub Issue #4 已关闭（2026-03-31）
+
+28. **[已修复] Startup GPS spread 门槛过严导致 corridor 无法启动**
+   - 现象: 首轮实车测试中 `gps_global_aligner` / `gps_route_runner` 停在 `WAITING_FOR_STABLE_FIX`，系统其余部分正常
+   - 根因: route 默认 `startup_fix_spread_max_m: 3.0`，但当前 GPS 设备 60 点窗口 spread 典型值 ~4.8m，无法满足
+   - 修复: commit `d9b63dc` — 路线采集脚本默认从 `2.0` 放宽到 `5.0`，当前运行 route 从 `3.0` 改为 `5.0`
+   - 状态: 已修正，待下次晴天复测验证（2026-03-31）
+
 1. **[已修复] PGO 启动后 `map -> odom` 不建立**
    - 现象: 启动后持续刷 `Received out of order message`，没有关键帧，没有稳定 `map -> odom`，RViz 在 `map` fixed frame 下看起来像空白。
    - 根因: `pgo_node.cpp` 中同步状态 `last_message_time` 未初始化，第一对同步消息会被错误判定为 out-of-order。
@@ -145,7 +157,8 @@
      - 影响：旋转 Jacobian 随距离从原点增长被放大数百倍 → IESKF 旋转修正错误 → 地图旋转 → odom 发散
    - 修复: commit `e4945f4` — 一行修复 `state.t_wi` → `state.t_il`
    - 缓解措施保留（commit `308fe77`）: odom watchdog + ESKF 退化保护仍作为通用安全机制
-   - 状态: 根因已修复，等待实车验证确认发散是否完全消除
+   - 2026-03-31 更新: Jetson smoke test 通过；首轮现场测试系统正常启动（未触发 odom 发散），但因 startup GPS gate 过严未进入导航阶段，发散修复效果尚未在长距离行驶中验证
+   - 状态: 根因已修复，待长距离实车验证
 
 25. **[重要] GPS 路线采集/锚定方法不足以保证物理精度**
    - 描述: 当前 corridor GPS 路线依赖单个 `start_ref` + `launch_yaw_deg` 锚定。startup GPS 本身带 ~2.5m 误差，加上路线几何只在 ENU 域定义，导致 map 中生成的目标线系统性偏离用户期望的物理路径

@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-03-30
+> Last updated: 2026-03-31
 
 ## Current System Summary
 
@@ -10,9 +10,11 @@
 - **GPS Corridor v2 standalone Global Aligner architecture deployed on `gps-rpp` branch**: `make launch-corridor`
   - Waypoint 1 reached reliably; runtime fine-tuning closed out
   - **FAST-LIO2 fatal Jacobian bug fixed** (commit `e4945f4`): `lidar_processor.cpp:245` `hat(t_wi)` -> `hat(t_il)`, eliminating root cause of rotation estimate divergence with distance
+  - **syncPackage empty point cloud segfault fixed** (commit `9a193af`, Issue #4): empty frame guard prevents FAST-LIO2 crash
   - Odom divergence watchdog + ESKF degradation protection deployed and retained as general safety measures
   - Calibration handshake mechanism deployed, but wp1 calibration failed due to 30m GPS deviation
-  - Current status: **Jacobian fix awaiting on-vehicle verification; GPS anchoring issue to be re-evaluated after Jacobian fix is verified**
+  - **Startup GPS spread threshold relaxed from 3.0m to 5.0m** (commit `d9b63dc`): first on-vehicle test showed GPS 60-point window spread typically ~4.8m, original threshold too strict
+  - Current status: **Issue #4 and startup gate fixed; Jacobian fix + relaxed startup gate awaiting next clear-weather on-vehicle re-test**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
