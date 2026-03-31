@@ -82,6 +82,7 @@ set -u
 case "$MODE" in
   slam)         LAUNCH_FILE="system_slam.launch.py" ;;
   explore)      LAUNCH_FILE="system_explore.launch.py" ;;
+  indoor-nav)   LAUNCH_FILE="system_explore.launch.py" ;;
   corridor)     LAUNCH_FILE="system_gps_corridor.launch.py" ;;
   travel)       LAUNCH_FILE="system_travel.launch.py" ;;
   explore-gps)  LAUNCH_FILE="system_explore_gps.launch.py" ;;
@@ -90,7 +91,7 @@ case "$MODE" in
 esac
 
 LAUNCH_ARGS=()
-if [[ "$MODE" == "corridor" ]]; then
+if [[ "$MODE" == "corridor" || "$MODE" == "indoor-nav" ]]; then
   if [[ -n "${FYP_USE_RVIZ:-}" ]]; then
     LAUNCH_ARGS+=("use_rviz:=${FYP_USE_RVIZ}")
   elif [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
