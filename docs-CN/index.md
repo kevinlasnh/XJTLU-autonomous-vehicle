@@ -5,17 +5,17 @@
 ## 当前系统摘要
 
 - 当前主运行模式: `make launch-explore`
+- **室内无 GPS 点击点导航**: `make launch-indoor-nav`（RViz 发目标，无需 GNSS）
 - GPS 融合模式已部署: `make launch-explore-gps`
 - GPS 目标导航模式已在 `feature/gps-navigation-v4` 完成软件部署并通过室内 smoke: `make launch-nav-gps`
-- **GPS Corridor v2 独立 Global Aligner 架构已在 `gps-rpp` 分支部署**: `make launch-corridor`
-  - waypoint 1 已稳定到达，运行期微调已收口
-  - **FAST-LIO2 Jacobian 致命 bug 已修复**（commit `e4945f4`）：`lidar_processor.cpp:245` 的 `hat(t_wi)` → `hat(t_il)`，消除旋转估计随距离发散的根因
-  - **syncPackage 空点云段错误已修复**（commit `9a193af`，Issue #4）：空帧守卫防止 FAST-LIO2 崩溃
-  - Odom 发散 watchdog + ESKF 退化保护已部署并保留为通用安全机制
-  - Calibration handshake 机制已部署，但 wp1 标定因 GPS 偏差 30m 而失败
-  - **Startup GPS spread 门槛已从 3.0m 放宽到 5.0m**（commit `d9b63dc`）：首轮实车中 GPS 60 点窗口 spread 典型 ~4.8m，原门槛过严
-  - 当前状态：**Issue #4 和 startup gate 已修复；Jacobian 修复 + 放宽后的 startup gate 待下次晴天实车复测验证**
-- 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2
+- **GPS Corridor v2 已切换到 MPPI 控制器（`gps-mppi` 分支）**: `make launch-corridor`
+  - 控制器从 RotationShim + RPP 切换到 MPPI（commit `9d71823`），获得原生采样避障能力
+  - Costmap 高度过滤调优（commit `ce5226f`）：只保留车体高度范围内障碍，消除假障碍
+  - 障碍地图范围扩展到 15m（commit `2c2b8e6`），匹配 Livox MID360 量程
+  - **室内实车验证通过**：MPPI 成功��开人体、走廊整圈巡航无漂移、内存稳定 ~2.67GB
+  - FAST-LIO2 Jacobian 修复（commit `e4945f4`）+ syncPackage 空点云守卫（commit `9a193af`，Issue #4）均已包含
+  - 当前状态：**室内无 GPS 导航已验证通过；后续开发统一在 `gps-mppi` 分支**
+- 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2 (MPPI)
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`
 - 日志统一入口: `scripts/launch_with_logs.sh`

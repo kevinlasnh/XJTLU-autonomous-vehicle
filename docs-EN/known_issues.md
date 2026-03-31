@@ -49,11 +49,11 @@
    - Description: During prolonged operation, FAST-LIO2, PGO keyframes, and related caches push up memory usage.
    - Status: System-level service trimming done, but algorithm-level handling not addressed
 
-9. **[Mitigated] Costmap obstacle residuals / slow clearing**
+9. **[Fixed] Costmap obstacle residuals / slow clearing**
    - Description: After obstacles are removed, cost values on the costmap clear too slowly.
    - Status: 2026-03-26, STVL `clear_after_reading` changed from `true` to `false` (local + global); obstacles are now managed naturally by `voxel_decay` instead of being cleared every cycle
-   - Concurrent change: global inflation from `0.75 -> 0.95`, `cost_scaling_factor` from `2.0 -> 1.0`; green paths no longer hug obstacle edges
-   - Impact: No longer a primary source of corridor stop-go behavior
+   - 2026-03-31 update (`gps-mppi`): Height window narrowed to `-0.33~0.30m` (vehicle body height range), inflation radius local `0.43` / global `0.63`, obstacle map expanded to 15m. Indoor testing confirmed false obstacles eliminated
+   - Impact: No longer an issue
 
 ## Medium Issues
 
@@ -138,11 +138,10 @@
     - Status: **Resolved via architectural change** -- standalone global aligner replaced PGO handoff; switching threshold no longer needed
     - Impact: No longer applicable
 
-22. **[Medium] Controller / Planner loop frequency below target**
+22. **[Fixed] Controller / Planner loop frequency below target**
     - Description: Controller repeatedly reports `Control loop missed its desired rate`; Planner drops to ~2 Hz.
-    - Status: v2 fix lowered controller target frequency from 20 Hz to 15 Hz, reducing CPU pressure
-    - Root cause: Total computational load from costmap updates + TF lookups + point cloud processing on the current Jetson is near the bottleneck
-    - Impact: Increased probability of TF extrapolation warnings and false `collision ahead` reports (mitigated by frequency reduction)
+    - Status: On `gps-mppi`, MPPI runs at 20Hz; indoor testing passed with no frequency shortfall reports
+    - Impact: No longer an issue
 
 23. **[Fixed] Corridor BT file had Spin removed but runtime still executed spin**
     - Description: Both local and Jetson corridor BT XML files did not contain `Spin`, but `behavior_server` logs still printed `Running spin`
@@ -157,8 +156,8 @@
       - Impact: rotation Jacobian scales with distance from origin (hundreds of times too large) -> incorrect IESKF rotation correction -> map rotation -> odom divergence
     - Fix: commit `e4945f4` -- one-line fix `state.t_wi` -> `state.t_il`
     - Mitigations retained (commit `308fe77`): odom watchdog + ESKF degradation protection kept as general safety measures
-    - 2026-03-31 update: Jetson smoke test passed; first on-site test showed system started normally (no odom divergence triggered), but startup GPS gate was too strict so navigation phase was never reached; divergence fix effect not yet verified over long distances
-    - Status: root cause fixed; awaiting long-distance on-vehicle verification
+    - 2026-03-31 update: `gps-mppi` indoor full-loop corridor verification showed FAST-LIO2 stable throughout, no odom divergence, no IMU drift, no point cloud drift. Jacobian fix introduced no regressions on the current baseline
+    - Status: root cause fixed; indoor verification passed; awaiting outdoor long-distance verification
 
 25. **[Important] GPS route collection/anchoring method insufficient for physical precision**
     - Description: Current corridor GPS route relies on a single `start_ref` + `launch_yaw_deg` for anchoring. Startup GPS itself has ~2.5 m error, and route geometry is defined only in the ENU domain, causing map-projected targets to systematically deviate from the user's intended physical path

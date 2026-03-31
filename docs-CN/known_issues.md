@@ -49,11 +49,11 @@
    - 描述: 长时间运行时 FAST-LIO2、PGO 关键帧和相关缓存会推高内存占用。
    - 状态: 系统层面已做服务裁剪，但算法层未处理
 
-9. **[已缓解] 代价地图障碍残留 / 消散慢**
+9. **[已修复] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
    - 状态: 2026-03-26 STVL `clear_after_reading` 已从 `true` 改为 `false`（local + global），障碍由 `voxel_decay` 自然管理，不再每周期清空
-   - 同期 global inflation 从 `0.75 → 0.95`，`cost_scaling_factor` 从 `2.0 → 1.0`，绿色路径不再紧贴障碍边缘
-   - 影响: 已不再是 corridor 主要 stop-go 来源
+   - 2026-03-31 更新（`gps-mppi`）：高度窗口收窄到 `-0.33~0.30m`（车体高度范围），膨胀半径 local `0.43` / global `0.63`，障碍地图扩展到 15m。室内实测假障碍已消除
+   - 影响: 已不再是问题
 
 ## 中等问题
 
@@ -138,11 +138,10 @@
    - 状态: **已通过架构变更解决** — 独立 global aligner 替代了 PGO handoff，不再需要切换门槛
    - 影响: 不再适用
 
-22. **[中等] Controller / Planner 循环频率不达标**
+22. **[已修复] Controller / Planner 循环频率不达标**
    - 描述: Controller 反复报 `Control loop missed its desired rate`，Planner 降至 `~2Hz`。
-   - 状态: 修正 v2 已将 controller 目标频率从 20Hz 降至 15Hz，减轻 CPU 压力
-   - 根因: 当前 Jetson 上 costmap 更新 + TF 查询 + 点云处理的总计算量已接近瓶颈
-   - 影响: TF extrapolation warnings、collision ahead 误报概率增加（但已通过降频缓解）
+   - 状态: `gps-mppi` 上 MPPI 以 20Hz 运行，室内实测通过，未再报频率不达标
+   - 影响: 不再是问题
 
 23. **[已修复] Corridor BT 文件已移除 Spin 但 runtime 仍执行 spin**
    - 描述: 本地和 Jetson 的 corridor BT XML 都不含 `Spin`，但 `behavior_server` 日志仍打印 `Running spin`
@@ -157,8 +156,8 @@
      - 影响：旋转 Jacobian 随距离从原点增长被放大数百倍 → IESKF 旋转修正错误 → 地图旋转 → odom 发散
    - 修复: commit `e4945f4` — 一行修复 `state.t_wi` → `state.t_il`
    - 缓解措施保留（commit `308fe77`）: odom watchdog + ESKF 退化保护仍作为通用安全机制
-   - 2026-03-31 更新: Jetson smoke test 通过；首轮现场测试系统正常启动（未触发 odom 发散），但因 startup GPS gate 过严未进入导航阶段，发散修复效果尚未在长距离行驶中验证
-   - 状态: 根因已修复，待长距离实车验证
+   - 2026-03-31 更新: `gps-mppi` 室内整圈巡航验证中 FAST-LIO2 全程稳定，无 odom 发散、无 IMU 漂移、无点云漂移。Jacobian 修复在当前基线上未引入回归
+   - 状态: 根因已修复，室内验证通过，待户外长距离验证
 
 25. **[重要] GPS 路线采集/锚定方法不足以保证物理精度**
    - 描述: 当前 corridor GPS 路线依赖单个 `start_ref` + `launch_yaw_deg` 锚定。startup GPS 本身带 ~2.5m 误差，加上路线几何只在 ENU 域定义，导致 map 中生成的目标线系统性偏离用户期望的物理路径

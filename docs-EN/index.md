@@ -5,17 +5,17 @@
 ## Current System Summary
 
 - Current primary operating mode: `make launch-explore`
+- **Indoor click-to-go navigation without GPS**: `make launch-indoor-nav` (RViz goal publishing, no GNSS required)
 - GPS fusion mode deployed: `make launch-explore-gps`
 - GPS goal navigation mode software deployment completed on `feature/gps-navigation-v4`, passed indoor smoke test: `make launch-nav-gps`
-- **GPS Corridor v2 standalone Global Aligner architecture deployed on `gps-rpp` branch**: `make launch-corridor`
-  - Waypoint 1 reached reliably; runtime fine-tuning closed out
-  - **FAST-LIO2 fatal Jacobian bug fixed** (commit `e4945f4`): `lidar_processor.cpp:245` `hat(t_wi)` -> `hat(t_il)`, eliminating root cause of rotation estimate divergence with distance
-  - **syncPackage empty point cloud segfault fixed** (commit `9a193af`, Issue #4): empty frame guard prevents FAST-LIO2 crash
-  - Odom divergence watchdog + ESKF degradation protection deployed and retained as general safety measures
-  - Calibration handshake mechanism deployed, but wp1 calibration failed due to 30m GPS deviation
-  - **Startup GPS spread threshold relaxed from 3.0m to 5.0m** (commit `d9b63dc`): first on-vehicle test showed GPS 60-point window spread typically ~4.8m, original threshold too strict
-  - Current status: **Issue #4 and startup gate fixed; Jacobian fix + relaxed startup gate awaiting next clear-weather on-vehicle re-test**
-- Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2
+- **GPS Corridor v2 switched to MPPI controller (`gps-mppi` branch)**: `make launch-corridor`
+  - Controller switched from RotationShim + RPP to MPPI (commit `9d71823`), gaining native sampling-based obstacle avoidance
+  - Costmap vehicle-height filtering tuned (commit `ce5226f`): only obstacles within vehicle body height range retained, false obstacles eliminated
+  - Obstacle map coverage expanded to 15m (commit `2c2b8e6`), matching Livox MID360 range
+  - **Indoor on-vehicle verification passed**: MPPI successfully navigated around a person, full corridor loop with no drift, memory stable at ~2.67GB
+  - FAST-LIO2 Jacobian fix (commit `e4945f4`) + syncPackage empty point cloud guard (commit `9a193af`, Issue #4) both included
+  - Current status: **Indoor GPS-free navigation verified; all future development on `gps-mppi` branch**
+- Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2 (MPPI)
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
 - Unified logging entry point: `scripts/launch_with_logs.sh`
