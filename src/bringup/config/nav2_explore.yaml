@@ -293,7 +293,7 @@ controller_server:
       vx_std: 0.2
       vy_std: 0.0
       wz_std: 0.3
-      vx_max: 0.7
+      vx_max: 1.5
       vx_min: 0.0
       vy_max: 0.0
       wz_max: 1.0
@@ -301,7 +301,7 @@ controller_server:
       ax_min: -3.0
       az_max: 3.5
       iteration_count: 1
-      prune_distance: 1.7
+      prune_distance: 2.5
       transform_tolerance: 0.5
       temperature: 0.3
       gamma: 0.015
@@ -816,7 +816,7 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_velocity: [0.7, 0.0, 1.0]
+    max_velocity: [1.5, 0.0, 1.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     min_velocity: [0.0, 0.0, -1.0]
