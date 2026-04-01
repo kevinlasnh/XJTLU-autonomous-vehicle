@@ -480,36 +480,24 @@ class GPSGlobalAligner(Node):
     def _solve_calibration_alignment(
         self, pairs: list[CalibrationPair]
     ) -> Alignment2D | None:
+        if self._bootstrap_alignment is None:
+            return None
         if len(pairs) < 2:
             return None
         spread_m = self._compute_pair_spread_m(pairs)
         if spread_m < self._calibration_min_spread_m:
             return None
 
-        enu_cx = sum(pair.enu_x for pair in pairs) / len(pairs)
-        enu_cy = sum(pair.enu_y for pair in pairs) / len(pairs)
-        map_cx = sum(pair.map_x for pair in pairs) / len(pairs)
-        map_cy = sum(pair.map_y for pair in pairs) / len(pairs)
-
-        h00 = 0.0
-        h01 = 0.0
-        h10 = 0.0
-        h11 = 0.0
-        for pair in pairs:
-            enu_dx = pair.enu_x - enu_cx
-            enu_dy = pair.enu_y - enu_cy
-            map_dx = pair.map_x - map_cx
-            map_dy = pair.map_y - map_cy
-            h00 += enu_dx * map_dx
-            h01 += enu_dx * map_dy
-            h10 += enu_dy * map_dx
-            h11 += enu_dy * map_dy
-
-        theta = normalize_angle(math.atan2(h10 - h01, h00 + h11))
+        theta = self._bootstrap_alignment.theta
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
-        tx = map_cx - (cos_theta * enu_cx - sin_theta * enu_cy)
-        ty = map_cy - (sin_theta * enu_cx + cos_theta * enu_cy)
+        tx_sum = 0.0
+        ty_sum = 0.0
+        for pair in pairs:
+            tx_sum += pair.map_x - (cos_theta * pair.enu_x - sin_theta * pair.enu_y)
+            ty_sum += pair.map_y - (sin_theta * pair.enu_x + cos_theta * pair.enu_y)
+        tx = tx_sum / len(pairs)
+        ty = ty_sum / len(pairs)
         if not (math.isfinite(theta) and math.isfinite(tx) and math.isfinite(ty)):
             return None
         return Alignment2D(
