@@ -385,9 +385,13 @@ public:
     {
         std::lock_guard<std::mutex> lock(m_state_data.imu_mutex);
         double timestamp = Utils::getSec(msg->header);
-        RCLCPP_INFO(this->get_logger(), "Received IMU data: accel(%.2f, %.2f, %.2f), gyro(%.2f, %.2f, %.2f), time: %.6f",
-                    msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z,
-                    msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z, timestamp);
+        RCLCPP_DEBUG_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Received IMU data: accel(%.2f, %.2f, %.2f), gyro(%.2f, %.2f, %.2f), time: %.6f",
+            msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z,
+            msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z, timestamp);
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -414,7 +418,13 @@ public:
     void lidarCB(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg)
     {
         CloudType::Ptr cloud = Utils::livox2PCL(msg, m_builder_config.lidar_filter_num, m_builder_config.lidar_min_range, m_builder_config.lidar_max_range);
-        RCLCPP_INFO(this->get_logger(), "Received LIDAR data: %zu points, time: %.6f", cloud->size(), Utils::getSec(msg->header));
+        RCLCPP_DEBUG_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Received LIDAR data: %zu points, time: %.6f",
+            cloud->size(),
+            Utils::getSec(msg->header));
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -612,8 +622,13 @@ public:
     {
         if (!syncPackage())
             return;
-        RCLCPP_INFO(this->get_logger(), "Processing sync package: %zu IMU samples, %zu LIDAR points", 
-                    m_package.imus.size(), m_package.cloud->size());
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Processing sync package: %zu IMU samples, %zu LIDAR points",
+            m_package.imus.size(),
+            m_package.cloud->size());
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -637,8 +652,12 @@ public:
         if (m_builder->status() != BuilderStatus::MAPPING)
             return;
 
-        RCLCPP_INFO(this->get_logger(), "Current position: x=%.2f, y=%.2f, z=%.2f", 
-                    m_kf->x().t_wi.x(), m_kf->x().t_wi.y(), m_kf->x().t_wi.z());
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Current position: x=%.2f, y=%.2f, z=%.2f",
+            m_kf->x().t_wi.x(), m_kf->x().t_wi.y(), m_kf->x().t_wi.z());
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
