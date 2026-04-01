@@ -57,6 +57,15 @@
 
       # 激光观测协方差逆；调大更相信激光匹配结果。
       lidar_cov_inv: 1000.0
+      # 是否在 FAST-LIO2 发布给下游前，先按重力方向相对高度裁剪点云。
+      # 开启后会同时影响 /fastlio2/body_cloud 与 /fastlio2/world_cloud，也会连带影响 PGO 与 Nav2。
+      publish_cloud_height_filter_enabled: true
+      # FAST-LIO2 输出点云的最小相对高度窗口（相对车体原点，沿重力方向）。
+      # 当前值对齐 2026-03-31 那组实测高度窗，用于剔除地面附近低点。
+      publish_cloud_min_z: -0.33
+      # FAST-LIO2 输出点云的最大相对高度窗口（相对车体原点，沿重力方向）。
+      # 当前值用于剔除车体高度以上的高点，减少顶棚/高处杂点进入下游。
+      publish_cloud_max_z: 0.30
 
 /pgo:
   pgo_node:
