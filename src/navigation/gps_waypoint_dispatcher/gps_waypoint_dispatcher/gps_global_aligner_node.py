@@ -396,16 +396,33 @@ class GPSGlobalAligner(Node):
         translation = transform.transform.translation
         return float(translation.x), float(translation.y)
 
-    def _build_bootstrap_alignment(self, x0: float, y0: float, yaw0: float) -> Alignment2D:
+    def _build_bootstrap_alignment(
+        self,
+        x0: float,
+        y0: float,
+        yaw0: float,
+        startup_fix: dict | None = None,
+    ) -> Alignment2D:
         launch_yaw_rad = math.radians(
             compass_heading_to_enu_yaw_deg(float(self._route["launch_yaw_deg"]))
         )
         theta = normalize_angle(yaw0 - launch_yaw_rad)
-        start_ref = self._route["start_ref"]
+        if startup_fix is not None:
+            anchor_enu_x, anchor_enu_y = self._projector.forward(
+                startup_fix["lat"], startup_fix["lon"]
+            )
+        else:
+            start_ref = self._route["start_ref"]
+            anchor_enu_x = start_ref["enu_x"]
+            anchor_enu_y = start_ref["enu_y"]
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
-        tx = x0 - (cos_theta * start_ref["enu_x"] - sin_theta * start_ref["enu_y"])
-        ty = y0 - (sin_theta * start_ref["enu_x"] + cos_theta * start_ref["enu_y"])
+        self.get_logger().info(
+            "Bootstrap anchor: %s enu=(%.2f, %.2f)"
+            % ("startup_fix" if startup_fix else "start_ref", anchor_enu_x, anchor_enu_y)
+        )
+        tx = x0 - (cos_theta * anchor_enu_x - sin_theta * anchor_enu_y)
+        ty = y0 - (sin_theta * anchor_enu_x + cos_theta * anchor_enu_y)
         self._alignment_revision += 1
         return Alignment2D(theta=theta, tx=tx, ty=ty, source="bootstrap", revision=self._alignment_revision)
 
@@ -744,7 +761,7 @@ class GPSGlobalAligner(Node):
         startup_fix = self._wait_for_stable_fix()
         self._validate_startup(startup_fix)
         x0, y0, yaw0 = self._lookup_current_pose("ALIGNER_WAITING_FOR_MAP_TF")
-        self._bootstrap_alignment = self._build_bootstrap_alignment(x0, y0, yaw0)
+        self._bootstrap_alignment = self._build_bootstrap_alignment(x0, y0, yaw0, startup_fix)
         self._current_alignment = self._bootstrap_alignment
         self._raw_alignment = self._bootstrap_alignment
         startup_enu_x, startup_enu_y = self._projector.forward(
