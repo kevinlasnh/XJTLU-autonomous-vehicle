@@ -49,6 +49,10 @@
    - 描述: 长时间运行时 FAST-LIO2、PGO 关键帧和相关缓存会推高内存占用。
    - 状态: 系统层面已做服务裁剪，但算法层未处理
 
+30. **[重要] GPS corridor 对齐机制待改进**
+   - 描述: 2026-04-01 测试暴露三个最小修复方向：(1) startup bootstrap 应吸收上电 stable GPS offset (2) waypoint calibration 应改为 translation-only 避免旋转翻转 (3) alignment 刷新粒度应从 per-waypoint 放宽到 per-subgoal
+   - 状态: 待下一轮设计/实现
+
 9. **[已修复] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
    - 状态: 2026-03-26 STVL `clear_after_reading` 已从 `true` 改为 `false`（local + global），障碍由 `voxel_decay` 自然管理，不再每周期清空
@@ -74,8 +78,12 @@
    - 状态: 未开始
 
 14. **[中等] 原地旋转轨迹不圆**
-   - 描述: 机械侧左右轮输出不一致，狭窄区域旋转时风险较高。
+   - 描述: 机械侧左右轮输出不一致，狭窄区域旋转时风险较���。
    - 状态: 硬件限制
+
+29. **[中等] Rosbag 录制提前终止**
+   - 描述: 2026-04-01 GPS corridor 测试中 rosbag 在 11:22:15 停录，但系统运行到 11:31:13，后半段无法回放
+   - 状态: 已记录，根因待查
 
 ## 低优先级 / 工具链问题
 
@@ -171,6 +179,7 @@
      - 结论：当前路线中 wp1 不具备可靠标定锚点价值
    - 状态: 2026-03-27 再次确认为当前主瓶颈，需回 Step 8 重新复审锚定方案
    - 候选方向: 多点刚体配准 / map 物理点位路线 / 连续轨迹采集
+   - 2026-04-01 GPS corridor 回归测试再次确认：startup offset 未吸收（~4.11m）、calibration theta 翻转（176.95deg）、live alignment 被 guard 拒绝（4.96m > 3.0m）。用户决定当前轮次按通过收口，问题转入下一轮
 
 26. **[已知] Translation-only aligner 未能纠回启动锚定误差**
    - 描述: commit `94862d7` �� global aligner 改为固定 bootstrap 旋转、只估计平移的模式，意图在运行中逐步修正启动锚定偏差

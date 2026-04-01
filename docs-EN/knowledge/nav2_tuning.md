@@ -8,7 +8,7 @@
 ## 2. Current Vehicle Motion Parameters
 
 - `robot_radius`: `0.38625`
-- `max_vel_x`: `0.5`
+- `max_vel_x`: `0.7` (2026-04-01 raised from 0.45, commit `2471e73`)
 - `min_vel_x`: `0.0`
 - `max_vel_theta`: `1.0`
 - `min_speed_theta`: `0.0`
@@ -21,20 +21,28 @@
 
 - `feedback: OPEN_LOOP`
 - `odom_topic: /fastlio2/lio_odom`
+- `max_velocity: [0.7, 0.0, 1.0]` (2026-04-01 sync)
 - Reason: Closed-loop integration has been confirmed unstable at this stage; continuing with open-loop is the current real configuration
 
-## 4. Explore Main Mode -- Current Key Tuning Conclusions
+## 4. Explore / Corridor Main Mode Current Controller (Updated 2026-04-01)
 
-DWB controller remains the default configuration for Explore mode:
+Explore and Corridor modes are now unified under the MPPI controller (`nav2_explore.yaml`):
 
-- `BaseObstacle.scale: 0.02`
-- `GoalAlign.scale: 16.0`
-- `PathAlign + GoalAlign.forward_point_distance: 0.325`
-- `trans_stopped_velocity: 0.05`
-- `RotateToGoal.scale: 200.0`
-- Reversing disabled: `min_vel_x = 0.0`
+- `plugin: nav2_mppi_controller::MPPIController`
+- `time_steps: 48`, `model_dt: 0.05` (forward simulation 2.4s)
+- `batch_size: 1000` (1000 trajectories sampled per iteration)
+- `vx_max: 0.7`, `wz_max: 1.0`
+- `temperature: 0.3`, `gamma: 0.015`
+- `motion_model: DiffDrive`
+- Critics: `ConstraintCritic`, `CostCritic(4.5)`, `GoalCritic(5.0)`, `GoalAngleCritic(3.0)`, `PathAlignCritic(14.0)`, `PathFollowCritic(5.0)`, `PathAngleCritic(2.0)`, `PreferForwardCritic(5.0)`
+- `controller_frequency: 20.0`
+- `yaw_goal_tolerance: 6.28` (effectively disables heading check)
 
-## 4a. Corridor Mode RPP Controller (2026-03-22)
+Historical DWB configuration is no longer used, only retained in `nav2_gps.yaml` and `nav2_travel.yaml`.
+
+## 4a. Corridor Mode RPP Controller (2026-03-22, Deprecated)
+
+> The following parameters are for historical reference only. Corridor switched to MPPI on 2026-03-31 (commit `9d71823`).
 
 Corridor v2 uses Rotation Shim + Regulated Pure Pursuit instead of DWB:
 
@@ -49,57 +57,39 @@ Corridor v2 uses Rotation Shim + Regulated Pure Pursuit instead of DWB:
 - `RPP.max_lookahead_dist: 1.5`
 - `RPP.lookahead_time: 1.5`
 - `RPP.max_allowed_time_to_collision_up_to_carrot: 0.30`
-  - Note: Original value 0.6; v1 mistakenly tuned to 1.2 (wrong direction); corrected in v2 back to 0.6; later further tightened to 0.30 to trigger deceleration earlier rather than hard stopping
 - `RPP.use_cost_regulated_linear_velocity_scaling: true` (enabled 2026-03-26)
-  - `cost_scaling_dist: 0.55`
-  - `cost_scaling_gain: 0.70`
-  - Effect: Smooth deceleration near obstacles, replacing the previous binary hard-stop behavior
-- `RPP.regulated_linear_scaling_min_radius: 1.2`
-- `RPP.regulated_linear_scaling_min_speed: 0.25`
-- `RPP.use_rotate_to_heading: false`
-- `RPP.rotate_to_goal_heading: false`
 - `RPP.allow_reversing: false`
 
-Reason for choosing RPP: DWB's RotateToGoal/GoalAlign critics caused path bending and looping in the GPS corridor scenario. RPP's pure pursuit geometric tracking is well suited for corridor straight lines.
+## 5. Costmap-Related Conclusions (Updated 2026-04-01)
 
-## 5. Costmap-Related Conclusions (Updated 2026-03-22)
+### Local Costmap (current `nav2_explore.yaml` actual values)
 
-### Local Costmap
+- Update frequency: `12 Hz`
+- Publish frequency: `6 Hz`
+- `resolution: 0.05`
+- `width/height: 30` (cells, physical range 30 * 0.05 = 1.5m)
+- STVL `voxel_decay: 0.8`
+- `obstacle_range: 15.0`
+- `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
+- `inflation_radius: 0.43`, `cost_scaling_factor: 2.0`
+- `denoise_layer.minimal_group_size: 4`
 
-- Update frequency: `10 Hz` (reduced from 12 to save CPU)
-- Publish frequency: `5 Hz`
-- `resolution: 0.02` (the corridor branch currently retains 0.02; the planned 0.05 has not been deployed yet)
-- VoxelLayer is planned but the current branch still uses ObstacleLayer
-- `obstacle_min_range: 0.2` (filter LiDAR origin noise)
-- `obstacle_max_range: 5.0`
-- `raytrace_max_range: 6.0`
-- `min_obstacle_height: -0.3`
+### Global Costmap (current `nav2_explore.yaml` actual values)
 
-### Global Costmap
+- Update frequency: `3 Hz`
+- Publish frequency: `1.5 Hz`
+- `resolution: 0.10`
+- `width/height: 80` (cells, physical range 80 * 0.10 = 8.0m)
+- STVL `voxel_decay: 1.5`
+- `obstacle_range: 15.0`
+- `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
+- `inflation_radius: 0.63`, `cost_scaling_factor: 1.0`
 
-- Update frequency: `2 Hz` (reduced from 3)
-- Publish frequency: `1 Hz`
-- `resolution: 0.02` (the planned 0.10 has not been deployed yet)
-- `obstacle_max_range: 4.0` (significantly tightened from 10)
-- `obstacle_min_range: 1.0` (increased from 0.3 to reduce near-field marking)
-- `raytrace_max_range: 5.0` (significantly tightened from 12)
-- `raytrace_min_range: 0.5`
-- Uses rolling window, width/height: 50
+### Known Improvements Needed
 
-### Real-Vehicle Findings (2026-03-22~26)
-
-- **2026-03-26 latest parameters (closure version)**:
-  - Local costmap: `width/height: 18`, `inflation_radius: 0.65`, `cost_scaling_factor: 2.0`
-  - Global costmap: `width/height: 80`, `inflation_radius: 0.95`, `cost_scaling_factor: 1.0`
-  - STVL `clear_after_reading: false` (local + global), obstacles managed by `voxel_decay` naturally
-  - RPP `max_allowed_time_to_collision_up_to_carrot: 0.30`
-  - RPP `use_cost_regulated_linear_velocity_scaling: true`
-  - Subgoal spacing 30m (global costmap radius 40m - 10m buffer)
-- Green `/plan` hugging obstacle edges resolved by global `cost_scaling_factor: 1.0` (was 2.0) + `inflation_radius: 0.95` (was 0.75)
-- `clear_after_reading: false` fixed the issue of obstacles being cleared every cycle; STVL now decays normally via `voxel_decay`
-- BT override fixed: `default_nav_to_pose_bt_xml` moved from the incorrect `bt_navigator_navigate_to_pose_rclcpp_node` to `bt_navigator`
-- Corridor runtime tuning has hit its ceiling; the current main bottleneck is not Nav2 parameters but the GPS route anchoring method
-- **2026-03-23 correction v2**: local `denoise_layer.minimal_group_size` increased from 3 to 4; global STVL `transform_tolerance` aligned from 0.35 to 0.5
+- Costmap canvas size (local 1.5m / global 8m) is much smaller than `obstacle_range` 15m and LiDAR 15m range
+- Obstacle data beyond the canvas is truncated; global NavFn has essentially no global rerouting capability for distant subgoals (30m)
+- Current MPPI local obstacle avoidance has been verified indoors, but outdoor large-obstacle rerouting capability remains to be evaluated
 
 ## 6. GPS-Specific Configuration (`nav2_gps.yaml`)
 
@@ -121,14 +111,14 @@ Tuning principles:
 - Keep the existing DWB / costmap main structure unchanged
 - Do not introduce larger changes like MPPI or VoxelLayer in the GPS MVP branch
 
-## 7. Current Operational Notes (2026-03)
+## 7. Current Operational Notes (2026-04)
 
-1. The RViz fixed frame must be set to `map`.
+1. RViz fixed frame must be set to `map`.
 2. If `map -> odom` is not established, even with Livox and FAST-LIO2 running, RViz may appear blank or the costmap may not display.
-3. `nav2_default.yaml`, `nav2_explore.yaml`, and `nav2_travel.yaml` had their comments and formatting rewritten on 2026-03-18, but no parameter values were changed.
-4. `nav2_gps.yaml` has completed software deployment on `feature/gps-navigation-v4`; outdoor tuning is not yet finished.
-5. Corridor mode (`gps` branch) reuses `nav2_explore.yaml`, where the controller section has been changed from DWB to Rotation Shim + RPP, and costmap parameters have been adjusted for corridor requirements.
-6. The Jetson currently runs the controller target at 15Hz (down from 20Hz, correction v2) and the planner at ~2Hz. Frequency should not be blindly increased further.
+3. Explore and Corridor modes are now unified under the MPPI controller (commit `9d71823`).
+4. `velocity_smoother.max_velocity[0]` has been synced to `0.7`.
+5. `nav2_gps.yaml` still uses the DWB controller, independent of Explore/Corridor.
+6. FAST-LIO2 published point cloud is now height-filtered at the C++ level with window `[-0.33, 0.30]` (commit `f619fa6`); downstream STVL receives clean data.
 
 ## 8. Waypoint System
 

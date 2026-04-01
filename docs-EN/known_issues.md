@@ -49,6 +49,10 @@
    - Description: During prolonged operation, FAST-LIO2, PGO keyframes, and related caches push up memory usage.
    - Status: System-level service trimming done, but algorithm-level handling not addressed
 
+30. **[Important] GPS corridor alignment mechanism needs improvement**
+    - Description: 2026-04-01 testing exposed three minimum fix directions: (1) startup bootstrap should absorb power-on stable GPS offset (2) waypoint calibration should be translation-only to avoid rotation flips (3) alignment refresh granularity should be relaxed from per-waypoint to per-subgoal
+    - Status: Pending next round of design/implementation
+
 9. **[Fixed] Costmap obstacle residuals / slow clearing**
    - Description: After obstacles are removed, cost values on the costmap clear too slowly.
    - Status: 2026-03-26, STVL `clear_after_reading` changed from `true` to `false` (local + global); obstacles are now managed naturally by `voxel_decay` instead of being cleared every cycle
@@ -76,6 +80,10 @@
 14. **[Medium] In-place rotation trajectory is not circular**
     - Description: Mechanical asymmetry in left/right wheel output creates higher risk during rotation in tight spaces.
     - Status: Hardware limitation
+
+29. **[Medium] Rosbag recording early termination**
+    - Description: During 2026-04-01 GPS corridor test, rosbag stopped at 11:22:15 but system ran until 11:31:13; second half cannot be replayed
+    - Status: Recorded, root cause TBD
 
 ## Low Priority / Toolchain Issues
 
@@ -171,6 +179,7 @@
       - Conclusion: wp1 in the current route does not serve as a reliable calibration anchor
     - Status: 2026-03-27, re-confirmed as the current primary bottleneck; needs to return to Step 8 for anchoring approach re-review
     - Candidate directions: multi-point rigid-body registration / map physical waypoint route / continuous trajectory collection
+    - 2026-04-01 GPS corridor regression test confirmed again: startup offset not absorbed (~4.11m), calibration theta flip (176.95deg), live alignment rejected by guard (4.96m > 3.0m). User decided to close current round as pass; issues deferred to next round
 
 26. **[Known] Translation-only aligner failed to correct startup anchoring error**
     - Description: Commit `94862d7` changed the global aligner to fix the bootstrap rotation and only estimate translation, intending to progressively correct startup anchoring deviation during operation

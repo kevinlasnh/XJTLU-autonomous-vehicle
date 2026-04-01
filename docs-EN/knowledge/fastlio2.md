@@ -3,7 +3,7 @@
 ## Current Location in the Project
 
 - Package name: `fastlio2`
-- Current primary outputs:
+- Current primary outputs (when height filtering is enabled, point cloud outputs are height-filtered before publishing; see below):
   - `/fastlio2/lio_odom`
   - `/fastlio2/body_cloud`
 - Current primary entry point:
@@ -15,6 +15,19 @@ ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/
 - Current parameter source is primarily `src/bringup/config/master_params.yaml`; `lio_no_rviz.py` retains legacy `fastlio2/config/lio.yaml` fallback capability.
 - The downstream `pgo` node directly consumes `/fastlio2/lio_odom` and `/fastlio2/body_cloud`.
 - This document mainly explains the algorithm principles; for the full vehicle pipeline, also refer to `docs/architecture.md` and `docs/knowledge/pgo.md`.
+
+## Publish Cloud Pre-Height-Filtering (2026-04-01)
+
+FAST-LIO2 now includes publish-time point cloud height filtering in `lio_node.cpp` (commit `f619fa6`):
+
+- Before publishing `body_cloud` and `world_cloud` to downstream consumers (PGO, Nav2 STVL), points are filtered by their relative height along gravity with respect to the body origin
+- Filter window controlled via `master_params.yaml`:
+  - `publish_cloud_height_filter_enabled: true` (toggle)
+  - `publish_cloud_min_z: -0.33` (minimum relative height)
+  - `publish_cloud_max_z: 0.30` (maximum relative height)
+- Relative height calculation: `relative_height = world_cloud.z - body_origin_z_in_world`
+- Effect: ground-level low points and above-vehicle-height noise (ceiling, elevated structures) are eliminated at the source; downstream costmaps no longer need redundant height filtering
+- This filter does not affect FAST-LIO2's internal SLAM mapping and state estimation; it only affects the point clouds published to external consumers
 
 ## 1. Odom (Odometry) Data Interpretation
 

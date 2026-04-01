@@ -3,7 +3,7 @@
 ## 当前项目中的位置
 
 - 包名: `fastlio2`
-- 当前主输出:
+- 当前主输出（启用高度过滤时，点云输出经过发布前高度裁剪，详见下文）:
   - `/fastlio2/lio_odom`
   - `/fastlio2/body_cloud`
 - 当前主入口:
@@ -15,6 +15,19 @@ ros2 launch fastlio2 lio_no_rviz.py params_file:=~/XJTLU-autonomous-vehicle/src/
 - 当前参数来源以 `src/bringup/config/master_params.yaml` 为主；`lio_no_rviz.py` 保留 legacy `fastlio2/config/lio.yaml` 回退能力。
 - 下游的 `pgo` 节点直接消费 `/fastlio2/lio_odom` 和 `/fastlio2/body_cloud`。
 - 这份文档主要解释算法原理；整车链路请同时参考 `docs/architecture.md` 和 `docs/knowledge/pgo.md`。
+
+## 发布点云前置高度过滤（2026-04-01）
+
+FAST-LIO2 在 `lio_node.cpp` 中新增了发布前点云高度过滤功能（commit `f619fa6`）：
+
+- 在 `body_cloud` 和 `world_cloud` 发布给下游（PGO、Nav2 STVL）之前，按重力方向相对车体原点的高度进行裁剪
+- 过滤窗口由 `master_params.yaml` 控制：
+  - `publish_cloud_height_filter_enabled: true`（开关）
+  - `publish_cloud_min_z: -0.33`（最低相对高度）
+  - `publish_cloud_max_z: 0.30`（最高相对高度）
+- 相对高度计算：`relative_height = world_cloud.z - body_origin_z_in_world`
+- 效果：地面低点和车体高度以上的杂点（顶棚��高处结构）在源头被剔除，下游 costmap 不再需要重复过滤
+- 该过滤不影响 FAST-LIO2 内部的 SLAM 建图和状态估计，仅影响发布给外部的点云
 
 ## 1. odom 里程计数据解读
 

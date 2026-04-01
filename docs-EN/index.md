@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-03-31
+> Last updated: 2026-04-01
 
 ## Current System Summary
 
@@ -12,9 +12,11 @@
   - Controller switched from RotationShim + RPP to MPPI (commit `9d71823`), gaining native sampling-based obstacle avoidance
   - Costmap vehicle-height filtering tuned (commit `ce5226f`): only obstacles within vehicle body height range retained, false obstacles eliminated
   - Obstacle map coverage expanded to 15m (commit `2c2b8e6`), matching Livox MID360 range
+  - Corridor speed cap raised to 0.7 m/s (commit `2471e73`)
+  - FAST-LIO2 publish cloud pre-height-filtering (commit `f619fa6`), C++ level filtering before downstream consumption
   - **Indoor on-vehicle verification passed**: MPPI successfully navigated around a person, full corridor loop with no drift, memory stable at ~2.67GB
-  - FAST-LIO2 Jacobian fix (commit `e4945f4`) + syncPackage empty point cloud guard (commit `9a193af`, Issue #4) both included
-  - Current status: **Indoor GPS-free navigation verified; all future development on `gps-mppi` branch**
+  - **GPS outdoor regression test closed out** (2026-04-01): exposed startup offset not absorbed, calibration rotation flip, etc.; recorded for next round of fixes
+  - Current status: **Indoor navigation verified; GPS corridor basically functional but with known alignment issues; all future development on `gps-mppi` branch**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2 (MPPI)
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
@@ -47,6 +49,7 @@
 | 2025-11 | [devlog/2025-11.md](devlog/2025-11.md) |
 | 2025-12 | [devlog/2025-12.md](devlog/2025-12.md) |
 | 2026-03 | [devlog/2026-03.md](devlog/2026-03.md) |
+| 2026-04 | [devlog/2026-04.md](devlog/2026-04.md) |
 
 ## Repository-Level Auxiliary Documentation
 
