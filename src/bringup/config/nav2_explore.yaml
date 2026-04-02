@@ -292,14 +292,14 @@ controller_server:
       batch_size: 1000
       vx_std: 0.28
       vy_std: 0.0
-      wz_std: 0.2
+      wz_std: 0.25
       vx_max: 1.5
       vx_min: 0.0
       vy_max: 0.0
-      wz_max: 1.0
+      wz_max: 1.35
       ax_max: 3.0
       ax_min: -3.0
-      az_max: 3.5
+      az_max: 4.5
       iteration_count: 1
       prune_distance: 4.0
       transform_tolerance: 0.5
@@ -762,13 +762,13 @@ behavior_server:
     simulate_ahead_time: 2.0
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_rotational_vel: 1.0
+    max_rotational_vel: 1.35
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    min_rotational_vel: 0.4
+    min_rotational_vel: 0.55
     # 恢复行为角加速度上限；限制转向提速的快慢。
     # 调大：转向响应更快但更猛；调小：更柔和但更慢。
-    rotational_acc_lim: 3.5
+    rotational_acc_lim: 4.5
 # Robot State Publisher 参数块；负责基础状态发布的 ROS 参数。
 # 改错节点名或层级：节点会读不到参数。
 robot_state_publisher:
@@ -828,16 +828,16 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_velocity: [1.5, 0.0, 1.0]
+    max_velocity: [1.5, 0.0, 1.35]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     min_velocity: [0.0, 0.0, -1.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_accel: [3.0, 0.0, 3.5]
+    max_accel: [3.0, 0.0, 4.5]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_decel: [-3.0, 0.0, -3.5]
+    max_decel: [-3.0, 0.0, -4.5]
     # 输入或输出话题名；决定该模块从哪里取数据或向哪里发数据。
     # 改错话题：上下游节点会直接断链。
     odom_topic: "odom_CBoar"
