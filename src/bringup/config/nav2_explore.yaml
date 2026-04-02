@@ -1,5 +1,5 @@
 # Nav2 Explore 模式参数文件。
-# 本次仅重写逐参数注释和排版，不改任何参数值。
+# 当前文件已包含实际运行中的参数调优结果，不只是注释和排版变更。
 # AMCL 节点参数块；负责静态地图定位和粒子滤波。
 # 改错节点名或层级：AMCL 会读不到参数并回退默认值。
 amcl:
@@ -292,7 +292,7 @@ controller_server:
       batch_size: 1000
       vx_std: 0.28
       vy_std: 0.0
-      wz_std: 0.3
+      wz_std: 0.2
       vx_max: 1.5
       vx_min: 0.0
       vy_max: 0.0
@@ -306,6 +306,8 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
+      publish_critics_stats: true
+      open_loop: true
       visualize: false
       reset_period: 1.0
       regenerate_noises: false
@@ -669,22 +671,32 @@ smoother_server:
     use_sim_time: false
     # 平滑器列表；决定 smoother server 提供哪些路径平滑器。
     # 增删平滑器：会改变路径后处理能力或导致引用失败。
-    smoother_plugins: ["simple_smoother"]
-    # Simple Smoother 参数块；负责控制路径平滑的迭代策略。
-    # 改错结构或参数：平滑后的路径会更抖或更慢。
-    simple_smoother:
+    costmap_topic: global_costmap/costmap_raw
+    footprint_topic: global_costmap/published_footprint
+    robot_base_frame: base_link
+    transform_tolerance: 0.1
+    smoother_plugins: ["savitzky_golay_smoother"]
+    # Savitzky-Golay 参数块；用于去掉 NavFn 路径中的细小锯齿和微小折线。
+    # 改错结构或参数：平滑器可能加载失败或平滑效果不稳定。
+    savitzky_golay_smoother:
       # 插件类名；决定当前参数块最终加载哪种 Nav2 实现。
       # 改成不存在或不兼容的插件：对应功能块会加载失败。
-      plugin: "nav2_smoother::SimpleSmoother"
-      # 容差参数；决定当前算法接受多大误差仍视为有效。
-      # 调大：更宽松；调小：更严格。
-      tolerance: 1.0e-10
-      # 最大迭代次数；限制路径平滑最多做多少轮优化。
-      # 调大：更充分但更耗时；调小：更快但可能平滑不够。
-      max_its: 1000
-      # 是否执行细化步骤；决定平滑后是否再做一轮精修。
-      # 改为 true：路径更平滑但更耗时；改为 false：更快但结果可能更粗。
+      plugin: "nav2_smoother::SavitzkyGolaySmoother"
+      # 平滑窗口大小；必须为奇数，窗口更大时更能抑制路径细碎噪声。
+      # 调大：更平滑；调小：更贴近原始路径。
+      window_size: 7
+      # 拟合多项式阶数；决定每个窗口内如何逼近原始路径。
+      # 调大：更灵活但更容易保留细碎变化；调小：更保守更稳。
+      poly_order: 3
+      # 是否递归细化平滑结果；可进一步消除微小折线。
+      # 改为 true：更平滑；改为 false：更接近原始路径。
       do_refinement: true
+      # 递归细化次数；决定额外平滑迭代轮数。
+      # 调大：更平滑但更可能抹掉细节；调小：更保守。
+      refinement_num: 2
+      # 是否保留输入路径中的反转/断裂；NavFn 路径一般不需要强制保留。
+      # 改为 false：更利于抹掉 NavFn 小 artifacts；改为 true：更尊重原路径断点。
+      enforce_path_inversion: false
 # Behavior Server 节点参数块；负责恢复行为和辅助动作。
 # 改错节点名或层级：恢复行为会读不到参数或不可用。
 behavior_server:
