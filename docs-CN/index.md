@@ -20,8 +20,8 @@
     - Runner 使用实时 alignment 重新计算 subgoal，移除 per-waypoint frozen 机制
   - **室内实车验证通过**：MPPI 成功绕开人体、走廊整圈巡航无漂移、内存稳定 ~2.67GB、高速避障正常
   - **GPS 户外回归测试已收口**（2026-04-01）：live alignment 机制已部署，基本对齐问题已修复
+  - **直线稳定性调优已完成**（2026-04-02）：引入 Savitzky-Golay 路径平滑 + MPPI critic 调优，直线跟踪已达到"完美成功"标准
   - 当前状态：**室内导航已验证；GPS corridor 基本可用；后续开发统一在 `gps-mppi` 分支**
-  - 已知残留：无障碍直线路径跟踪有蛇形修正现象，待下一轮 MPPI 稳定性调参
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2 (MPPI)
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`

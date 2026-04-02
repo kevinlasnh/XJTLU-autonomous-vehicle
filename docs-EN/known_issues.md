@@ -49,9 +49,10 @@
    - Description: During prolonged operation, FAST-LIO2, PGO keyframes, and related caches push up memory usage.
    - Status: System-level service trimming done, but algorithm-level handling not addressed
 
-31. **[Important] MPPI straight path tracking serpentine corrections**
+31. **[Resolved] MPPI straight path tracking serpentine corrections**
     - Description: Evening high-speed test on 2026-04-01 revealed left-right-left-right serpentine corrections on clear straight path tracking
-    - Status: Recorded, awaiting next round MPPI straight-line stability tuning
+    - Solution: 2026-04-02 introduced Savitzky-Golay path smoothing (inserted SmoothPath in BT) + MPPI critic tuning (PathAlignCritic earlier intervention, PathFollowCritic delayed exit)
+    - Status: Resolved, user on-vehicle test evaluation "perfectly successful" (commit `15d4cac`)
 
 9. **[Fixed] Costmap obstacle residuals / slow clearing**
    - Description: After obstacles are removed, cost values on the costmap clear too slowly.

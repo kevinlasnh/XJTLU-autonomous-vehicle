@@ -20,8 +20,8 @@
     - Runner uses real-time alignment to recompute subgoals, removed per-waypoint frozen mechanism
   - **Indoor on-vehicle verification passed**: MPPI successfully navigated around a person, full corridor loop with no drift, memory stable at ~2.67GB, high-speed obstacle avoidance normal
   - **GPS outdoor regression test closed out** (2026-04-01): live alignment mechanism deployed, basic alignment issues fixed
+  - **Straight-line stability tuning completed** (2026-04-02): Introduced Savitzky-Golay path smoothing + MPPI critic tuning, straight-line tracking achieved "perfectly successful" standard
   - Current status: **Indoor navigation verified; GPS corridor basically functional; all future development on `gps-mppi` branch**
-  - Known residual: serpentine corrections on clear straight path tracking, awaiting next round MPPI stability tuning
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2 (MPPI)
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
