@@ -49,9 +49,9 @@
    - Description: During prolonged operation, FAST-LIO2, PGO keyframes, and related caches push up memory usage.
    - Status: System-level service trimming done, but algorithm-level handling not addressed
 
-30. **[Important] GPS corridor alignment mechanism needs improvement**
-    - Description: 2026-04-01 testing exposed three minimum fix directions: (1) startup bootstrap should absorb power-on stable GPS offset (2) waypoint calibration should be translation-only to avoid rotation flips (3) alignment refresh granularity should be relaxed from per-waypoint to per-subgoal
-    - Status: Pending next round of design/implementation
+31. **[Important] MPPI straight path tracking serpentine corrections**
+    - Description: Evening high-speed test on 2026-04-01 revealed left-right-left-right serpentine corrections on clear straight path tracking
+    - Status: Recorded, awaiting next round MPPI straight-line stability tuning
 
 9. **[Fixed] Costmap obstacle residuals / slow clearing**
    - Description: After obstacles are removed, cost values on the costmap clear too slowly.
@@ -108,6 +108,16 @@
     - Status: Hardware limitation
 
 ## Recently Fixed
+
+30. **[Fixed] GPS corridor alignment mechanism issues**
+    - Symptom: Morning test on 2026-04-01 exposed three core issues: (1) startup stable GPS offset (~4.11m) not absorbed into bootstrap (2) waypoint calibration rotation flip (176.95deg) (3) per-waypoint frozen alignment caused live alignment rejection by guard
+    - Fix: Evening 2026-04-01 completed four changes (commit `ebc26e2` + `fe3933e` + `e73c2bf` + `c0ea847`):
+      - Calibration switched to translation-only, avoiding rotation flips
+      - Startup directly absorbs stable GPS offset into bootstrap alignment
+      - Runner uses real-time alignment to recompute subgoals, removed per-waypoint frozen mechanism
+      - Speed cap raised to 1.5 m/s
+    - Verification: Evening indoor high-speed test passed, high-speed obstacle avoidance normal
+    - Status: Fixed and deployed (2026-04-01)
 
 27. **[Fixed] syncPackage empty point cloud segfault (Issue #4)**
     - Symptom: When LiDAR is occluded or all points are out of range, `livox2PCL()` returns an empty cloud; `syncPackage()` calls `.back()` on empty `points`, triggering a segfault

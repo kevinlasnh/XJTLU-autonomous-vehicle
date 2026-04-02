@@ -1,6 +1,6 @@
 # FYP 自主导航车辆文档索引
 
-> 最后更新: 2026-04-01
+> 最后更新: 2026-04-02
 
 ## 当前系统摘要
 
@@ -12,11 +12,16 @@
   - 控制器从 RotationShim + RPP 切换到 MPPI（commit `9d71823`），获得原生采样避障能力
   - Costmap 高度过滤调优（commit `ce5226f`）：只保留车体高度范围内障碍，消除假障碍
   - 障碍地图范围扩展到 15m（commit `2c2b8e6`），匹配 Livox MID360 量程
-  - 走廊速度上限提升到 0.7 m/s（commit `2471e73`）
+  - 走廊速度上限提升到 1.5 m/s（commit `c0ea847`）
   - FAST-LIO2 发布点云前置高度过滤（commit `f619fa6`），C++ 端裁剪后交给下游
-  - **室内实车验证通过**：MPPI 成功绕开人体、走廊整圈巡航无漂移、内存稳定 ~2.67GB
-  - **GPS 户外回归测试已收口**（2026-04-01）：暴露 startup offset 未吸收、calibration 旋转翻转等问题，已记录待下一轮修复
-  - 当前状态：**室内导航已验证；GPS corridor 基本可用但有已知对齐问题；后续开发统一在 `gps-mppi` 分支**
+  - **GPS live alignment 已部署**（commit `ebc26e2` + `fe3933e` + `e73c2bf`）：
+    - Calibration 改为 translation-only，避免旋转翻转
+    - 启动时直接吸收 stable GPS offset
+    - Runner 使用实时 alignment 重新计算 subgoal，移除 per-waypoint frozen 机制
+  - **室内实车验证通过**：MPPI 成功绕开人体、走廊整圈巡航无漂移、内存稳定 ~2.67GB、高速避障正常
+  - **GPS 户外回归测试已收口**（2026-04-01）：live alignment 机制已部署，基本对齐问题已修复
+  - 当前状态：**室内导航已验证；GPS corridor 基本可用；后续开发统一在 `gps-mppi` 分支**
+  - 已知残留：无障碍直线路径跟踪有蛇形修正现象，待下一轮 MPPI 稳定性调参
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2 (MPPI)
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`

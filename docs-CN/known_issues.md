@@ -49,9 +49,9 @@
    - 描述: 长时间运行时 FAST-LIO2、PGO 关键帧和相关缓存会推高内存占用。
    - 状态: 系统层面已做服务裁剪，但算法层未处理
 
-30. **[重要] GPS corridor 对齐机制待改进**
-   - 描述: 2026-04-01 测试暴露三个最小修复方向：(1) startup bootstrap 应吸收上电 stable GPS offset (2) waypoint calibration 应改为 translation-only 避免旋转翻转 (3) alignment 刷新粒度应从 per-waypoint 放宽到 per-subgoal
-   - 状态: 待下一轮设计/实现
+31. **[重要] MPPI 直线路径跟踪蛇形修正**
+   - 描述: 2026-04-01 晚间高速测试中发现，无障碍直线路径跟踪会出现左-右-左-右蛇形修正
+   - 状态: 已记录，待下一轮 MPPI 直线稳定性调参
 
 9. **[已修复] 代价地图障碍残留 / 消散慢**
    - 描述: 移除障碍后，代价地图上的代价值清除不够快。
@@ -108,6 +108,16 @@
    - 状态: 硬件限制
 
 ## 最近已修复
+
+30. **[已修复] GPS corridor 对齐机制问题**
+   - 现象: 2026-04-01 上午测试暴露三个核心问题：(1) startup stable GPS offset (~4.11m) 未被 bootstrap 吸收 (2) waypoint calibration 旋转翻转 (176.95deg) (3) per-waypoint frozen alignment 导致 live alignment 被 guard 拒绝
+   - 修复: 2026-04-01 晚间完成四项改动（commit `ebc26e2` + `fe3933e` + `e73c2bf` + `c0ea847`）：
+     - Calibration 改为 translation-only，避免旋转翻转
+     - 启动时直接吸收 stable GPS offset 到 bootstrap alignment
+     - Runner 使用实时 alignment 重新计算 subgoal，移除 per-waypoint frozen 机制
+     - 速度上限提升到 1.5 m/s
+   - 验证: 晚间室内高速测试通过，高速避障正常
+   - 状态: 已修复并部署（2026-04-01）
 
 27. **[已修复] syncPackage 空点云段错误 (Issue #4)**
    - 现象: 雷达被遮挡或所有点超出范围时，`livox2PCL()` 返回空 cloud，`syncPackage()` 对空 `points` 调用 `.back()` 触发段错误
