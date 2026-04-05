@@ -2,6 +2,15 @@
 
 ## Current Blockers
 
+32. **[Important] runtime-data Hugging Face remote synchronization blocked**
+   - Description: Attempts to archive and push on-vehicle test runtime-data to the Hugging Face dataset failed.
+   - Symptom:
+     - Git/Xet push throws `gnutls_handshake() failed`
+     - HF API fallback fails with `SSL EOF` due to lack of token under proxy
+     - SSH fallback fails with `Permission denied (publickey)` due to unconfigured keys
+   - Status: Recorded on 2026-04-05. Main code deployment and on-vehicle tests passed, but data archiving loop is blocked.
+   - Impact: Unable to archive and push runtime data while offline.
+
 1. **[Fatal] First on-vehicle `nav-gps` navigation run on `feature/gps-route-ready-v2` fails during execution**
    - Description: User has collected a real `ls-building` scene and completed the `current_scene/` compilation; `nav_gps_menu.py` can successfully enter `GOAL_REQUESTED -> COMPUTING_ROUTE -> FOLLOWING_ROUTE`, but the vehicle only moves briefly before stopping.
    - Direct evidence:

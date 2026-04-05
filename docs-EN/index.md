@@ -21,6 +21,7 @@
   - **Indoor on-vehicle verification passed**: MPPI successfully navigated around a person, full corridor loop with no drift, memory stable at ~2.67GB, high-speed obstacle avoidance normal
   - **GPS outdoor regression test closed out** (2026-04-01): live alignment mechanism deployed, basic alignment issues fixed
   - **Straight-line stability tuning completed** (2026-04-02): Introduced Savitzky-Golay path smoothing + MPPI critic tuning, straight-line tracking achieved "perfectly successful" standard
+  - **Dynamic obstacle avoidance recovery and replanning optimized** (2026-04-05): Global replanning raised to 5Hz, Navfn A* search enabled; BT recovery upgraded to 5-level progressive escalation (partial clear -> wait -> spin -> full clear -> backup 1m).
   - Current status: **Indoor navigation verified; GPS corridor basically functional; all future development on `gps-mppi` branch**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2 (MPPI)
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`

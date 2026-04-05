@@ -2,6 +2,15 @@
 
 ## 当前阻塞
 
+32. **[重要] runtime-data Hugging Face 远端同步阻塞**
+   - 描述: 尝试将实车测试的 runtime-data 数据归档推送到 Hugging Face dataset 时失败。
+   - 现象:
+     - 尝试 Git/Xet push 时出现 `gnutls_handshake() failed`
+     - HF API fallback 由于无 token 且代理环境下抛出 `SSL EOF`
+     - SSH 方式回退因公钥未配置导致 `Permission denied (publickey)`
+   - 状态: 2026-04-05 记录。主代码部署与实测已通过，但数据归档闭环被阻塞。
+   - 影响: 无法在离线状态下继续归档和推送运行数据。
+
 1. **[致命] `feature/gps-route-ready-v2` 首轮实车 `nav-gps` 导航会在执行中失效**
    - 描述: 用户已采真实 `ls-building` scene，并完成 `current_scene/` 编译；`nav_gps_menu.py` 可正常进入 `GOAL_REQUESTED -> COMPUTING_ROUTE -> FOLLOWING_ROUTE`，但车辆只短暂动作后即停止。
    - 直接证据:

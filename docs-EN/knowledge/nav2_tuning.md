@@ -76,10 +76,10 @@ Corridor v2 uses Rotation Shim + Regulated Pure Pursuit instead of DWB:
 
 ### Global Costmap (current `nav2_explore.yaml` actual values)
 
-- Update frequency: `3 Hz`
-- Publish frequency: `1.5 Hz`
+- Update frequency: `5 Hz` (raised from 3Hz on 2026-04-05 to support 5Hz replanning)
+- Publish frequency: `2.0 Hz`
 - `resolution: 0.10`
-- `width/height: 80` (cells, physical range 80 * 0.10 = 8.0m)
+- `width/height: 50` (cells, physical range 50 * 0.10 = 5.0m, shrunk on 2026-04-05 to reduce overhead)
 - STVL `voxel_decay: 1.5`
 - `obstacle_range: 15.0`
 - `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
@@ -97,11 +97,9 @@ GPS goal navigation mode does not modify `nav2_explore.yaml` directly; instead, 
 
 Minimum necessary differences from the Explore configuration:
 
-- `progress_checker.movement_time_allowance = 10.0`
 - `general_goal_checker.xy_goal_tolerance = 3.0`
 - `general_goal_checker.yaw_goal_tolerance = 0.5`
 - `GridBased.tolerance = 2.5`
-- `GridBased.use_astar = true`
 - `BaseObstacle.scale = 0.02`
 - `GoalAlign.scale = 24.0`
 - `RotateToGoal.scale = 32.0`

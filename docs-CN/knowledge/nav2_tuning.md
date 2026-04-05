@@ -76,10 +76,10 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 
 ### Global Costmap（当前 `nav2_explore.yaml` 实际值）
 
-- 更新频率: `3 Hz`
-- 发布频率: `1.5 Hz`
+- 更新频率: `5 Hz`（2026-04-05 从 3Hz 提升以支持 5Hz 重规划）
+- 发布频率: `2.0 Hz`
 - `resolution: 0.10`
-- `width/height: 80`（cells，实际物理范围 80 * 0.10 = 8.0m）
+- `width/height: 50`（cells，实际物理范围 50 * 0.10 = 5.0m，2026-04-05 缩小以降低开销）
 - STVL `voxel_decay: 1.5`
 - `obstacle_range: 15.0`
 - `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
@@ -97,11 +97,9 @@ GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `
 
 相对 Explore 配置的最小必要差异：
 
-- `progress_checker.movement_time_allowance = 10.0`
 - `general_goal_checker.xy_goal_tolerance = 3.0`
 - `general_goal_checker.yaw_goal_tolerance = 0.5`
 - `GridBased.tolerance = 2.5`
-- `GridBased.use_astar = true`
 - `BaseObstacle.scale = 0.02`
 - `GoalAlign.scale = 24.0`
 - `RotateToGoal.scale = 32.0`
