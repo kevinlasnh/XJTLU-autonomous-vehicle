@@ -6,7 +6,7 @@
     2. Wait 2 s                  (let STVL voxels decay)
     3. Spin 90 deg               (rescan surroundings)
     4. ClearEntireCostmap        (nuclear reset)
-    5. BackUp 0.5 m              (physical retreat)
+    5. BackUp 1.0 m              (physical retreat)
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
@@ -39,7 +39,7 @@
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
-          <BackUp backup_dist="0.50" backup_speed="0.15"/>
+          <BackUp backup_dist="1.00" backup_speed="0.15"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>
