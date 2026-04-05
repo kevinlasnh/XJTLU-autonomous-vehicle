@@ -265,7 +265,7 @@ controller_server:
       required_movement_radius: 0.15
       # 移动超时时间；决定多久没有明显进展就判定为卡住。
       # 调大：更宽容、更晚判定卡住；调小：更严格、更早进入恢复。
-      movement_time_allowance: 15.0
+      movement_time_allowance: 10.0
     # 目标检查器参数块；负责位置和朝向的到点判定。
     # 改成其它结构或缺少子参数：到点判断会失真。
     general_goal_checker:
@@ -501,10 +501,10 @@ global_costmap:
     ros__parameters:
       # 代价地图更新频率；决定障碍信息每秒刷新多少次。
       # 调大：环境更新更及时但 CPU 更高；调小：更省资源但环境变化反映更慢。
-      update_frequency: 3.0
+      update_frequency: 5.0
       # 代价地图发布频率；决定对外发布地图消息的频率。
       # 调大：下游拿到新地图更快；调小：带宽和 CPU 开销更低。
-      publish_frequency: 1.5
+      publish_frequency: 2.0
       # 全局参考坐标系；决定规划、行为或代价地图在 TF 树中的根坐标。
       # 改成错误坐标系：地图、路径和机器人位姿会整体错位。
       global_frame: map
@@ -528,10 +528,10 @@ global_costmap:
       rolling_window: true
       # 地图宽度；决定 costmap 在 X 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      width: 80
+      width: 50
       # 地图高度；决定 costmap 在 Y 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      height: 80
+      height: 50
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
       plugins: ["stvl_layer", "inflation_layer"]
@@ -638,7 +638,7 @@ planner_server:
     transform_tolerance: 0.8
     # 期望规划频率；用于监控全局规划线程是否跟上预期节奏。
     # 调大：更强调高频规划；调小：监控更宽松。
-    expected_planner_frequency: 3.0
+    expected_planner_frequency: 5.0
     # 是否使用仿真时间；决定该节点读取 /clock 还是真实系统时间。
     # 改为 true：依赖外部仿真时钟；改为 false：直接使用系统时间。
     use_sim_time: false
@@ -656,7 +656,7 @@ planner_server:
       tolerance: 0.5
       # 是否使用 A* 搜索；决定 NavFn 走 A* 还是更传统的搜索策略。
       # 改为 true：通常更偏向启发式搜索；改为 false：更接近传统全图搜索。
-      use_astar: false
+      use_astar: true
       # 是否允许穿越未知区域；决定规划器能否把未知空间当作可通行。
       # 改为 true：更容易找到穿越未知区的路；改为 false：路径更保守。
       allow_unknown: true
