@@ -97,11 +97,9 @@ GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `
 
 相对 Explore 配置的最小必要差异：
 
-- `progress_checker.movement_time_allowance = 10.0`
 - `general_goal_checker.xy_goal_tolerance = 3.0`
 - `general_goal_checker.yaw_goal_tolerance = 0.5`
 - `GridBased.tolerance = 2.5`
-- `GridBased.use_astar = true`
 - `BaseObstacle.scale = 0.02`
 - `GoalAlign.scale = 24.0`
 - `RotateToGoal.scale = 32.0`

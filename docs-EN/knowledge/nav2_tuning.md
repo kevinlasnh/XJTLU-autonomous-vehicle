@@ -97,11 +97,9 @@ GPS goal navigation mode does not modify `nav2_explore.yaml` directly; instead, 
 
 Minimum necessary differences from the Explore configuration:
 
-- `progress_checker.movement_time_allowance = 10.0`
 - `general_goal_checker.xy_goal_tolerance = 3.0`
 - `general_goal_checker.yaw_goal_tolerance = 0.5`
 - `GridBased.tolerance = 2.5`
-- `GridBased.use_astar = true`
 - `BaseObstacle.scale = 0.02`
 - `GoalAlign.scale = 24.0`
 - `RotateToGoal.scale = 32.0`
