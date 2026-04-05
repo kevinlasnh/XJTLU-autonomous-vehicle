@@ -47,6 +47,7 @@ runtime-data/
 # Local-only project management files
 AGENTS.md
 CLAUDE.md
+GEMINI.md
 WORKFLOW.md
 findings.md
 progress.md
