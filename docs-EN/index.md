@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-04-02
+> Last updated: 2026-04-09
 
 ## Current System Summary
 
@@ -18,7 +18,7 @@
     - Calibration switched to translation-only, avoiding rotation flips
     - Startup directly absorbs stable GPS offset
     - Runner uses real-time alignment to recompute subgoals, removed per-waypoint frozen mechanism
-  - **Indoor on-vehicle verification passed**: MPPI successfully navigated around a person, full corridor loop with no drift, memory stable at ~2.67GB, high-speed obstacle avoidance normal
+  - **Indoor on-vehicle verification passed**: representative full-stack session `2026-03-31-20-51-45` (`indoor-nav`, `gps-mppi@2c2b8e6`) lasted about 16 min 59 s with 1009 `tegrastats` samples; MPPI successfully navigated around a person, completed a full corridor loop with no drift, and kept RAM within `2.676-3.387 GB / 15.289 GB`
   - **GPS outdoor regression test closed out** (2026-04-01): live alignment mechanism deployed, basic alignment issues fixed
   - **Straight-line stability tuning completed** (2026-04-02): Introduced Savitzky-Golay path smoothing + MPPI critic tuning, straight-line tracking achieved "perfectly successful" standard
   - **Dynamic obstacle avoidance recovery and replanning optimized** (2026-04-05): Global replanning raised to 5Hz, Navfn A* search enabled; BT recovery upgraded to 5-level progressive escalation (partial clear -> wait -> spin -> full clear -> backup 1m).

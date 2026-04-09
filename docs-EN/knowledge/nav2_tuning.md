@@ -91,6 +91,23 @@ Corridor v2 uses Rotation Shim + Regulated Pure Pursuit instead of DWB:
 - Obstacle data beyond the canvas is truncated; global NavFn has essentially no global rerouting capability for distant subgoals (30m)
 - Current MPPI local obstacle avoidance has been verified indoors, but outdoor large-obstacle rerouting capability remains to be evaluated
 
+### Representative Indoor Full-System Session (2026-03-31)
+
+- Session: `runtime-data/logs/2026-03-31-20-51-45/`
+- Mode / version: `indoor-nav`, `gps-mppi@2c2b8e6`
+- Duration: about `16 min 59 s`
+- Complete use case: Livox + FAST-LIO2 + PGO + Nav2 (MPPI) + serial chassis control + RViz click-to-go navigation; GNSS-related nodes were intentionally not started
+- Navigation evidence: `rviz2` recorded 13 `Setting goal pose` events; `bt_navigator` recorded 13 `Begin navigating from current location` events
+- Control-chain evidence: `controller_server` recorded 17 goal receptions and 1251 path handoffs; `data/serial_twistctl.log` was continuously written
+- Performance metrics (from 1009 1Hz samples in `system/tegrastats.log`):
+  - RAM: `2.676-3.387 GB`, mean `3.224 GB`, total memory `15.289 GB`
+  - CPU: 8-core average utilization `57.92%`, peak single-core utilization `83%`
+  - GR3D: average `55.79%`, peak `97%`
+  - `VDD_IN`: average `10.27 W`, peak `11.87 W`
+  - Temperatures: `tj/cpu` peak `62.312C`, `gpu` peak `59.875C`
+- Purpose: this is the current representative session used for the oral-presentation resource-stability plot and the indoor no-GNSS full-stack verification claim
+- Remote retention: this session's `system/`, `console/`, and `data/` directories are already present in the runtime-data Hugging Face dataset remote main branch
+
 ## 6. GPS-Specific Configuration (`nav2_gps.yaml`)
 
 GPS goal navigation mode does not modify `nav2_explore.yaml` directly; instead, a separate `nav2_gps.yaml` is created.

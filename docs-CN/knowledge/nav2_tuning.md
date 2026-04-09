@@ -91,6 +91,23 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - 超出画布的障碍数据被截断；全局 NavFn 对远距离子目标（30m）实质上没有全局绕路能力
 - 当前 MPPI 局部避障能力已通过室内验证，但室外大障碍物绕路能力待评估
 
+### 代表性室内 full-system session（2026-03-31）
+
+- Session：`runtime-data/logs/2026-03-31-20-51-45/`
+- 模式 / 版本：`indoor-nav`，`gps-mppi@2c2b8e6`
+- 时长：约 `16 分 59 秒`
+- 完整 use case：Livox + FAST-LIO2 + PGO + Nav2(MPPI) + 串口底盘控制 + RViz 点击点导航；不启 GNSS 相关链路
+- 导航交互证据：`rviz2` 记录 13 次 `Setting goal pose`，`bt_navigator` 记录 13 次 `Begin navigating from current location`
+- 控制链证据：`controller_server` 记录 17 次 goal 接收、1251 次 path handoff；`data/serial_twistctl.log` 持续写入
+- 性能指标（来自 `system/tegrastats.log` 的 1009 个 1Hz 样本）：
+  - RAM：`2.676-3.387 GB`，均值 `3.224 GB`，总内存 `15.289 GB`
+  - CPU：8 核平均占用 `57.92%`，单核峰值 `83%`
+  - GR3D：平均 `55.79%`，峰值 `97%`
+  - `VDD_IN`：平均 `10.27 W`，峰值 `11.87 W`
+  - 温度：`tj/cpu` 峰值 `62.312C`，`gpu` 峰值 `59.875C`
+- 用途：这是当前用于答辩资源稳定性图和室内无 GPS 全链路验证的代表性 session
+- 远端保存：该 session 的 `system/`、`console/`、`data/` 已保存在 runtime-data Hugging Face 数据仓库远端主分支
+
 ## 6. GPS 专用配置（`nav2_gps.yaml`）
 
 GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `nav2_gps.yaml`。
