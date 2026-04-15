@@ -52,6 +52,10 @@ struct Config
     V3D t_il = V3D::Zero();
 
     double lidar_cov_inv = 1000.0;
+
+    bool publish_cloud_height_filter_enabled = false;
+    double publish_cloud_min_z = -0.33;
+    double publish_cloud_max_z = 0.30;
 };
 
 struct IMUData

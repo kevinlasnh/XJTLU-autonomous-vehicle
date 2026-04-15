@@ -225,10 +225,10 @@ void LidarProcessor::updateLossFunc(State &state, SharedState &share_data)
         m_effect_norm_vec->points[effect_feat_num] = m_norm_vec->points[i];
         effect_feat_num++;
     }
-    if (effect_feat_num < 1)
+    if (effect_feat_num < 50)
     {
         share_data.valid = false;
-        std::cerr << "NO Effective Points!" << std::endl;
+        std::cerr << "NO Effective Points! count=" << effect_feat_num << std::endl;
         return;
     }
     share_data.valid = true;
@@ -242,7 +242,7 @@ void LidarProcessor::updateLossFunc(State &state, SharedState &share_data)
         const PointType &norm_p = m_effect_norm_vec->points[i];
         Eigen::Vector3d laser_p_vec(laser_p.x, laser_p.y, laser_p.z);
         Eigen::Vector3d norm_vec(norm_p.x, norm_p.y, norm_p.z);
-        Eigen::Matrix<double, 1, 3> B = -norm_vec.transpose() * state.r_wi * Sophus::SO3d::hat(state.r_il * laser_p_vec + state.t_wi);
+        Eigen::Matrix<double, 1, 3> B = -norm_vec.transpose() * state.r_wi * Sophus::SO3d::hat(state.r_il * laser_p_vec + state.t_il);
         J.block<1, 3>(0, 0) = B;
         J.block<1, 3>(0, 3) = norm_vec.transpose();
         if (m_config.esti_il)

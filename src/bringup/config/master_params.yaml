@@ -26,7 +26,7 @@
       # 局部地图体素边长；调大可减少切块频率，但会增加局部地图规模。
       cube_len: 300.0
       # 检测范围；调大覆盖更远，但近邻搜索和匹配开销上升。
-      det_range: 60.0
+      det_range: 30.0
       # 地图平移阈值；调大可减少地图移动，调小更敏感。
       move_thresh: 1.5
 
@@ -57,6 +57,15 @@
 
       # 激光观测协方差逆；调大更相信激光匹配结果。
       lidar_cov_inv: 1000.0
+      # 是否在 FAST-LIO2 发布给下游前，先按重力方向相对高度裁剪点云。
+      # 开启后会同时影响 /fastlio2/body_cloud 与 /fastlio2/world_cloud，也会连带影响 PGO 与 Nav2。
+      publish_cloud_height_filter_enabled: true
+      # FAST-LIO2 输出点云的最小相对高度窗口（相对车体原点，沿重力方向）。
+      # 当前值对齐 2026-03-31 那组实测高度窗，用于剔除地面附近低点。
+      publish_cloud_min_z: -0.33
+      # FAST-LIO2 输出点云的最大相对高度窗口（相对车体原点，沿重力方向）。
+      # 当前值用于剔除车体高度以上的高点，减少顶棚/高处杂点进入下游。
+      publish_cloud_max_z: 0.30
 
 /pgo:
   pgo_node:
@@ -89,14 +98,24 @@
 
       # 是否启用 GPS 因子；关闭后回到纯激光图优化。
       "gps.enable": true
-      # PGO 使用的 GNSS 话题；当前主线是校准后的 /gnss。
-      "gps.topic": /gnss
+      # PGO 使用的 GNSS 话题；corridor v2 直接消费原始 /fix。
+      "gps.topic": /fix
       # GPS 水平噪声；调大表示更不相信 GPS。
       "gps.noise_xy": 2.5
       # GPS 垂直噪声；调大表示更不相信海拔。
       "gps.noise_z": 5.0
       # 每隔多少关键帧加入一个 GPS 因子；调小更频繁融合。
-      "gps.factor_interval": 10
+      "gps.factor_interval": 5
+      # 至少累计多少个 ENU/map 配对后才允许解算 ENU->map。
+      "gps.alignment_min_points": 5
+      # ENU 配对的最小空间展幅；不足则继续累计，不发布有效对齐。
+      "gps.alignment_min_spread_m": 5.0
+      # 对齐刚建立后的前 N 个 GPS 因子，使用更大的水平 sigma 软引入。
+      "gps.alignment_warmup_factors": 5
+      # 热身 GPS 因子的水平 sigma；显式覆盖协方差上限。
+      "gps.alignment_warmup_sigma": 10.0
+      # PGO 发布 ENU->map 调试对齐的话题；corridor 模式下会覆盖到专用调试话题。
+      "gps.alignment_topic": /gps_corridor/enu_to_map
       # GPS 水平质量阈值；调小更严格，调大更宽松。
       "gps.quality_hdop_max": 3.0
       # 最小卫星数阈值；当前主要作记录占位，未进入主过滤逻辑。
@@ -107,6 +126,85 @@
       "gps.alert_interval": 3
       # 严重预警节流间隔；调小会更频繁报警。
       "gps.emergency_interval": 1
+      # GPS ENU 原点模式；fixed 表示使用显式固定原点。
+      "gps.origin_mode": fixed
+      # 固定 GPS ENU 原点纬度；PGO 与 dispatcher 必须共用同一组值。
+      "gps.origin_lat": 31.274927
+      # 固定 GPS ENU 原点经度；PGO 与 dispatcher 必须共用同一组值。
+      "gps.origin_lon": 120.737548
+      # 固定 GPS ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+      "gps.origin_alt": 0.0
+
+/gps_waypoint_dispatcher:
+  ros__parameters:
+    # GPS dispatcher 使用的固定 ENU 原点纬度；必须与 PGO 完全一致。
+    enu_origin_lat: 31.274927
+    # GPS dispatcher 使用的固定 ENU 原点经度；必须与 PGO 完全一致。
+    enu_origin_lon: 120.737548
+    # GPS dispatcher 使用的固定 ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+    enu_origin_alt: 0.0
+    # 是否允许在路网外回退到直线直达；v4 默认关闭。
+    allow_direct_fallback: false
+
+/gps_global_aligner:
+  ros__parameters:
+    # 独立 global aligner 使用的固定 ENU 原点纬度；必须与 route 文件一致。
+    enu_origin_lat: 31.274927
+    # 独立 global aligner 使用的固定 ENU 原点经度；必须与 route 文件一致。
+    enu_origin_lon: 120.737548
+    # 独立 global aligner 使用的固定 ENU 原点海拔。
+    enu_origin_alt: 0.0
+    # 在线保留 GPS/map 配对的时间窗口；增大窗口，保留更多历史对齐证据。
+    pair_window_s: 90.0
+    # 采纳新配对前要求的最小位移；增大间距，减少高噪声冗余点对。
+    pair_min_spacing_m: 2.0
+    # 至少多少个最近配对后才尝试解算对齐。
+    alignment_min_pairs: 8
+    # 至少累计多少 ENU 展幅后才允许在线修正；避免小展幅下被 GPS 噪声误导。
+    alignment_min_spread_m: 20.0
+    # waypoint 校准点对的最小展幅；不足则拒绝显式校准结果。
+    calibration_min_spread_m: 20.0
+    # 单次允许的最大角度更新步长；限制运行中参考系转动速度。
+    max_theta_step_deg: 0.5
+    # 单次允许的最大平移更新步长；限制运行中参考系平移速度。
+    max_translation_step_m: 0.15
+    # 原始 GPS 解与 bootstrap 差异过大时直接拒绝，避免误拖动整条路线。
+    max_bootstrap_delta_deg: 25.0
+    # 原始 GPS 解相对 bootstrap 的总平移漂移上限；避免 waypoint 边界整体拖偏几十米。
+    max_bootstrap_translation_delta_m: 8.0
+    # 显式 waypoint 校准结果允许的最大平移跳变；与 live raw GPS 分开控制。
+    max_calibration_translation_delta_m: 12.0
+    # 连续发布 alignment 的周期；供 runner 与 bag 观测。
+    publish_period_s: 0.2
+    # 对齐状态日志的节流周期。
+    status_log_period_s: 5.0
+    # runner 发布 waypoint 校准请求的话题。
+    calibration_request_topic: /gps_corridor/calibration_request
+    # aligner 发布 waypoint 校准结果的话题。
+    calibration_status_topic: /gps_corridor/calibration_status
+
+/gps_route_runner:
+  ros__parameters:
+    # GPS route runner 使用的固定 ENU 原点纬度；必须与 PGO 完全一致。
+    enu_origin_lat: 31.274927
+    # GPS route runner 使用的固定 ENU 原点经度；必须与 PGO 完全一致。
+    enu_origin_lon: 120.737548
+    # GPS route runner 使用的固定 ENU 原点海拔；当前先以 0.0 作为平面导航基线。
+    enu_origin_alt: 0.0
+    # 发布底盘速度控制的话题；watchdog abort 时发送零速度。
+    cmd_vel_topic: /cmd_vel
+    # odom watchdog 预警阈值：单步位移超过该值记一次 warning。
+    odom_watchdog_step_warn_m: 0.5
+    # odom watchdog 直接中止阈值：单步位移超过该值立即 abort。
+    odom_watchdog_step_abort_m: 1.0
+    # 连续多少次 warning 后直接 abort。
+    odom_watchdog_warn_count_abort: 3
+    # 连续多少次 TF stale 后直接 abort。
+    odom_watchdog_tf_stale_abort_count: 3
+    # watchdog 检查周期。
+    odom_watchdog_monitor_period_s: 0.1
+    # 已下发 subgoal 若因 live alignment 飘移而偏移超阈值，则取消并重算。
+    alignment_shift_cancel_threshold_m: 0.5
 
 /serial_twistctl_node:
   ros__parameters:

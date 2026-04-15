@@ -4,10 +4,11 @@ import launch
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -20,7 +21,34 @@ def generate_launch_description():
     """
 
     bringup_share = get_package_share_directory("bringup")
-    master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
+    default_master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
+    nav2_params_file = os.path.join(bringup_share, "config", "nav2_explore.yaml")
+    corridor_bt_xml = os.path.join(
+        bringup_share,
+        "behavior_trees",
+        "navigate_to_pose_w_replanning_3hz_and_recovery.xml",
+    )
+    rewritten_nav2_params = RewrittenYaml(
+        source_file=nav2_params_file,
+        param_rewrites={"default_nav_to_pose_bt_xml": corridor_bt_xml},
+        convert_types=True,
+    )
+
+    use_rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="true",
+        description="Whether to launch RViz together with the Explore stack",
+    )
+    master_params_arg = DeclareLaunchArgument(
+        "master_params_file",
+        default_value=default_master_params_file,
+        description="ROS2 parameter file used by FAST-LIO2, PGO, and serial nodes",
+    )
+    pgo_extra_params_arg = DeclareLaunchArgument(
+        "pgo_extra_params_file",
+        default_value="",
+        description="Optional ROS2 parameter file appended only to the PGO node",
+    )
 
     livox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -44,7 +72,11 @@ def generate_launch_description():
                 )
             ]
         ),
-        launch_arguments={"params_file": master_params_file}.items(),
+        launch_arguments={
+            "params_file": LaunchConfiguration("master_params_file"),
+            "extra_params_file": LaunchConfiguration("pgo_extra_params_file"),
+            "use_rviz": LaunchConfiguration("use_rviz"),
+        }.items(),
     )
 
     serial_node = launch_ros.actions.Node(
@@ -52,7 +84,7 @@ def generate_launch_description():
         executable="serial_twistctl_node",
         name="serial_twistctl_node",
         output="screen",
-        parameters=[master_params_file],
+        parameters=[LaunchConfiguration("master_params_file")],
     )
 
     serial_reader_node = launch_ros.actions.Node(
@@ -60,7 +92,7 @@ def generate_launch_description():
         executable="serial_reader_node",
         name="serial_reader_node",
         output="screen",
-        parameters=[master_params_file],
+        parameters=[LaunchConfiguration("master_params_file")],
     )
 
     nav2_launch = IncludeLaunchDescription(
@@ -73,7 +105,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "use_sim_time": "false",
-            "params_file": os.path.join(bringup_share, "config", "nav2_explore.yaml"),
+            "params_file": rewritten_nav2_params,
         }.items(),
     )
 
@@ -81,6 +113,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            use_rviz_arg,
+            master_params_arg,
+            pgo_extra_params_arg,
             livox_launch,
             pgo_launch,
             serial_node,

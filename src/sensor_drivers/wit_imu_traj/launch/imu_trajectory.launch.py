@@ -5,7 +5,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    runtime_root = os.environ.get("FYP_RUNTIME_ROOT", os.path.expanduser("~/fyp_runtime_data"))
+    runtime_root = os.environ.get("FYP_RUNTIME_ROOT", os.path.expanduser("~/XJTLU-autonomous-vehicle/runtime-data"))
     log_file_path = os.path.join(runtime_root, "logs", "imu_trajectory", "imu_trajectory_log.txt")
     # 定义 IMU 轨迹计算节点
     imu_trajectory_node = Node(

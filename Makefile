@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-explore-gps launch-travel kill clean
+.PHONY: setup build build-sensor build-perception build-planning build-navigation test launch-slam launch-explore launch-indoor-nav launch-corridor launch-explore-gps launch-nav-gps launch-travel kill kill-runtime clean
 
 setup:
 	@echo ">>> 拉取第三方依赖..."
@@ -36,7 +36,7 @@ build-planning:
 build-navigation:
 	source /opt/ros/humble/setup.bash && \
 	colcon build --symlink-install --packages-select \
-		waypoint_collector waypoint_nav_tool
+		waypoint_collector waypoint_nav_tool gps_waypoint_dispatcher
 
 test:
 	source /opt/ros/humble/setup.bash && \
@@ -48,15 +48,35 @@ launch-slam:
 launch-explore:
 	bash scripts/launch_with_logs.sh explore
 
+launch-indoor-nav:
+	bash scripts/launch_with_logs.sh indoor-nav
+
+launch-corridor:
+	bash scripts/launch_with_logs.sh corridor
+
 launch-explore-gps:
 	bash scripts/launch_with_logs.sh explore-gps
+
+launch-nav-gps:
+	bash scripts/launch_with_logs.sh nav-gps
 
 launch-travel:
 	bash scripts/launch_with_logs.sh travel
 
 kill:
-	pkill -f ros2 || true
-	@echo ">>> 所有 ROS2 进程已终止"
+	@$(MAKE) kill-runtime
+
+kill-runtime:
+	pkill -INT -f '[l]aunch_with_logs.sh|[m]onitor_corridor_status(\.py)?|[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[w]aypoint_follower|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher|[p]ointcloud_to_laserscan' || true
+	sleep 2
+	pkill -KILL -f '[l]aunch_with_logs.sh|[m]onitor_corridor_status(\.py)?|[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[w]aypoint_follower|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher|[p]ointcloud_to_laserscan' || true
+	ros2 daemon stop >/dev/null 2>&1 || true
+	@for dev in /dev/serial_twistctl /dev/wheeltec_gps; do \
+		if [ -e "$$dev" ] && fuser "$$dev" >/dev/null 2>&1; then \
+			fuser -k "$$dev" >/dev/null 2>&1 || true; \
+		fi; \
+	done
+	@echo ">>> 导航相关残留进程已清理，ROS 2 daemon 已停止"
 
 clean:
 	rm -rf build/ install/ log/

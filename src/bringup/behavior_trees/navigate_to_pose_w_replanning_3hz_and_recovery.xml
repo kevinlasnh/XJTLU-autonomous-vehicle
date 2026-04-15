@@ -1,0 +1,47 @@
+<!--
+  Corridor-specific Nav2 Behavior Tree.
+  Global replanning raised from 1 Hz (Humble default) to 5 Hz for faster
+  dynamic-obstacle response. Recovery uses a 5-level progressive escalation:
+    1. ClearCostmapExceptRegion  (preserve nearby real obstacles)
+    2. Wait 2 s                  (let STVL voxels decay)
+    3. Spin 90 deg               (rescan surroundings)
+    4. ClearEntireCostmap        (nuclear reset)
+    5. BackUp 1.0 m              (physical retreat)
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="5.0">
+          <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPath">
+            <Sequence name="ComputeAndSmoothPathSequence">
+              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+              <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="savitzky_golay_smoother" check_for_collisions="false"/>
+            </Sequence>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="PartialClearingActions">
+            <ClearCostmapExceptRegion name="ClearLocalExceptNear" service_name="local_costmap/clear_except_local_costmap" reset_distance="2.0"/>
+            <ClearCostmapExceptRegion name="ClearGlobalExceptNear" service_name="global_costmap/clear_except_global_costmap" reset_distance="2.0"/>
+          </Sequence>
+          <Wait wait_duration="2"/>
+          <Spin spin_dist="1.57"/>
+          <Sequence name="FullClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+          <BackUp backup_dist="1.00" backup_speed="0.15"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

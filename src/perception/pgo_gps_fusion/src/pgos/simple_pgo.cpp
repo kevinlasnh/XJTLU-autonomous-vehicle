@@ -42,7 +42,9 @@ bool SimplePGO::addKeyPose(const CloudWithPose &cloud_with_pose)
     if (idx == 0)
     {
         // 添加先验约束
-        gtsam::noiseModel::Diagonal::shared_ptr noise = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Ones() * 1e-12);
+        gtsam::noiseModel::Diagonal::shared_ptr noise =
+            gtsam::noiseModel::Diagonal::Variances(
+                (gtsam::Vector(6) << 1e-6, 1e-6, 1e-6, 1e-2, 1e-2, 1e-4).finished());
         m_graph.add(gtsam::PriorFactor<gtsam::Pose3>(idx, gtsam::Pose3(gtsam::Rot3(init_r), gtsam::Point3(init_t)), noise));
     }
     else
@@ -215,7 +217,8 @@ void SimplePGO::addGPSFactor(size_t key_idx,
                               const V3D &gps_position,
                               const std::array<double, 9> &covariance,
                               double noise_xy, 
-                              double noise_z)
+                              double noise_z,
+                              double horizontal_sigma_override)
 {
     // 检查索引有效性
     if (key_idx >= m_key_poses.size()) {
@@ -240,6 +243,11 @@ void SimplePGO::addGPSFactor(size_t key_idx,
         sigma_x = std::clamp(sigma_x, 0.3, 5.0);
         sigma_y = std::clamp(sigma_y, 0.3, 5.0);
         sigma_z = std::clamp(sigma_z, 1.0, 10.0);
+    }
+
+    if (horizontal_sigma_override > 0.0) {
+        sigma_x = horizontal_sigma_override;
+        sigma_y = horizontal_sigma_override;
     }
     
     // 创建噪声模型

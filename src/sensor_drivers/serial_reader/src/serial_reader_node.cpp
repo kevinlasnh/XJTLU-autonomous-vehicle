@@ -48,7 +48,7 @@ std::string getRuntimeRoot() {
         return std::string(runtime_root);
     }
     const char* home = std::getenv("HOME");
-    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+    return std::string(home != nullptr ? home : "/home/jetson") + "/XJTLU-autonomous-vehicle/runtime-data";
 }
 
 std::string getRuntimePath(const std::string& relative_path) {
@@ -341,7 +341,11 @@ private:
         int64_t ros_timestamp = now.nanoseconds();  // 转换为19位纳秒格式
 
         // 添加控制台输出日志
-        RCLCPP_INFO(this->get_logger(), "Publishing sensor data: position(%.6f, %.6f, %.6f), orientation(%.6f, %.6f, %.6f, %.6f), linear_vel(%.6f, %.6f, %.6f), angular_vel(%.6f, %.6f, %.6f), magnetic(%.6f, %.6f, %.6f), timestamp: %ld",
+        RCLCPP_INFO_THROTTLE(
+                this->get_logger(),
+                *this->get_clock(),
+                5000,
+                "Publishing sensor data: position(%.6f, %.6f, %.6f), orientation(%.6f, %.6f, %.6f, %.6f), linear_vel(%.6f, %.6f, %.6f), angular_vel(%.6f, %.6f, %.6f), magnetic(%.6f, %.6f, %.6f), timestamp: %ld",
                 vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6],
                 vals[7], vals[8], vals[9], vals[10], vals[11], vals[12],
                 vals[13], vals[14], vals[15],

@@ -37,3 +37,20 @@ Thumbs.db
 
 # Third-party repos pulled by vcs import
 src/third_party/
+
+# Runtime data (logs, GPS routes, bags, maps)
+runtime-data/
+
+# Claude Code
+.claude/
+.codex_tmp/
+src/firmware/
+
+# Local-only project management files
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+WORKFLOW.md
+findings.md
+progress.md
+task_plan.md

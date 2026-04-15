@@ -39,7 +39,7 @@ std::string getRuntimeRoot() {
         return std::string(runtime_root);
     }
     const char* home = std::getenv("HOME");
-    return std::string(home != nullptr ? home : "/home/jetson") + "/fyp_runtime_data";
+    return std::string(home != nullptr ? home : "/home/jetson") + "/XJTLU-autonomous-vehicle/runtime-data";
 }
 
 std::string getRuntimePath(const std::string& relative_path) {
@@ -148,8 +148,8 @@ public:
         m_imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(m_node_config.imu_topic, 10, std::bind(&LIONode::imuCB, this, std::placeholders::_1));
         m_lidar_sub = this->create_subscription<livox_ros_driver2::msg::CustomMsg>(m_node_config.lidar_topic, 10, std::bind(&LIONode::lidarCB, this, std::placeholders::_1));
 
-        m_body_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("body_cloud", 10000);
-        m_world_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("world_cloud", 10000);
+        m_body_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("body_cloud", 500);
+        m_world_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("world_cloud", 500);
         m_path_pub = this->create_publisher<nav_msgs::msg::Path>("lio_path", 10000);
         m_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("lio_odom", 10000);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -227,6 +227,12 @@ public:
         m_builder_config.gravity_align = this->declare_parameter<bool>("gravity_align", true);
         m_builder_config.esti_il = this->declare_parameter<bool>("esti_il", false);
         m_builder_config.lidar_cov_inv = this->declare_parameter<double>("lidar_cov_inv", 1000.0);
+        m_builder_config.publish_cloud_height_filter_enabled =
+            this->declare_parameter<bool>("publish_cloud_height_filter_enabled", false);
+        m_builder_config.publish_cloud_min_z =
+            this->declare_parameter<double>("publish_cloud_min_z", -0.33);
+        m_builder_config.publish_cloud_max_z =
+            this->declare_parameter<double>("publish_cloud_max_z", 0.30);
 
         auto t_il_vec = this->declare_parameter<std::vector<double>>("t_il", default_t_il);
         auto r_il_vec = this->declare_parameter<std::vector<double>>("r_il", default_r_il);
@@ -314,6 +320,15 @@ public:
             m_builder_config.esti_il = config["esti_il"].as<bool>();
         if (config["lidar_cov_inv"])
             m_builder_config.lidar_cov_inv = config["lidar_cov_inv"].as<double>();
+        if (config["publish_cloud_height_filter_enabled"])
+            m_builder_config.publish_cloud_height_filter_enabled =
+                config["publish_cloud_height_filter_enabled"].as<bool>();
+        if (config["publish_cloud_min_z"])
+            m_builder_config.publish_cloud_min_z =
+                config["publish_cloud_min_z"].as<double>();
+        if (config["publish_cloud_max_z"])
+            m_builder_config.publish_cloud_max_z =
+                config["publish_cloud_max_z"].as<double>();
 
         const std::vector<double> t_il_vec =
             config["t_il"] ? config["t_il"].as<std::vector<double>>() : std::vector<double>{m_builder_config.t_il.x(), m_builder_config.t_il.y(), m_builder_config.t_il.z()};
@@ -360,6 +375,9 @@ public:
             rclcpp::Parameter("t_il", t_il),
             rclcpp::Parameter("r_il", r_il),
             rclcpp::Parameter("lidar_cov_inv", m_builder_config.lidar_cov_inv),
+            rclcpp::Parameter("publish_cloud_height_filter_enabled", m_builder_config.publish_cloud_height_filter_enabled),
+            rclcpp::Parameter("publish_cloud_min_z", m_builder_config.publish_cloud_min_z),
+            rclcpp::Parameter("publish_cloud_max_z", m_builder_config.publish_cloud_max_z),
         });
     }
 
@@ -367,9 +385,13 @@ public:
     {
         std::lock_guard<std::mutex> lock(m_state_data.imu_mutex);
         double timestamp = Utils::getSec(msg->header);
-        RCLCPP_INFO(this->get_logger(), "Received IMU data: accel(%.2f, %.2f, %.2f), gyro(%.2f, %.2f, %.2f), time: %.6f",
-                    msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z,
-                    msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z, timestamp);
+        RCLCPP_DEBUG_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Received IMU data: accel(%.2f, %.2f, %.2f), gyro(%.2f, %.2f, %.2f), time: %.6f",
+            msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z,
+            msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z, timestamp);
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -396,7 +418,13 @@ public:
     void lidarCB(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg)
     {
         CloudType::Ptr cloud = Utils::livox2PCL(msg, m_builder_config.lidar_filter_num, m_builder_config.lidar_min_range, m_builder_config.lidar_max_range);
-        RCLCPP_INFO(this->get_logger(), "Received LIDAR data: %zu points, time: %.6f", cloud->size(), Utils::getSec(msg->header));
+        RCLCPP_DEBUG_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Received LIDAR data: %zu points, time: %.6f",
+            cloud->size(),
+            Utils::getSec(msg->header));
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -425,6 +453,12 @@ public:
         if (!m_state_data.lidar_pushed)
         {
             m_package.cloud = m_state_data.lidar_buffer.front().second;
+            if (m_package.cloud->points.empty())
+            {
+                RCLCPP_WARN(this->get_logger(), "Empty point cloud, dropping frame");
+                m_state_data.lidar_buffer.pop_front();
+                return false;
+            }
             std::sort(m_package.cloud->points.begin(), m_package.cloud->points.end(), [](PointType &p1, PointType &p2)
                       { return p1.curvature < p2.curvature; });
             m_package.cloud_start_time = m_state_data.lidar_buffer.front().first;
@@ -454,6 +488,73 @@ public:
         cloud_msg.header.frame_id = frame_id;
         cloud_msg.header.stamp = Utils::getTime(time);
         pub->publish(cloud_msg);
+    }
+
+    std::pair<CloudType::Ptr, CloudType::Ptr> filterPublishedClouds(
+        const CloudType::Ptr &body_cloud,
+        const CloudType::Ptr &world_cloud)
+    {
+        if (!m_builder_config.publish_cloud_height_filter_enabled)
+            return {body_cloud, world_cloud};
+
+        if (!body_cloud || !world_cloud)
+            return {body_cloud, world_cloud};
+
+        if (body_cloud->size() != world_cloud->size())
+        {
+            RCLCPP_WARN(this->get_logger(),
+                        "Published cloud filter skipped because body/world cloud sizes differ: %zu vs %zu",
+                        body_cloud->size(), world_cloud->size());
+            return {body_cloud, world_cloud};
+        }
+
+        CloudType::Ptr filtered_body_cloud(new CloudType);
+        CloudType::Ptr filtered_world_cloud(new CloudType);
+        filtered_body_cloud->reserve(body_cloud->size());
+        filtered_world_cloud->reserve(world_cloud->size());
+
+        const double body_origin_z_in_world = m_kf->x().t_wi.z();
+        std::size_t dropped_points = 0;
+
+        for (std::size_t i = 0; i < body_cloud->size(); ++i)
+        {
+            const double relative_height = world_cloud->points[i].z - body_origin_z_in_world;
+            if (relative_height < m_builder_config.publish_cloud_min_z ||
+                relative_height > m_builder_config.publish_cloud_max_z)
+            {
+                dropped_points++;
+                continue;
+            }
+
+            filtered_body_cloud->points.push_back(body_cloud->points[i]);
+            filtered_world_cloud->points.push_back(world_cloud->points[i]);
+        }
+
+        filtered_body_cloud->width = filtered_body_cloud->points.size();
+        filtered_body_cloud->height = 1;
+        filtered_body_cloud->is_dense = false;
+        filtered_world_cloud->width = filtered_world_cloud->points.size();
+        filtered_world_cloud->height = 1;
+        filtered_world_cloud->is_dense = false;
+
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "FAST-LIO2 publish cloud height filter kept %zu/%zu points with relative z window [%.2f, %.2f]",
+            filtered_body_cloud->points.size(),
+            body_cloud->points.size(),
+            m_builder_config.publish_cloud_min_z,
+            m_builder_config.publish_cloud_max_z);
+
+        if (filtered_body_cloud->points.empty() && dropped_points > 0)
+        {
+            RCLCPP_WARN(this->get_logger(),
+                        "FAST-LIO2 publish cloud height filter dropped all %zu points",
+                        dropped_points);
+        }
+
+        return {filtered_body_cloud, filtered_world_cloud};
     }
 
     void publishOdometry(rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub, std::string frame_id, std::string child_frame, const double &time)
@@ -521,8 +622,13 @@ public:
     {
         if (!syncPackage())
             return;
-        RCLCPP_INFO(this->get_logger(), "Processing sync package: %zu IMU samples, %zu LIDAR points", 
-                    m_package.imus.size(), m_package.cloud->size());
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Processing sync package: %zu IMU samples, %zu LIDAR points",
+            m_package.imus.size(),
+            m_package.cloud->size());
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -546,8 +652,12 @@ public:
         if (m_builder->status() != BuilderStatus::MAPPING)
             return;
 
-        RCLCPP_INFO(this->get_logger(), "Current position: x=%.2f, y=%.2f, z=%.2f", 
-                    m_kf->x().t_wi.x(), m_kf->x().t_wi.y(), m_kf->x().t_wi.z());
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            5000,
+            "Current position: x=%.2f, y=%.2f, z=%.2f",
+            m_kf->x().t_wi.x(), m_kf->x().t_wi.y(), m_kf->x().t_wi.z());
         
         if (m_log_file.is_open()) {
             auto ros_time = this->now();
@@ -563,13 +673,16 @@ public:
 
         publishOdometry(m_odom_pub, m_node_config.world_frame, m_node_config.body_frame, this->now().seconds());
 
-        CloudType::Ptr body_cloud = m_builder->lidar_processor()->transformCloud(m_package.cloud, m_kf->x().r_il, m_kf->x().t_il);
+        CloudType::Ptr body_cloud =
+            m_builder->lidar_processor()->transformCloud(m_package.cloud, m_kf->x().r_il, m_kf->x().t_il);
+        CloudType::Ptr world_cloud =
+            m_builder->lidar_processor()->transformCloud(m_package.cloud, m_builder->lidar_processor()->r_wl(), m_builder->lidar_processor()->t_wl());
 
-        publishCloud(m_body_cloud_pub, body_cloud, m_node_config.body_frame, this->now().seconds());
+        auto [filtered_body_cloud, filtered_world_cloud] =
+            filterPublishedClouds(body_cloud, world_cloud);
 
-        CloudType::Ptr world_cloud = m_builder->lidar_processor()->transformCloud(m_package.cloud, m_builder->lidar_processor()->r_wl(), m_builder->lidar_processor()->t_wl());
-
-        publishCloud(m_world_cloud_pub, world_cloud, m_node_config.world_frame, this->now().seconds());
+        publishCloud(m_body_cloud_pub, filtered_body_cloud, m_node_config.body_frame, this->now().seconds());
+        publishCloud(m_world_cloud_pub, filtered_world_cloud, m_node_config.world_frame, this->now().seconds());
 
         publishPath(m_path_pub, m_node_config.world_frame, this->now().seconds());
     }

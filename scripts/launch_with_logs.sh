@@ -3,17 +3,30 @@ set -euo pipefail
 
 MODE="${1:-explore}"
 SESSION=$(date +%Y-%m-%d-%H-%M-%S)
-SESSION_DIR="$HOME/fyp_runtime_data/logs/$SESSION"
+SESSION_DIR="$HOME/XJTLU-autonomous-vehicle/runtime-data/logs/$SESSION"
 TEGRA_PID=""
+LAUNCH_PID=""
 CLEANUP_DONE=0
 
 mkdir -p "$SESSION_DIR/console"
 mkdir -p "$SESSION_DIR/data"
 mkdir -p "$SESSION_DIR/system"
-ln -sfn "$SESSION_DIR" "$HOME/fyp_runtime_data/logs/latest"
+ln -sfn "$SESSION_DIR" "$HOME/XJTLU-autonomous-vehicle/runtime-data/logs/latest"
 
 export ROS_LOG_DIR="$SESSION_DIR/console"
 export FYP_LOG_SESSION_DIR="$SESSION_DIR/data"
+
+cleanup_runtime_nodes() {
+  pkill -INT -f '[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[w]aypoint_follower|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher|[p]ointcloud_to_laserscan|[m]onitor_corridor_status' 2>/dev/null || true
+  sleep 1
+  pkill -KILL -f '[r]os2 bag|[r]viz2|[l]ivox_ros_driver2_node|[l]io_node|[p]go_node|[s]erial_twistctl_node|[n]mea_serial_driver|[p]lanner_server|[c]ontroller_server|[b]ehavior_server|[b]t_navigator|[s]moother_server|[v]elocity_smoother|[l]ifecycle_manager|[w]aypoint_follower|[m]ap_server|[a]mcl|[c]omponent_container(_mt)?|[g]ps_route_runner|[g]ps_global_aligner|[r]obot_state_publisher|[p]ointcloud_to_laserscan|[m]onitor_corridor_status' 2>/dev/null || true
+  ros2 daemon stop 2>/dev/null || true
+  for dev in /dev/serial_twistctl /dev/wheeltec_gps; do
+    if [ -e "$dev" ] && fuser "$dev" >/dev/null 2>&1; then
+      fuser -k "$dev" 2>/dev/null || true
+    fi
+  done
+}
 
 cleanup() {
   if [[ "$CLEANUP_DONE" == "1" ]]; then
@@ -25,6 +38,13 @@ cleanup() {
     kill "$TEGRA_PID" 2>/dev/null || true
     wait "$TEGRA_PID" 2>/dev/null || true
   fi
+
+  if [[ -n "${LAUNCH_PID:-}" ]]; then
+    kill "$LAUNCH_PID" 2>/dev/null || true
+    wait "$LAUNCH_PID" 2>/dev/null || true
+  fi
+
+  cleanup_runtime_nodes
 
   if [[ -f "$SESSION_DIR/system/session_info.yaml" ]]; then
     echo "end_time: $(date -Iseconds)" >> "$SESSION_DIR/system/session_info.yaml"
@@ -52,6 +72,8 @@ echo "  Data:    $SESSION_DIR/data/"
 echo "  System:  $SESSION_DIR/system/"
 echo "=== Launching mode: $MODE ==="
 
+cleanup_runtime_nodes
+
 set +u
 source /opt/ros/humble/setup.bash
 source ~/XJTLU-autonomous-vehicle/install/setup.bash
@@ -60,9 +82,76 @@ set -u
 case "$MODE" in
   slam)         LAUNCH_FILE="system_slam.launch.py" ;;
   explore)      LAUNCH_FILE="system_explore.launch.py" ;;
+  indoor-nav)   LAUNCH_FILE="system_explore.launch.py" ;;
+  corridor)     LAUNCH_FILE="system_gps_corridor.launch.py" ;;
   travel)       LAUNCH_FILE="system_travel.launch.py" ;;
   explore-gps)  LAUNCH_FILE="system_explore_gps.launch.py" ;;
+  nav-gps)      LAUNCH_FILE="system_nav_gps.launch.py" ;;
   *)            echo "Unknown mode: $MODE"; exit 1 ;;
 esac
 
-ros2 launch bringup "$LAUNCH_FILE"
+LAUNCH_ARGS=()
+if [[ "$MODE" == "corridor" || "$MODE" == "indoor-nav" ]]; then
+  if [[ -n "${FYP_USE_RVIZ:-}" ]]; then
+    LAUNCH_ARGS+=("use_rviz:=${FYP_USE_RVIZ}")
+  elif [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    LAUNCH_ARGS+=("use_rviz:=true")
+  else
+    LAUNCH_ARGS+=("use_rviz:=false")
+  fi
+fi
+
+if [[ "$MODE" == "corridor" && "${FYP_CORRIDOR_CONSOLE_MODE:-quiet}" != "raw" ]]; then
+  ROUTE_FILE="$HOME/XJTLU-autonomous-vehicle/runtime-data/gnss/current_route.yaml"
+  ROUTE_FIX_TIMEOUT_S=""
+  if [[ -f "$ROUTE_FILE" ]]; then
+    ROUTE_FIX_TIMEOUT_S="$(
+      awk -F: '
+        /^[[:space:]]*startup_fix_timeout_s[[:space:]]*:/ {
+          value=$2
+          gsub(/[[:space:]]/, "", value)
+          if (value != "") {
+            print value
+          }
+        }
+      ' "$ROUTE_FILE" | tail -n 1
+    )"
+  fi
+
+  if [[ -n "${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-}" ]]; then
+    STARTUP_TIMEOUT_S="${FYP_CORRIDOR_STARTUP_TIMEOUT_S}"
+  elif [[ -n "$ROUTE_FIX_TIMEOUT_S" ]]; then
+    STARTUP_TIMEOUT_S="$(awk "BEGIN { printf \"%.0f\", (${ROUTE_FIX_TIMEOUT_S} + 30.0) }")"
+  else
+    STARTUP_TIMEOUT_S="45"
+  fi
+
+  LAUNCH_STDOUT_LOG="$SESSION_DIR/system/launch_stdout.log"
+  echo "=== Corridor Console: quiet ==="
+  echo "  Status: foreground concise monitor"
+  echo "  Full launch output: $LAUNCH_STDOUT_LOG"
+  echo "  Startup timeout: ${STARTUP_TIMEOUT_S}s"
+  if [[ -n "$ROUTE_FIX_TIMEOUT_S" && -z "${FYP_CORRIDOR_STARTUP_TIMEOUT_S:-}" ]]; then
+    echo "  Route stable-fix timeout: ${ROUTE_FIX_TIMEOUT_S}s (+30s buffer)"
+  fi
+
+  ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}" >"$LAUNCH_STDOUT_LOG" 2>&1 &
+  LAUNCH_PID=$!
+
+  set +e
+  python3 ~/XJTLU-autonomous-vehicle/scripts/monitor_corridor_status.py \
+    --startup-timeout-s "$STARTUP_TIMEOUT_S" \
+    --launch-log "$LAUNCH_STDOUT_LOG" \
+    --launch-pid "$LAUNCH_PID"
+  MONITOR_RC=$?
+  set -e
+
+  if [[ -n "${LAUNCH_PID:-}" ]]; then
+    kill "$LAUNCH_PID" 2>/dev/null || true
+    wait "$LAUNCH_PID" 2>/dev/null || true
+    LAUNCH_PID=""
+  fi
+  exit "$MONITOR_RC"
+fi
+
+ros2 launch bringup "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}"

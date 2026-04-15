@@ -19,8 +19,14 @@ def generate_launch_description():
         "launch",
         "nmea_serial_driver.launch.py",
     )
+    default_calibration_points = os.path.join(
+        get_package_share_directory("gnss_calibration"),
+        "config",
+        "calibration_points.yaml",
+    )
 
     params_file = LaunchConfiguration("params_file")
+    calibration_points_file = LaunchConfiguration("calibration_points_file")
 
     nmea_driver = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(nmea_launch_path),
@@ -32,6 +38,7 @@ def generate_launch_description():
         executable="gnss_calibration_node",
         name="gnss_calibration",
         output="screen",
+        parameters=[{"calibration_points_file": calibration_points_file}],
     )
 
     return LaunchDescription(
@@ -40,6 +47,11 @@ def generate_launch_description():
                 "params_file",
                 default_value=default_nmea_params,
                 description="ROS2 parameter file used by nmea_navsat_driver",
+            ),
+            DeclareLaunchArgument(
+                "calibration_points_file",
+                default_value=default_calibration_points,
+                description="Calibration point YAML used by gnss_calibration",
             ),
             nmea_driver,
             gnss_calibration,

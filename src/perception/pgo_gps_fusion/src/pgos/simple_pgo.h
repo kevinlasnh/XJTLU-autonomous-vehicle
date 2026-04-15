@@ -60,7 +60,8 @@ public:
                       const V3D &gps_position,
                       const std::array<double, 9> &covariance,
                       double noise_xy, 
-                      double noise_z);
+                      double noise_z,
+                      double horizontal_sigma_override = -1.0);
     // ✅ GPS 融合修改结束 - GPS 因子接口添加完成
 
     bool hasLoop(){return m_cache_pairs.size() > 0;}

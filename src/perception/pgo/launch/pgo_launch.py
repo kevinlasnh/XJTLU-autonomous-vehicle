@@ -1,9 +1,13 @@
 import launch
 import launch_ros.actions
-from launch.substitutions import PathJoinSubstitution
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
+
 def generate_launch_description():
+    use_rviz = LaunchConfiguration("use_rviz")
     rviz_cfg = PathJoinSubstitution(
         [FindPackageShare("pgo"), "rviz", "pgo.rviz"]
     )
@@ -15,9 +19,13 @@ def generate_launch_description():
         [FindPackageShare("fastlio2"), "config", "lio.yaml"]
     )
 
-
     return launch.LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "use_rviz",
+                default_value="true",
+                description="Whether to launch RViz together with PGO",
+            ),
             launch_ros.actions.Node(
                 package="fastlio2",
                 namespace="fastlio2",
@@ -45,6 +53,7 @@ def generate_launch_description():
                 name="rviz2",
                 output="screen",
                 arguments=["-d", rviz_cfg.perform(launch.LaunchContext())],
+                condition=IfCondition(use_rviz),
             )
         ]
     )

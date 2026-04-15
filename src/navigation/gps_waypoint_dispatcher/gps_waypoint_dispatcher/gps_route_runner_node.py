@@ -1,0 +1,853 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import math
+import time
+from dataclasses import dataclass
+from pathlib import Path as FSPath
+
+import rclpy
+import yaml
+from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import PoseStamped, Twist
+from nav2_msgs.action import NavigateToPose
+from nav_msgs.msg import Path as NavPath
+from rclpy.action import ActionClient
+from rclpy.duration import Duration
+from rclpy.node import Node
+from rclpy.time import Time
+from sensor_msgs.msg import NavSatFix
+from std_msgs.msg import Float64MultiArray, String
+from tf2_ros import Buffer, TransformException, TransformListener
+
+from gps_waypoint_dispatcher.scene_runtime import (
+    FixedENUProjector,
+    default_route_file,
+    haversine_m,
+    quaternion_to_yaw,
+    yaw_to_quaternion,
+)
+
+
+def valid_fix(msg: NavSatFix | None) -> bool:
+    if msg is None:
+        return False
+    if msg.status.status < 0:
+        return False
+    if not math.isfinite(msg.latitude) or not math.isfinite(msg.longitude):
+        return False
+    return True
+
+
+def normalize_angle(angle: float) -> float:
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+GOAL_STATUS_ALIGNMENT_SHIFT = -100
+
+
+@dataclass
+class Alignment2D:
+    theta: float
+    tx: float
+    ty: float
+    source: str
+    revision: int
+
+
+@dataclass
+class RouteWaypoint:
+    name: str
+    lat: float
+    lon: float
+    alt: float
+    enu_x: float
+    enu_y: float
+
+
+@dataclass
+class SegmentPlan:
+    waypoint: RouteWaypoint
+    start_enu: tuple[float, float]
+    end_enu: tuple[float, float]
+    total_length_m: float
+    total_subgoals: int
+    dir_x: float
+    dir_y: float
+
+
+class GPSRouteRunner(Node):
+    def __init__(self) -> None:
+        super().__init__("gps_route_runner")
+        self.declare_parameter("route_file", str(default_route_file()))
+        self.declare_parameter("route_frame", "map")
+        self.declare_parameter("base_frame", "base_link")
+        self.declare_parameter("fix_topic", "/fix")
+        self.declare_parameter("alignment_topic", "/gps_corridor/enu_to_map")
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("startup_wait_timeout_s", 90.0)
+        self.declare_parameter("enu_origin_lat", 0.0)
+        self.declare_parameter("enu_origin_lon", 0.0)
+        self.declare_parameter("enu_origin_alt", 0.0)
+        self.declare_parameter("odom_watchdog_step_warn_m", 0.5)
+        self.declare_parameter("odom_watchdog_step_abort_m", 1.0)
+        self.declare_parameter("odom_watchdog_warn_count_abort", 3)
+        self.declare_parameter("odom_watchdog_tf_stale_abort_count", 3)
+        self.declare_parameter("odom_watchdog_monitor_period_s", 0.1)
+        self.declare_parameter("alignment_shift_cancel_threshold_m", 0.5)
+
+        self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
+        self._route_frame = str(self.get_parameter("route_frame").value)
+        self._base_frame = str(self.get_parameter("base_frame").value)
+        self._fix_topic = str(self.get_parameter("fix_topic").value)
+        self._alignment_topic = str(self.get_parameter("alignment_topic").value)
+        self._cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
+        self._startup_wait_timeout_s = float(self.get_parameter("startup_wait_timeout_s").value)
+        self._enu_origin_lat = float(self.get_parameter("enu_origin_lat").value)
+        self._enu_origin_lon = float(self.get_parameter("enu_origin_lon").value)
+        self._enu_origin_alt = float(self.get_parameter("enu_origin_alt").value)
+        self._odom_watchdog_step_warn_m = float(
+            self.get_parameter("odom_watchdog_step_warn_m").value
+        )
+        self._odom_watchdog_step_abort_m = float(
+            self.get_parameter("odom_watchdog_step_abort_m").value
+        )
+        self._odom_watchdog_warn_count_abort = int(
+            self.get_parameter("odom_watchdog_warn_count_abort").value
+        )
+        self._odom_watchdog_tf_stale_abort_count = int(
+            self.get_parameter("odom_watchdog_tf_stale_abort_count").value
+        )
+        self._odom_watchdog_monitor_period_s = float(
+            self.get_parameter("odom_watchdog_monitor_period_s").value
+        )
+        self._alignment_shift_cancel_threshold_m = float(
+            self.get_parameter("alignment_shift_cancel_threshold_m").value
+        )
+
+        self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
+        self._goal_pub = self.create_publisher(PoseStamped, "/gps_corridor/goal_map", 10)
+        self._path_pub = self.create_publisher(NavPath, "/gps_corridor/path_map", 10)
+        self._cmd_vel_pub = self.create_publisher(Twist, self._cmd_vel_topic, 10)
+        self._fix_sub = self.create_subscription(NavSatFix, self._fix_topic, self._fix_callback, 10)
+        self._alignment_sub = self.create_subscription(
+            Float64MultiArray, self._alignment_topic, self._alignment_callback, 10
+        )
+
+        self._latest_fix: NavSatFix | None = None
+        self._last_fix_key: tuple | None = None
+        self._latest_alignment: Alignment2D | None = None
+        self._alignment_revision = 0
+        self._tf_buffer = Buffer()
+        self._tf_listener = TransformListener(self._tf_buffer, self)
+        self._nav_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
+
+        self._projector = FixedENUProjector(
+            self._enu_origin_lat, self._enu_origin_lon, self._enu_origin_alt
+        )
+        self._route = self._load_route(self._route_file)
+
+    def _publish_status(self, text: str) -> None:
+        self.get_logger().info(text)
+        self._status_pub.publish(String(data=text))
+
+    def _fix_callback(self, msg: NavSatFix) -> None:
+        self._latest_fix = msg
+
+    def _alignment_callback(self, msg: Float64MultiArray) -> None:
+        if len(msg.data) < 4 or msg.data[3] < 0.5:
+            return
+        theta, tx, ty = float(msg.data[0]), float(msg.data[1]), float(msg.data[2])
+        current = self._latest_alignment
+        if (
+            current is not None
+            and abs(current.theta - theta) < 1e-6
+            and abs(current.tx - tx) < 1e-4
+            and abs(current.ty - ty) < 1e-4
+        ):
+            return
+        self._alignment_revision += 1
+        self._latest_alignment = Alignment2D(
+            theta=theta,
+            tx=tx,
+            ty=ty,
+            source="aligner",
+            revision=self._alignment_revision,
+        )
+        self.get_logger().info(
+            "Received valid ENU->map transform: theta=%.2fdeg tx=%.2f ty=%.2f"
+            % (math.degrees(theta), tx, ty)
+        )
+
+    def _load_route(self, path: FSPath) -> dict:
+        if not path.exists():
+            raise RuntimeError(f"route file not found: {path}")
+        with open(path, "r", encoding="utf-8") as route_file:
+            data = yaml.safe_load(route_file) or {}
+
+        for key in ("enu_origin", "start_ref", "waypoints", "launch_yaw_deg"):
+            if key not in data:
+                raise RuntimeError(f"missing key in route file: {key}")
+        if not isinstance(data["waypoints"], list) or not data["waypoints"]:
+            raise RuntimeError("route file has no waypoints")
+
+        self._validate_origin_match(data["enu_origin"])
+
+        start_ref = data["start_ref"]
+        start_ref["lat"] = float(start_ref["lat"])
+        start_ref["lon"] = float(start_ref["lon"])
+        start_ref["alt"] = float(start_ref.get("alt", 0.0))
+        start_ref["enu_x"], start_ref["enu_y"] = self._projector.forward(
+            start_ref["lat"], start_ref["lon"]
+        )
+
+        waypoints: list[RouteWaypoint] = []
+        for index, raw_waypoint in enumerate(data["waypoints"], start=1):
+            lat = float(raw_waypoint["lat"])
+            lon = float(raw_waypoint["lon"])
+            alt = float(raw_waypoint.get("alt", 0.0))
+            enu_x, enu_y = self._projector.forward(lat, lon)
+            waypoints.append(
+                RouteWaypoint(
+                    name=str(raw_waypoint.get("name", f"wp{index}")),
+                    lat=lat,
+                    lon=lon,
+                    alt=alt,
+                    enu_x=enu_x,
+                    enu_y=enu_y,
+                )
+            )
+
+        data["launch_yaw_deg"] = float(data["launch_yaw_deg"])
+        data["start_ref"] = start_ref
+        data["waypoints"] = waypoints
+        return data
+
+    def _validate_origin_match(self, enu_origin: dict) -> None:
+        route_lat = float(enu_origin["lat"])
+        route_lon = float(enu_origin["lon"])
+        route_alt = float(enu_origin.get("alt", 0.0))
+        if abs(route_lat - self._enu_origin_lat) > 1e-7:
+            raise RuntimeError(
+                f"route enu_origin.lat {route_lat:.7f} != runtime {self._enu_origin_lat:.7f}"
+            )
+        if abs(route_lon - self._enu_origin_lon) > 1e-7:
+            raise RuntimeError(
+                f"route enu_origin.lon {route_lon:.7f} != runtime {self._enu_origin_lon:.7f}"
+            )
+        if abs(route_alt - self._enu_origin_alt) > 0.1:
+            raise RuntimeError(
+                f"route enu_origin.alt {route_alt:.2f} != runtime {self._enu_origin_alt:.2f}"
+            )
+
+    def _sample_key(self, msg: NavSatFix) -> tuple:
+        return (
+            msg.header.stamp.sec,
+            msg.header.stamp.nanosec,
+            round(msg.latitude, 9),
+            round(msg.longitude, 9),
+            round(float(msg.altitude), 4),
+        )
+
+    def _wait_for_stable_fix(self) -> dict:
+        sample_count = int(self._route.get("startup_fix_sample_count", 10))
+        spread_limit = float(self._route.get("startup_fix_spread_max_m", 2.0))
+        route_timeout_s = float(
+            self._route.get("startup_fix_timeout_s", self._startup_wait_timeout_s)
+        )
+        timeout_s = max(route_timeout_s, self._startup_wait_timeout_s)
+        deadline = time.time() + timeout_s
+        samples: list[tuple[float, float, float]] = []
+        self._publish_status("WAITING_FOR_STABLE_FIX")
+
+        while rclpy.ok() and time.time() < deadline:
+            rclpy.spin_once(self, timeout_sec=0.2)
+            msg = self._latest_fix
+            if not valid_fix(msg):
+                continue
+            key = self._sample_key(msg)
+            if key == self._last_fix_key:
+                continue
+            self._last_fix_key = key
+            samples.append((msg.latitude, msg.longitude, float(msg.altitude)))
+            if len(samples) < sample_count:
+                continue
+            if len(samples) > sample_count:
+                samples = samples[-sample_count:]
+
+            max_spread = 0.0
+            for i in range(len(samples)):
+                for j in range(i + 1, len(samples)):
+                    spread = haversine_m(
+                        samples[i][0],
+                        samples[i][1],
+                        samples[j][0],
+                        samples[j][1],
+                    )
+                    max_spread = max(max_spread, spread)
+            if max_spread > spread_limit:
+                continue
+
+            return {
+                "lat": sum(sample[0] for sample in samples) / len(samples),
+                "lon": sum(sample[1] for sample in samples) / len(samples),
+                "alt": sum(sample[2] for sample in samples) / len(samples),
+                "samples": len(samples),
+                "spread_m": round(max_spread, 2),
+            }
+
+        raise RuntimeError("timed out waiting for stable /fix samples")
+
+    def _validate_startup(self, startup_fix: dict) -> float:
+        start_ref = self._route["start_ref"]
+        distance_m = haversine_m(
+            startup_fix["lat"],
+            startup_fix["lon"],
+            start_ref["lat"],
+            start_ref["lon"],
+        )
+        tolerance_m = float(self._route.get("startup_gps_tolerance_m", 15.0))
+        self.get_logger().info(
+            "Startup fix mean lat=%.7f lon=%.7f spread=%.2fm distance_to_start_ref=%.2fm"
+            % (
+                startup_fix["lat"],
+                startup_fix["lon"],
+                startup_fix["spread_m"],
+                distance_m,
+            )
+        )
+        if distance_m > tolerance_m:
+            raise RuntimeError(
+                f"startup GPS is {distance_m:.2f}m from start_ref (limit {tolerance_m:.2f}m)"
+            )
+        return distance_m
+
+    def _wait_for_nav2(self) -> None:
+        self._publish_status("WAITING_FOR_NAV2")
+        deadline = time.time() + self._startup_wait_timeout_s
+        while rclpy.ok() and time.time() < deadline:
+            if self._nav_client.wait_for_server(timeout_sec=1.0):
+                return
+        raise RuntimeError("navigate_to_pose action server not available")
+
+    def _wait_for_alignment(self) -> Alignment2D:
+        self._publish_status("WAITING_FOR_ALIGNMENT")
+        deadline = time.time() + self._startup_wait_timeout_s
+        while rclpy.ok() and time.time() < deadline:
+            if self._latest_alignment is not None:
+                return self._latest_alignment
+            rclpy.spin_once(self, timeout_sec=0.2)
+        raise RuntimeError("timed out waiting for valid ENU->map alignment")
+
+    def _lookup_current_pose(self, announce_wait: bool = False) -> tuple[float, float, float]:
+        deadline = time.time() + self._startup_wait_timeout_s
+        if announce_wait:
+            self._publish_status("WAITING_FOR_MAP_TF")
+        while rclpy.ok() and time.time() < deadline:
+            try:
+                transform = self._tf_buffer.lookup_transform(
+                    self._route_frame,
+                    self._base_frame,
+                    Time(),
+                    timeout=Duration(seconds=0.5),
+                )
+                translation = transform.transform.translation
+                rotation = transform.transform.rotation
+                yaw = quaternion_to_yaw(rotation.x, rotation.y, rotation.z, rotation.w)
+                return float(translation.x), float(translation.y), yaw
+            except TransformException:
+                rclpy.spin_once(self, timeout_sec=0.2)
+        raise RuntimeError(f"timed out waiting for TF {self._route_frame}->{self._base_frame}")
+
+    def _current_xy(self) -> tuple[float, float]:
+        x, y, _ = self._lookup_current_pose(announce_wait=False)
+        return x, y
+
+    def _try_lookup_current_pose(
+        self, timeout_s: float = 0.05
+    ) -> tuple[float, float, float] | None:
+        try:
+            transform = self._tf_buffer.lookup_transform(
+                self._route_frame,
+                self._base_frame,
+                Time(),
+                timeout=Duration(seconds=timeout_s),
+            )
+        except TransformException:
+            return None
+        translation = transform.transform.translation
+        rotation = transform.transform.rotation
+        yaw = quaternion_to_yaw(rotation.x, rotation.y, rotation.z, rotation.w)
+        return float(translation.x), float(translation.y), yaw
+
+    def _enu_to_map(self, enu_x: float, enu_y: float, alignment: Alignment2D) -> tuple[float, float]:
+        cos_theta = math.cos(alignment.theta)
+        sin_theta = math.sin(alignment.theta)
+        map_x = cos_theta * enu_x - sin_theta * enu_y + alignment.tx
+        map_y = sin_theta * enu_x + cos_theta * enu_y + alignment.ty
+        return map_x, map_y
+
+    def _map_to_enu(self, map_x: float, map_y: float, alignment: Alignment2D) -> tuple[float, float]:
+        dx = map_x - alignment.tx
+        dy = map_y - alignment.ty
+        cos_theta = math.cos(alignment.theta)
+        sin_theta = math.sin(alignment.theta)
+        enu_x = cos_theta * dx + sin_theta * dy
+        enu_y = -sin_theta * dx + cos_theta * dy
+        return enu_x, enu_y
+
+    def _segment_plan(self, waypoint_index: int) -> SegmentPlan:
+        waypoint = self._route["waypoints"][waypoint_index]
+        if waypoint_index == 0:
+            start_enu = (
+                float(self._route["start_ref"]["enu_x"]),
+                float(self._route["start_ref"]["enu_y"]),
+            )
+        else:
+            prev_waypoint = self._route["waypoints"][waypoint_index - 1]
+            start_enu = (prev_waypoint.enu_x, prev_waypoint.enu_y)
+        end_enu = (waypoint.enu_x, waypoint.enu_y)
+        dx = end_enu[0] - start_enu[0]
+        dy = end_enu[1] - start_enu[1]
+        total_length_m = math.hypot(dx, dy)
+        if total_length_m < 1e-3:
+            return SegmentPlan(
+                waypoint=waypoint,
+                start_enu=start_enu,
+                end_enu=end_enu,
+                total_length_m=0.0,
+                total_subgoals=1,
+                dir_x=1.0,
+                dir_y=0.0,
+            )
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
+        total_subgoals = max(1, int(math.ceil(total_length_m / max(0.5, segment_length_m))))
+        return SegmentPlan(
+            waypoint=waypoint,
+            start_enu=start_enu,
+            end_enu=end_enu,
+            total_length_m=total_length_m,
+            total_subgoals=total_subgoals,
+            dir_x=dx / total_length_m,
+            dir_y=dy / total_length_m,
+        )
+
+    def _segment_projection(
+        self, segment: SegmentPlan, current_enu: tuple[float, float]
+    ) -> tuple[float, float]:
+        rel_x = current_enu[0] - segment.start_enu[0]
+        rel_y = current_enu[1] - segment.start_enu[1]
+        along = rel_x * segment.dir_x + rel_y * segment.dir_y
+        cross = rel_x * (-segment.dir_y) + rel_y * segment.dir_x
+        return along, cross
+
+    def _progress_on_segment(
+        self, segment: SegmentPlan, current_enu: tuple[float, float]
+    ) -> tuple[float, float]:
+        along, cross = self._segment_projection(segment, current_enu)
+        clamped_along = max(0.0, min(segment.total_length_m, along))
+        return clamped_along, cross
+
+    def _point_on_segment(self, segment: SegmentPlan, progress_m: float) -> tuple[float, float]:
+        clamped_progress = max(0.0, min(segment.total_length_m, progress_m))
+        return (
+            segment.start_enu[0] + segment.dir_x * clamped_progress,
+            segment.start_enu[1] + segment.dir_y * clamped_progress,
+        )
+
+    def _segment_pose(
+        self, segment: SegmentPlan, progress_m: float, alignment: Alignment2D
+    ) -> PoseStamped:
+        enu_x, enu_y = self._point_on_segment(segment, progress_m)
+        map_x, map_y = self._enu_to_map(enu_x, enu_y, alignment)
+        heading = math.atan2(segment.dir_y, segment.dir_x) + alignment.theta
+        qx, qy, qz, qw = yaw_to_quaternion(heading)
+        pose = PoseStamped()
+        pose.header.frame_id = self._route_frame
+        pose.pose.position.x = map_x
+        pose.pose.position.y = map_y
+        pose.pose.position.z = 0.0
+        pose.pose.orientation.x = qx
+        pose.pose.orientation.y = qy
+        pose.pose.orientation.z = qz
+        pose.pose.orientation.w = qw
+        return pose
+
+    def _subgoal_index(
+        self, segment: SegmentPlan, target_progress_m: float, segment_length_m: float
+    ) -> int:
+        if segment.total_subgoals <= 1:
+            return 1
+        safe_segment_length_m = max(0.5, segment_length_m)
+        clamped_target_progress_m = min(segment.total_length_m, max(0.0, target_progress_m))
+        best_index = 1
+        best_error = float("inf")
+        for subgoal_index in range(1, segment.total_subgoals + 1):
+            nominal_progress_m = min(segment.total_length_m, subgoal_index * safe_segment_length_m)
+            error_m = abs(clamped_target_progress_m - nominal_progress_m)
+            if error_m < best_error:
+                best_error = error_m
+                best_index = subgoal_index
+        return best_index
+
+    def _append_map_segment(
+        self,
+        path: NavPath,
+        start_map: tuple[float, float],
+        end_map: tuple[float, float],
+        segment_length_m: float,
+    ) -> None:
+        x0, y0 = start_map
+        x1, y1 = end_map
+        dx = x1 - x0
+        dy = y1 - y0
+        distance_m = math.hypot(dx, dy)
+        if distance_m < 1e-3:
+            return
+        steps = max(1, int(math.ceil(distance_m / max(0.5, segment_length_m))))
+        heading = math.atan2(dy, dx)
+        qx, qy, qz, qw = yaw_to_quaternion(heading)
+        stamp = path.header.stamp
+        for step in range(1, steps + 1):
+            ratio = step / steps
+            pose = PoseStamped()
+            pose.header.frame_id = self._route_frame
+            pose.header.stamp = stamp
+            pose.pose.position.x = x0 + dx * ratio
+            pose.pose.position.y = y0 + dy * ratio
+            pose.pose.position.z = 0.0
+            pose.pose.orientation.x = qx
+            pose.pose.orientation.y = qy
+            pose.pose.orientation.z = qz
+            pose.pose.orientation.w = qw
+            path.poses.append(pose)
+
+    def _publish_remaining_path(
+        self,
+        current_xy: tuple[float, float],
+        waypoint_index: int,
+        alignment: Alignment2D,
+        current_progress_m: float,
+    ) -> None:
+        path = NavPath()
+        path.header.frame_id = self._route_frame
+        path.header.stamp = self.get_clock().now().to_msg()
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
+
+        segment = self._segment_plan(waypoint_index)
+        current_enu = self._point_on_segment(segment, current_progress_m)
+        current_start_map = self._enu_to_map(current_enu[0], current_enu[1], alignment)
+        segment_end_map = self._enu_to_map(segment.end_enu[0], segment.end_enu[1], alignment)
+        self._append_map_segment(path, current_start_map, segment_end_map, segment_length_m)
+
+        for index in range(waypoint_index + 1, len(self._route["waypoints"])):
+            future_segment = self._segment_plan(index)
+            future_start_map = self._enu_to_map(
+                future_segment.start_enu[0],
+                future_segment.start_enu[1],
+                alignment,
+            )
+            future_end_map = self._enu_to_map(
+                future_segment.end_enu[0],
+                future_segment.end_enu[1],
+                alignment,
+            )
+            self._append_map_segment(path, future_start_map, future_end_map, segment_length_m)
+
+        self._path_pub.publish(path)
+        if path.poses:
+            self._goal_pub.publish(path.poses[0])
+
+    def _publish_zero_cmd_vel(self, repeat: int = 3) -> None:
+        zero = Twist()
+        for _ in range(max(1, repeat)):
+            self._cmd_vel_pub.publish(zero)
+            rclpy.spin_once(self, timeout_sec=0.05)
+
+    def _abort_goal_with_watchdog(
+        self,
+        goal_handle,
+        waypoint_name: str,
+        subgoal_index: int,
+        reason: str,
+    ) -> int:
+        self.get_logger().error(
+            "Aborting %s subgoal %d due to odom watchdog: %s"
+            % (waypoint_name, subgoal_index, reason)
+        )
+        self._publish_status(
+            "ODOM_DIVERGENCE_ABORT|%s|%d|%s" % (waypoint_name, subgoal_index, reason)
+        )
+        cancel_future = goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=2.0)
+        self._publish_zero_cmd_vel()
+        return GoalStatus.STATUS_ABORTED
+
+    def _send_goal(
+        self,
+        pose: PoseStamped,
+        waypoint_name: str,
+        subgoal_index: int,
+        alignment_at_send: Alignment2D | None = None,
+    ) -> int:
+        goal = NavigateToPose.Goal()
+        pose.header.stamp = self.get_clock().now().to_msg()
+        goal.pose = pose
+        send_future = self._nav_client.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self, send_future)
+        goal_handle = send_future.result()
+        if goal_handle is None or not goal_handle.accepted:
+            return GoalStatus.STATUS_ABORTED
+        result_future = goal_handle.get_result_async()
+        last_pose = self._try_lookup_current_pose(timeout_s=0.05)
+        last_pose_mono = time.monotonic()
+        warning_count = 0
+        tf_stale_count = 0
+
+        while rclpy.ok():
+            rclpy.spin_once(self, timeout_sec=self._odom_watchdog_monitor_period_s)
+            if result_future.done():
+                result = result_future.result()
+                if result is None:
+                    return GoalStatus.STATUS_UNKNOWN
+                return int(result.status)
+
+            if alignment_at_send is not None and self._latest_alignment is not None:
+                goal_enu = self._map_to_enu(
+                    pose.pose.position.x, pose.pose.position.y, alignment_at_send
+                )
+                new_map = self._enu_to_map(goal_enu[0], goal_enu[1], self._latest_alignment)
+                displacement_m = math.hypot(
+                    new_map[0] - pose.pose.position.x,
+                    new_map[1] - pose.pose.position.y,
+                )
+                if displacement_m > self._alignment_shift_cancel_threshold_m:
+                    self.get_logger().info(
+                        "Alignment shifted %.2fm for %s subgoal %d, cancelling goal"
+                        % (displacement_m, waypoint_name, subgoal_index)
+                    )
+                    cancel_future = goal_handle.cancel_goal_async()
+                    rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=2.0)
+                    return GOAL_STATUS_ALIGNMENT_SHIFT
+
+            current_pose = self._try_lookup_current_pose(timeout_s=0.05)
+            now_mono = time.monotonic()
+            if current_pose is None:
+                tf_stale_count += 1
+                if tf_stale_count >= self._odom_watchdog_tf_stale_abort_count:
+                    return self._abort_goal_with_watchdog(
+                        goal_handle,
+                        waypoint_name,
+                        subgoal_index,
+                        "TF_STALE",
+                    )
+                continue
+
+            tf_stale_count = 0
+            if last_pose is None:
+                last_pose = current_pose
+                last_pose_mono = now_mono
+                continue
+
+            dt_s = max(1e-3, now_mono - last_pose_mono)
+            step_m = math.hypot(
+                current_pose[0] - last_pose[0],
+                current_pose[1] - last_pose[1],
+            )
+            last_pose = current_pose
+            last_pose_mono = now_mono
+
+            if step_m > self._odom_watchdog_step_abort_m:
+                return self._abort_goal_with_watchdog(
+                    goal_handle,
+                    waypoint_name,
+                    subgoal_index,
+                    "STEP_%.2fm_IN_%.2fs" % (step_m, dt_s),
+                )
+
+            if step_m > self._odom_watchdog_step_warn_m:
+                warning_count += 1
+                self.get_logger().warn(
+                    "Odom watchdog warning for %s subgoal %d: step %.2fm in %.2fs (%d/%d)"
+                    % (
+                        waypoint_name,
+                        subgoal_index,
+                        step_m,
+                        dt_s,
+                        warning_count,
+                        self._odom_watchdog_warn_count_abort,
+                    )
+                )
+                if warning_count >= self._odom_watchdog_warn_count_abort:
+                    return self._abort_goal_with_watchdog(
+                        goal_handle,
+                        waypoint_name,
+                        subgoal_index,
+                        "REPEATED_WARNING_%.2fm" % step_m,
+                    )
+                continue
+
+            warning_count = 0
+
+        return GoalStatus.STATUS_UNKNOWN
+
+    def _choose_waypoint_alignment(
+        self,
+        waypoint_index: int,
+        segment: SegmentPlan,
+        current_xy: tuple[float, float],
+    ) -> tuple[Alignment2D, float]:
+        alignment = self._latest_alignment
+        if alignment is None:
+            raise RuntimeError("lost ENU->map alignment before starting waypoint")
+        current_enu = self._map_to_enu(current_xy[0], current_xy[1], alignment)
+        raw_progress_m, _ = self._progress_on_segment(segment, current_enu)
+        progress_m = max(0.0, min(segment.total_length_m, raw_progress_m))
+        return alignment, progress_m
+
+    def _run_waypoint(self, waypoint_index: int) -> tuple[bool, tuple[float, float]]:
+        segment = self._segment_plan(waypoint_index)
+        waypoint = segment.waypoint
+        segment_length_m = float(self._route.get("segment_length_m", 30.0))
+        waypoint_tolerance_m = float(self._route.get("waypoint_xy_tolerance_m", 0.35))
+        current_xy = self._current_xy()
+        starting_alignment, current_progress_m = self._choose_waypoint_alignment(
+            waypoint_index, segment, current_xy
+        )
+        self.get_logger().info(
+            "Starting waypoint %s with alignment theta=%.2fdeg tx=%.2f ty=%.2f rev=%d"
+            % (
+                waypoint.name,
+                math.degrees(starting_alignment.theta),
+                starting_alignment.tx,
+                starting_alignment.ty,
+                starting_alignment.revision,
+            )
+        )
+
+        while rclpy.ok():
+            current_xy = self._current_xy()
+            live_alignment = self._latest_alignment
+            if live_alignment is None:
+                self.get_logger().error("Lost alignment during waypoint %s" % waypoint.name)
+                return False, current_xy
+            current_enu = self._map_to_enu(current_xy[0], current_xy[1], live_alignment)
+            projected_progress_m, _ = self._progress_on_segment(segment, current_enu)
+            current_progress_m = max(current_progress_m, projected_progress_m)
+            remaining_m = max(0.0, segment.total_length_m - current_progress_m)
+            if remaining_m <= waypoint_tolerance_m:
+                return True, current_xy
+
+            self._publish_remaining_path(
+                current_xy, waypoint_index, live_alignment, current_progress_m
+            )
+
+            next_progress_m = min(segment.total_length_m, current_progress_m + segment_length_m)
+            next_subgoal = self._segment_pose(segment, next_progress_m, live_alignment)
+            subgoal_index = self._subgoal_index(segment, next_progress_m, segment_length_m)
+            self._publish_status(
+                "NAVIGATING_SUBGOAL|%s|%d|%d|%.2f|%.2f|%s"
+                % (
+                    waypoint.name,
+                    subgoal_index,
+                    segment.total_subgoals,
+                    next_subgoal.pose.position.x,
+                    next_subgoal.pose.position.y,
+                    live_alignment.source,
+                )
+            )
+            self._goal_pub.publish(next_subgoal)
+            self.get_logger().info(
+                "Sending %s subgoal %d/%d x=%.2f y=%.2f progress=%.2f/%.2f source=%s"
+                % (
+                    waypoint.name,
+                    subgoal_index,
+                    segment.total_subgoals,
+                    next_subgoal.pose.position.x,
+                    next_subgoal.pose.position.y,
+                    next_progress_m,
+                    segment.total_length_m,
+                    live_alignment.source,
+                )
+            )
+
+            status = self._send_goal(
+                next_subgoal,
+                waypoint.name,
+                subgoal_index,
+                alignment_at_send=live_alignment,
+            )
+            if status == GOAL_STATUS_ALIGNMENT_SHIFT:
+                self.get_logger().info(
+                    "Re-computing subgoal for %s due to alignment shift" % waypoint.name
+                )
+                continue
+            if status != GoalStatus.STATUS_SUCCEEDED:
+                self._publish_status(
+                    f"FAILED_WAYPOINT_{waypoint.name}_SUBGOAL_{subgoal_index}_STATUS_{status}"
+                )
+                return False, current_xy
+
+        return False, self._current_xy()
+
+    def run(self) -> bool:
+        self._publish_status("INITIALIZING")
+        self.get_logger().info(f"Loaded route file: {self._route_file}")
+        self.get_logger().info(
+            "Route %s with %d waypoints"
+            % (self._route.get("route_name", "unnamed_route"), len(self._route["waypoints"]))
+        )
+
+        startup_fix = self._wait_for_stable_fix()
+        self._validate_startup(startup_fix)
+        self._wait_for_nav2()
+        alignment = self._wait_for_alignment()
+        self.get_logger().info(
+            "Using stable ENU->map alignment: theta=%.2fdeg tx=%.2f ty=%.2f"
+            % (math.degrees(alignment.theta), alignment.tx, alignment.ty)
+        )
+        self._publish_status("ALIGNMENT_READY")
+        self._publish_status("RUNNING_ROUTE")
+
+        x0, y0, _ = self._lookup_current_pose(announce_wait=True)
+        current_xy = (x0, y0)
+        for waypoint_index, waypoint in enumerate(self._route["waypoints"]):
+            self._publish_status(
+                "WAYPOINT_TARGET|%d|%d|%s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
+            )
+            self.get_logger().info(
+                "Navigating to waypoint %d/%d: %s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
+            )
+            ok, current_xy = self._run_waypoint(waypoint_index)
+            if not ok:
+                return False
+            self._publish_status(
+                "WAYPOINT_REACHED|%d|%d|%s"
+                % (waypoint_index + 1, len(self._route["waypoints"]), waypoint.name)
+            )
+
+        self._publish_status("SUCCEEDED")
+        return True
+
+
+def main(args=None) -> None:
+    rclpy.init(args=args)
+    node = GPSRouteRunner()
+    ok = False
+    try:
+        ok = node.run()
+    except KeyboardInterrupt:
+        node._publish_status("INTERRUPTED")
+    except Exception as exc:
+        node.get_logger().error(str(exc))
+        node._publish_status(f"ABORTED: {exc}")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+    raise SystemExit(0 if ok else 1)
+
+
+if __name__ == "__main__":
+    main()
