@@ -43,7 +43,10 @@ source install/setup.bash
 ```bash
 make launch-slam
 make launch-explore
+make launch-indoor-nav
+make launch-corridor
 make launch-explore-gps
+make launch-nav-gps
 make launch-travel
 ```
 
@@ -111,4 +114,4 @@ git fetch --prune
 1. YAML 参数改动必须记录原因。
 2. 构建必须使用 `--parallel-workers 1`。
 3. 每次构建后都要重新 `source install/setup.bash`。
-4. `src/third_party/navigation2` 不作为项目自定义开发区。
+4. 通过 `dependencies.repos` 拉取的上游依赖不作为项目自定义开发区。

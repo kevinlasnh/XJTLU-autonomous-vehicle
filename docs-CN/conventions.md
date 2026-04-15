@@ -4,7 +4,7 @@
 
 1. 先理解链路，再改代码或参数。
 2. 不要在未验证影响面的情况下改动主运行链。
-3. 第三方目录 `src/third_party/` 不作为项目自定义开发区。
+3. 上游依赖通过 `dependencies.repos` + `vcs import` 拉取，不在本仓库维护 `src/third_party/` 目录。
 4. 关键修改必须能说明 what、why、risk。
 
 ## 2. Git 与 PR 规则
@@ -87,6 +87,6 @@
 ## 9. 文档维护规则
 
 1. 改代码、launch、参数、脚本、系统配置或工作流时，同步更新文档。
-2. 月度事实记录写入 `docs/devlog/YYYY-MM.md`。
-3. 新问题、状态变化和已修复问题同步到 `docs/known_issues.md`。
+2. 月度事实记录同时写入 `docs-CN/devlog/YYYY-MM.md` 和 `docs-EN/devlog/YYYY-MM.md`。
+3. 新问题、状态变化和已修复问题同步到 `docs-CN/known_issues.md` 与 `docs-EN/known_issues.md`。
 4. 文档描述必须反映当前真实可执行状态，不能保留过时命令当“标准流程”。

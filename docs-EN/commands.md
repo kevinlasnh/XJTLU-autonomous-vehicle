@@ -36,7 +36,7 @@ bash scripts/init_runtime_data.sh
 ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
-## 3. Launch Six Operating Modes
+## 3. Launch Seven Operating Modes
 
 ```bash
 cd ~/XJTLU-autonomous-vehicle
@@ -44,6 +44,7 @@ cd ~/XJTLU-autonomous-vehicle
 make launch-slam
 make launch-explore
 make launch-indoor-nav
+make launch-corridor
 make launch-explore-gps
 make launch-nav-gps
 make launch-travel
@@ -55,6 +56,7 @@ Equivalent wrapper direct invocation:
 bash scripts/launch_with_logs.sh slam
 bash scripts/launch_with_logs.sh explore
 bash scripts/launch_with_logs.sh indoor-nav
+bash scripts/launch_with_logs.sh corridor
 bash scripts/launch_with_logs.sh explore-gps
 bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
@@ -65,6 +67,7 @@ Equivalent `ros2 launch` invocation:
 ```bash
 ros2 launch bringup system_slam.launch.py
 ros2 launch bringup system_explore.launch.py
+ros2 launch bringup system_gps_corridor.launch.py
 ros2 launch bringup system_explore_gps.launch.py
 ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
@@ -80,6 +83,16 @@ Notes:
 - `indoor-nav` does not start the GNSS driver, `gps_global_aligner`, or `gps_route_runner`
 - It keeps Livox, FAST-LIO2, PGO, Nav2, and the serial control chain running
 - In RViz, use `2D Goal Pose` to publish goals to `/goal_pose` for indoor click-to-go navigation
+
+One-line command for GPS Corridor v2:
+
+```bash
+cd ~/XJTLU-autonomous-vehicle && FYP_USE_RVIZ=true bash scripts/launch_with_logs.sh corridor
+```
+
+Notes:
+- Corridor-specific route capture, startup watchdog, and runtime behavior are documented in Section 14
+- The wrapper maintains both session logs and the foreground status monitor output
 
 ## 4. Launch Individual Core Components
 
@@ -207,7 +220,7 @@ python3 scripts/data_collection/bag_to_tum.py   ~/XJTLU-autonomous-vehicle/runti
 
 ```bash
 # Save 3D point cloud map
-ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
+ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '/home/jetson/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
 
 # Save 2D occupancy grid map
 ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-data/maps/2d/<dir>/map
@@ -215,6 +228,9 @@ ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-dat
 # View PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 ```
+
+Notes:
+- The `file_path` passed to `/pgo/save_maps` must be an absolute path; `~` is not expanded inside the ROS service request
 
 ## 9. Stop System and Emergency Stop
 

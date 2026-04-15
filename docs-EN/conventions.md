@@ -4,7 +4,7 @@
 
 1. Understand the chain before modifying code or parameters.
 2. Do not modify the primary operating chain without verifying the impact scope.
-3. The third-party directory `src/third_party/` is not used for project-specific development.
+3. Upstream dependencies are fetched through `dependencies.repos` + `vcs import`; this repository no longer maintains a checked-in `src/third_party/` tree.
 4. Critical modifications must explain what, why, and risk.
 
 ## 2. Git and PR Rules
@@ -87,6 +87,6 @@ Additional rules:
 ## 9. Documentation Maintenance Rules
 
 1. When modifying code, launch files, parameters, scripts, system configuration, or workflows, update the documentation accordingly.
-2. Monthly factual records are written to `docs/devlog/YYYY-MM.md`.
-3. New issues, status changes, and fixed issues are synced to `docs/known_issues.md`.
+2. Monthly factual records are written to both `docs-CN/devlog/YYYY-MM.md` and `docs-EN/devlog/YYYY-MM.md`.
+3. New issues, status changes, and fixed issues are synced to both `docs-CN/known_issues.md` and `docs-EN/known_issues.md`.
 4. Documentation descriptions must reflect the current actual executable state and must not retain outdated commands as "standard procedures."

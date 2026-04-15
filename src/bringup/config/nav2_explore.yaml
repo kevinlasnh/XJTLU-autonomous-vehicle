@@ -293,11 +293,11 @@ controller_server:
       vx_std: 0.28
       vy_std: 0.0
       wz_std: 0.22
-      vx_max: 1.5
+      vx_max: 1.0
       vx_min: 0.0
       vy_max: 0.0
-      wz_max: 1.75
-      ax_max: 3.0
+      wz_max: 1.2
+      ax_max: 1.2
       ax_min: -3.0
       az_max: 6.0
       iteration_count: 1
@@ -366,13 +366,13 @@ controller_server:
         max_path_occupancy_ratio: 0.05
         trajectory_point_step: 4
         threshold_to_consider: 0.5
-        offset_from_furthest: 14
+        offset_from_furthest: 6
         use_path_orientations: false
 
       PathFollowCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 6.0
+        cost_weight: 16.0
         offset_from_furthest: 5
         threshold_to_consider: 1.4
 
@@ -828,13 +828,13 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_velocity: [1.5, 0.0, 1.75]
+    max_velocity: [1.0, 0.0, 1.2]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     min_velocity: [0.0, 0.0, -1.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
-    max_accel: [3.0, 0.0, 6.0]
+    max_accel: [1.2, 0.0, 6.0]
     # 上下界参数；用于限制速度、高度、代价或其它量的允许范围。
     # 调大上界或调小下界：系统更激进；反向调整：系统更保守。
     max_decel: [-3.0, 0.0, -6.0]

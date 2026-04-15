@@ -5,40 +5,51 @@
 - 路径（Path）: 由 planner 生成的空间几何点集合
 - 轨迹（Trajectory）: 由 controller 生成的带时间和速度约束的可执行运动序列
 
-## 2. 当前车辆运动参数
+## 2. 当前主线速度边界（2026-04-15）
 
 - `robot_radius`: `0.38625`
-- `max_vel_x`: `0.7`（2026-04-01 从 0.45 提升，commit `2471e73`）
-- `min_vel_x`: `0.0`
-- `max_vel_theta`: `1.0`
-- `min_speed_theta`: `0.0`
-- `acc_lim_x`: `3.0`
-- `decel_lim_x`: `-3.0`
-- `acc_lim_theta`: `3.5`
-- `decel_lim_theta`: `-3.5`
+- `vx_max`: `1.0`（2026-04-15 吸收 IEEE demo 抗推头 baseline，从 1.5 下调）
+- `wz_max`: `1.2`
+- `ax_max`: `1.2`
+- `ax_min`: `-3.0`
+- `az_max`: `6.0`
 
 ## 3. 速度平滑器
 
 - `feedback: OPEN_LOOP`
 - `odom_topic: /fastlio2/lio_odom`
-- `max_velocity: [0.7, 0.0, 1.0]`（2026-04-01 同步提升）
+- `max_velocity: [1.0, 0.0, 1.2]`
+- `max_accel: [1.2, 0.0, 6.0]`
 - 原因: 已确认闭环接入现阶段不稳定，继续使用开环是当前真实配置
 
-## 4. Explore / Corridor 主模式当前控制器（2026-04-01 更新）
+## 4. Explore / Corridor 主模式当前控制器（2026-04-15 更新）
 
 Explore 和 Corridor 模式已统一使用 MPPI 控制器（`nav2_explore.yaml`）：
 
 - `plugin: nav2_mppi_controller::MPPIController`
 - `time_steps: 48`，`model_dt: 0.05`（前向仿真 2.4s）
 - `batch_size: 1000`（每次采样 1000 条轨迹）
-- `vx_max: 0.7`，`wz_max: 1.0`
+- `vx_max: 1.0`，`wz_max: 1.2`，`ax_max: 1.2`
 - `temperature: 0.3`，`gamma: 0.015`
 - `motion_model: DiffDrive`
-- Critics: `ConstraintCritic`, `CostCritic(4.5)`, `GoalCritic(5.0)`, `GoalAngleCritic(3.0)`, `PathAlignCritic(14.0)`, `PathFollowCritic(5.0)`, `PathAngleCritic(2.0)`, `PreferForwardCritic(5.0)`
+- Critics: `ConstraintCritic`, `CostCritic(4.5)`, `GoalCritic(5.0)`, `GoalAngleCritic(3.0)`, `PathAlignCritic(cost_weight=12.0, offset=6)`, `PathFollowCritic(cost_weight=16.0)`, `PathAngleCritic(4.0)`, `PreferForwardCritic(5.0)`
 - `controller_frequency: 20.0`
 - `yaw_goal_tolerance: 6.28`（实质上禁用朝向检查）
+- 仍保留 2026-04-05 收口的 `5 Hz` 全局重规划、A* 搜索和 5 级恢复行为
 
 历史 DWB 配置已不再使用，仅保留在 `nav2_gps.yaml` 和 `nav2_travel.yaml` 中。
+
+## 4b. 2026-04-05 走廊高速基线（历史记录）
+
+> 以下组合已经不再是当前主线代码值，但作为历史背景保留。
+
+- `vx_max: 1.5`
+- `wz_max: 1.75`
+- `ax_max: 3.0`
+- `velocity_smoother.max_velocity: [1.5, 0.0, 1.75]`
+- `velocity_smoother.max_accel: [3.0, 0.0, 6.0]`
+- 该轮同时把全局重规划提升到 `5 Hz` 并启用 `A*`
+- 2026-04-15 吸收 IEEE demo 抗推头 baseline 时，仅收回了线速度/角速度/加速度上限；`5 Hz` 重规划与 `A*` 仍保留在当前基线中
 
 ## 4a. Corridor 模式 RPP 控制器（2026-03-22，已废弃）
 
@@ -60,14 +71,14 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - `RPP.use_cost_regulated_linear_velocity_scaling: true`（2026-03-26 启用）
 - `RPP.allow_reversing: false`
 
-## 5. 代价地图相关结论（2026-04-01 更新）
+## 5. 代价地图相关结论（2026-04-15 更新）
 
 ### Local Costmap（当前 `nav2_explore.yaml` 实际值）
 
 - 更新频率: `12 Hz`
 - 发布频率: `6 Hz`
 - `resolution: 0.05`
-- `width/height: 30`（cells，实际物理范围 30 * 0.05 = 1.5m）
+- `width/height: 30`（单位是米，不是 cells）
 - STVL `voxel_decay: 0.8`
 - `obstacle_range: 15.0`
 - `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
@@ -79,7 +90,7 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 - 更新频率: `5 Hz`（2026-04-05 从 3Hz 提升以支持 5Hz 重规划）
 - 发布频率: `2.0 Hz`
 - `resolution: 0.10`
-- `width/height: 50`（cells，实际物理范围 50 * 0.10 = 5.0m，2026-04-05 缩小以降低开销）
+- `width/height: 50`（单位是米，2026-04-05 缩小以降低开销）
 - STVL `voxel_decay: 1.5`
 - `obstacle_range: 15.0`
 - `min_obstacle_height: -0.33` / `max_obstacle_height: 0.30`
@@ -87,9 +98,9 @@ Corridor v2 使用 Rotation Shim + Regulated Pure Pursuit 替代 DWB：
 
 ### 已知待改进
 
-- costmap 画布尺寸（local 1.5m / global 8m）远小于 `obstacle_range` 15m 和 LiDAR 15m 量程
-- 超出画布的障碍数据被截断；全局 NavFn 对远距离子目标（30m）实质上没有全局绕路能力
-- 当前 MPPI 局部避障能力已通过室内验证，但室外大障碍物绕路能力待评估
+- 当前 costmap 画布本身不是主要瓶颈；真正的约束来自 rolling window 语义、局部可视范围和场景几何
+- `5 Hz` 重规划对动态障碍响应更快，但室外大尺度绕路能力仍需继续实测
+- 当前 MPPI 基线更偏向“稳定贴路径 + 保留动态避障”，不是纯高速 corridor 配置
 
 ### 代表性室内 full-system session（2026-03-31）
 
@@ -131,7 +142,7 @@ GPS 目标导航模式不直接改 `nav2_explore.yaml`，而是新建独立的 `
 1. RViz 的 fixed frame 必须设为 `map`。
 2. 如果 `map -> odom` 没建立，即使 Livox 和 FAST-LIO2 在跑，RViz 也可能表现为空白或 costmap 不显示。
 3. Explore 和 Corridor 模式已统一使用 MPPI 控制器（commit `9d71823`）。
-4. `velocity_smoother.max_velocity[0]` 已同步到 `0.7`。
+4. `velocity_smoother.max_velocity[0]` 当前为 `1.0`，对应 2026-04-15 吸收的抗推头 baseline。
 5. `nav2_gps.yaml` 仍使用 DWB 控制器，独立于 Explore/Corridor。
 6. FAST-LIO2 发布点云已在 C++ 端按高度窗口 `[-0.33, 0.30]` 过滤（commit `f619fa6`），下游 STVL 收到的是干净数据。
 

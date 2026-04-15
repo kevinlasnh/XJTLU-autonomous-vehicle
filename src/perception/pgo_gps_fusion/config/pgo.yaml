@@ -15,6 +15,8 @@ loop_score_tresh: 0.15
 loop_submap_half_range: 5
 submap_resolution: 0.1
 min_loop_detect_duration: 5.0
+global_map_pub_rate: 1.0
+global_map_resolution: 0.1
 
 # ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
 # GPS 配置

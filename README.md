@@ -5,8 +5,11 @@
 ## Current State
 
 - Main deployment target: Jetson Orin NX running Ubuntu 22.04 and ROS 2 Humble
-- Main operating mode: `make launch-explore`
-- GPS-assisted mode available: `make launch-explore-gps`
+- Common runtime entry points: `make launch-explore`, `make launch-indoor-nav`, `make launch-corridor`
+- GPS-assisted mode available: `make launch-explore-gps`; GPS route-graph mode available: `make launch-nav-gps`
+- Current integrated MPPI baseline uses the anti-understeering tune absorbed from the former IEEE demo line: `vx_max=1.0`, `wz_max=1.2`, `ax_max=1.2`, `PathAlignCritic.offset_from_furthest=6`, `PathFollowCritic.cost_weight=16.0`
+- Global replanning remains at `5 Hz` with NavFn `A*` enabled in `src/bringup/config/nav2_explore.yaml`
+- PGO now supports on-demand `/pgo/global_map` publication and custom RViz layout injection via `ros2 launch pgo pgo_launch.py rviz_config:=...`
 - Runtime data lives inside the workspace under `~/XJTLU-autonomous-vehicle/runtime-data`
 - Runtime parameters are centralized in `src/bringup/config/master_params.yaml`
 - Session logs are created by `scripts/launch_with_logs.sh`
@@ -29,7 +32,10 @@ bash scripts/init_runtime_data.sh
 # Launch one operating mode
 make launch-slam
 make launch-explore
+make launch-indoor-nav
+make launch-corridor
 make launch-explore-gps
+make launch-nav-gps
 make launch-travel
 ```
 
@@ -41,12 +47,12 @@ src/
 ├── perception/       FAST-LIO2, PGO GPS fusion, pointcloud processing
 ├── planning/         GNSS global planning, coordinate transforms
 ├── navigation/       waypoint_collector and navigation tools
-├── bringup/          launch files, Nav2 configs, maps, RViz assets
-└── third_party/      vendored dependencies from dependencies.repos
+└── bringup/          launch files, Nav2 configs, maps, RViz assets
 
 docs-CN/              Active engineering documentation (Chinese)
 docs-EN/              Active engineering documentation (English)
 scripts/              Runtime helpers and data-collection tools
+dependencies.repos    vcs import manifest for upstream dependencies
 ```
 
 ## Operating Modes
@@ -55,12 +61,18 @@ scripts/              Runtime helpers and data-collection tools
    FAST-LIO2 + PGO + SLAM Toolbox mapping workflow
 2. `make launch-explore`
    FAST-LIO2 + PGO + Nav2 local navigation
-3. `make launch-explore-gps`
+3. `make launch-indoor-nav`
+   Explore stack without GNSS, optimized for RViz click-to-go testing
+4. `make launch-corridor`
+   GPS Corridor v2 runtime on the MPPI baseline
+5. `make launch-explore-gps`
    Explore mode with GNSS bringup and PGO GPS factor enabled
-4. `make launch-travel`
+6. `make launch-nav-gps`
+   Scene-bundle + route-graph GPS goal navigation workflow
+7. `make launch-travel`
    Static-map navigation workflow, currently paused
 
-All four `make launch-*` targets go through `scripts/launch_with_logs.sh`, which creates a per-session log directory under `~/XJTLU-autonomous-vehicle/runtime-data/logs/`.
+All seven `make launch-*` targets go through `scripts/launch_with_logs.sh`, which creates a per-session log directory under `~/XJTLU-autonomous-vehicle/runtime-data/logs/`.
 
 ## Documentation
 
@@ -105,5 +117,5 @@ See [`docs-EN/workflow.md`](docs-EN/workflow.md) for the full executor workflow 
 1. Do not modify tuned YAML parameters without documenting why.
 2. Always build with `--parallel-workers 1`.
 3. Always source `install/setup.bash` after a build.
-4. Do not modify vendored Nav2 under `src/third_party/navigation2`.
+4. Do not modify imported upstream dependencies casually; this repository no longer keeps a checked-in `src/third_party/` tree.
 5. Do not push directly to `main`; use PRs.

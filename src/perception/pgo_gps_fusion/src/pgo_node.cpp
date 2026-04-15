@@ -12,6 +12,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -118,6 +119,8 @@ struct NodeConfig
     std::string odom_topic = "/fastlio2/lio_odom";
     std::string map_frame = "map";
     std::string local_frame = "odom";
+    double global_map_pub_rate = 1.0;
+    double global_map_resolution = 0.1;
     
     // ✅ GPS 融合修改开始 - 2025/12/01 - 添加 GPS 配置参数
     std::string gps_topic = "/fix";               // GPS 话题名称
@@ -206,6 +209,7 @@ public:
         m_cloud_sub.subscribe(this, m_node_config.cloud_topic, qos.get_rmw_qos_profile());
         m_odom_sub.subscribe(this, m_node_config.odom_topic, qos.get_rmw_qos_profile());
         m_loop_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/pgo/loop_markers", 10000);
+        m_global_map_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/pgo/global_map", 10);
         m_optimized_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/pgo/optimized_odom", 100);
         m_alignment_pub = this->create_publisher<std_msgs::msg::Float64MultiArray>(
             m_node_config.gps_alignment_topic, 10);
@@ -251,6 +255,13 @@ public:
         //   6. 队列积压风险增加，需要监控 cloud_buffer 大小（已有监控代码）
         //   7. 回环检测和图优化执行频率降低，但由于这些操作耗时较长，降频有助于系统稳定性
         m_timer = this->create_wall_timer(20ms, std::bind(&PGONode::timerCB, this));
+        int global_map_period_ms = static_cast<int>(1000.0 / m_node_config.global_map_pub_rate);
+        if (global_map_period_ms <= 0) {
+            global_map_period_ms = 1000;
+        }
+        m_global_map_timer = this->create_wall_timer(
+            std::chrono::milliseconds(global_map_period_ms),
+            std::bind(&PGONode::publishGlobalMap, this));
         m_save_map_srv = this->create_service<interface::srv::SaveMaps>("/pgo/save_maps", std::bind(&PGONode::saveMapsCB, this, std::placeholders::_1, std::placeholders::_2));
     }
 
@@ -290,6 +301,8 @@ public:
         m_node_config.odom_topic = this->declare_parameter<std::string>("odom_topic", "/fastlio2/lio_odom");
         m_node_config.map_frame = this->declare_parameter<std::string>("map_frame", "map");
         m_node_config.local_frame = this->declare_parameter<std::string>("local_frame", "odom");
+        m_node_config.global_map_pub_rate = this->declare_parameter<double>("global_map_pub_rate", 1.0);
+        m_node_config.global_map_resolution = this->declare_parameter<double>("global_map_resolution", 0.1);
 
         m_pgo_config.key_pose_delta_deg = this->declare_parameter<double>("key_pose_delta_deg", 5.0);
         m_pgo_config.key_pose_delta_trans = this->declare_parameter<double>("key_pose_delta_trans", 0.1);
@@ -377,6 +390,10 @@ public:
             m_node_config.map_frame = config["map_frame"].as<std::string>();
         if (config["local_frame"])
             m_node_config.local_frame = config["local_frame"].as<std::string>();
+        if (config["global_map_pub_rate"])
+            m_node_config.global_map_pub_rate = config["global_map_pub_rate"].as<double>();
+        if (config["global_map_resolution"])
+            m_node_config.global_map_resolution = config["global_map_resolution"].as<double>();
 
         if (config["key_pose_delta_deg"])
             m_pgo_config.key_pose_delta_deg = config["key_pose_delta_deg"].as<double>();
@@ -443,6 +460,8 @@ public:
             rclcpp::Parameter("odom_topic", m_node_config.odom_topic),
             rclcpp::Parameter("map_frame", m_node_config.map_frame),
             rclcpp::Parameter("local_frame", m_node_config.local_frame),
+            rclcpp::Parameter("global_map_pub_rate", m_node_config.global_map_pub_rate),
+            rclcpp::Parameter("global_map_resolution", m_node_config.global_map_resolution),
             rclcpp::Parameter("key_pose_delta_deg", m_pgo_config.key_pose_delta_deg),
             rclcpp::Parameter("key_pose_delta_trans", m_pgo_config.key_pose_delta_trans),
             rclcpp::Parameter("loop_search_radius", m_pgo_config.loop_search_radius),
@@ -677,6 +696,52 @@ public:
         odom.pose.pose.orientation.w = q.w();
 
         m_optimized_odom_pub->publish(odom);
+    }
+
+    void publishGlobalMap()
+    {
+        if (!m_global_map_pub || m_global_map_pub->get_subscription_count() == 0)
+            return;
+        if (m_pgo->keyPoses().empty())
+            return;
+
+        CloudType::Ptr global_map(new CloudType);
+        for (size_t i = 0; i < m_pgo->keyPoses().size(); i++)
+        {
+            const auto &key_pose = m_pgo->keyPoses()[i];
+            if (!key_pose.body_cloud || key_pose.body_cloud->empty())
+                continue;
+
+            CloudType::Ptr world_cloud(new CloudType);
+            pcl::transformPointCloud(
+                *key_pose.body_cloud,
+                *world_cloud,
+                key_pose.t_global,
+                Eigen::Quaterniond(key_pose.r_global));
+            *global_map += *world_cloud;
+        }
+
+        if (global_map->empty())
+            return;
+
+        if (m_node_config.global_map_resolution > 0.0)
+        {
+            pcl::VoxelGrid<PointType> voxel_grid;
+            voxel_grid.setLeafSize(
+                m_node_config.global_map_resolution,
+                m_node_config.global_map_resolution,
+                m_node_config.global_map_resolution);
+            voxel_grid.setInputCloud(global_map);
+            CloudType::Ptr filtered_map(new CloudType);
+            voxel_grid.filter(*filtered_map);
+            global_map = filtered_map;
+        }
+
+        sensor_msgs::msg::PointCloud2 cloud_msg;
+        pcl::toROSMsg(*global_map, cloud_msg);
+        cloud_msg.header.frame_id = m_node_config.map_frame;
+        cloud_msg.header.stamp = this->now();
+        m_global_map_pub->publish(cloud_msg);
     }
 
     void publishLoopMarkers(builtin_interfaces::msg::Time &time)
@@ -1126,7 +1191,9 @@ private:
     NodeState m_state;
     std::shared_ptr<SimplePGO> m_pgo;
     rclcpp::TimerBase::SharedPtr m_timer;
+    rclcpp::TimerBase::SharedPtr m_global_map_timer;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_loop_marker_pub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_global_map_pub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_optimized_odom_pub;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr m_alignment_pub;
     rclcpp::Service<interface::srv::SaveMaps>::SharedPtr m_save_map_srv;

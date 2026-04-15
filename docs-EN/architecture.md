@@ -16,12 +16,14 @@
 - Serial connection to STM32 lower-level controller
 - PS2 gamepad as the highest-priority manual override
 
-## 3. Five Operating Modes
+## 3. Seven Operating Modes
 
 | Mode | Command | Current Purpose |
 |------|---------|-----------------|
 | SLAM | `make launch-slam` | Mapping and perception chain verification |
 | Explore | `make launch-explore` | Current primary operating mode, local obstacle avoidance navigation |
+| Indoor Nav | `make launch-indoor-nav` | RViz click-to-go navigation without GNSS |
+| Corridor | `make launch-corridor` | GPS Corridor v2 main runtime on the MPPI controller |
 | Explore GPS | `make launch-explore-gps` | Explore with GNSS and PGO GPS factor added |
 | Nav GPS | `make launch-nav-gps` | Scene bundle + anchor ready + GPS route-graph navigation mode |
 | Travel | `make launch-travel` | Static map navigation framework, currently paused |
@@ -162,8 +164,7 @@ src/
 ├── perception/
 ├── planning/
 ├── navigation/
-├── bringup/
-└── third_party/
+└── bringup/
 ```
 
 Notes:
@@ -172,7 +173,7 @@ Notes:
 - `planning/`: Historical GPS global planning and coordinate transformation experiments
 - `navigation/`: `waypoint_collector` and scene-graph goal manager `gps_waypoint_dispatcher`
 - `bringup/`: System launch files, parameters, maps, RViz configurations
-- `third_party/`: Upstream dependencies, not used for project-specific development
+- Upstream dependencies are fetched through `vcs import < dependencies.repos` and are not treated as project-specific development space
 
 ## 10. Package Build Types
 
@@ -229,7 +230,7 @@ current_route.yaml
                                                       5. freeze alignment within waypoint, split subgoals per segment
                                                       6. sequential NavigateToPose
                                                       v
-                                               Nav2 Explore stack (RPP controller)
+                                               Nav2 Explore stack (MPPI controller)
                                                -> planner/controller/costmaps
                                                -> /cmd_vel
 ```
@@ -247,7 +248,7 @@ Positioning assumptions for this mode:
 
 Key architectural decisions for this mode:
 - **Standalone global aligner**: Decoupled from PGO, smoothly publishes the `ENU->map` transform
-- **Freeze alignment within waypoint**: Does not recompute already-executed progress mid-subgoal execution
+- **Live alignment subgoal recomputation**: Continuously projects active subgoals using the latest alignment output instead of the old per-waypoint frozen model
 - **Bootstrap startup**: Immediately computes initial alignment using `yaw0 - radians(launch_yaw_deg)`, without waiting for GPS
 
 Data plane for this mode:

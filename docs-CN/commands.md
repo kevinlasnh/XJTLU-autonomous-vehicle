@@ -36,7 +36,7 @@ bash scripts/init_runtime_data.sh
 ls ~/XJTLU-autonomous-vehicle/runtime-data
 ```
 
-## 3. 启动六种运行模式
+## 3. 启动七种运行模式
 
 ```bash
 cd ~/XJTLU-autonomous-vehicle
@@ -44,6 +44,7 @@ cd ~/XJTLU-autonomous-vehicle
 make launch-slam
 make launch-explore
 make launch-indoor-nav
+make launch-corridor
 make launch-explore-gps
 make launch-nav-gps
 make launch-travel
@@ -55,6 +56,7 @@ make launch-travel
 bash scripts/launch_with_logs.sh slam
 bash scripts/launch_with_logs.sh explore
 bash scripts/launch_with_logs.sh indoor-nav
+bash scripts/launch_with_logs.sh corridor
 bash scripts/launch_with_logs.sh explore-gps
 bash scripts/launch_with_logs.sh nav-gps
 bash scripts/launch_with_logs.sh travel
@@ -65,6 +67,7 @@ bash scripts/launch_with_logs.sh travel
 ```bash
 ros2 launch bringup system_slam.launch.py
 ros2 launch bringup system_explore.launch.py
+ros2 launch bringup system_gps_corridor.launch.py
 ros2 launch bringup system_explore_gps.launch.py
 ros2 launch bringup system_nav_gps.launch.py
 ros2 launch bringup system_travel.launch.py
@@ -80,6 +83,16 @@ cd ~/XJTLU-autonomous-vehicle && FYP_USE_RVIZ=true bash scripts/launch_with_logs
 - `indoor-nav` 不启动 GNSS driver、`gps_global_aligner`、`gps_route_runner`
 - 会保留 Livox、FAST-LIO2、PGO、Nav2、串口控制链路
 - 在 RViz 中使用 `2D Goal Pose` 向 `/goal_pose` 发目标即可做室内点击点导航
+
+GPS Corridor v2 的一整行命令：
+
+```bash
+cd ~/XJTLU-autonomous-vehicle && FYP_USE_RVIZ=true bash scripts/launch_with_logs.sh corridor
+```
+
+说明：
+- `corridor` 的运行细节、路线采集和 startup watchdog 见第 14 节
+- wrapper 会同时维护 session 日志和前台状态监控输出
 
 ## 4. 单独启动核心组件
 
@@ -207,7 +220,7 @@ python3 scripts/data_collection/bag_to_tum.py   ~/XJTLU-autonomous-vehicle/runti
 
 ```bash
 # 保存 3D 点云地图
-ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '~/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
+ros2 service call /pgo/save_maps interface/srv/SaveMaps   "{file_path: '/home/jetson/XJTLU-autonomous-vehicle/runtime-data/maps/3d/<dir>', save_patches: true}"
 
 # 保存 2D 栅格地图
 ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-data/maps/2d/<dir>/map
@@ -215,6 +228,9 @@ ros2 run nav2_map_server map_saver_cli -f ~/XJTLU-autonomous-vehicle/runtime-dat
 # 查看 PCD
 pcl_viewer -bc 1,1,1 -ps 3 <map.pcd>
 ```
+
+说明：
+- `/pgo/save_maps` 的 `file_path` 必须写绝对路径，`~` 不会在 ROS service 请求里自动展开
 
 ## 9. 停止系统与紧急停车
 

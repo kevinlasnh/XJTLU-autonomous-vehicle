@@ -16,12 +16,14 @@
 - 串口连接到 STM32 下位机
 - PS2 手柄作为最高优先级人工接管
 
-## 3. 五种运行模式
+## 3. 七种运行模式
 
 | 模式 | 命令 | 当前用途 |
 |------|------|----------|
 | SLAM | `make launch-slam` | 建图与感知链验证 |
 | Explore | `make launch-explore` | 当前主运行模式，局部避障导航 |
+| Indoor Nav | `make launch-indoor-nav` | 不启 GNSS 的 RViz 点击点导航 |
+| Corridor | `make launch-corridor` | GPS Corridor v2 主链，基于 MPPI 控制器 |
 | Explore GPS | `make launch-explore-gps` | Explore 基础上加入 GNSS 与 PGO GPS 因子 |
 | Nav GPS | `make launch-nav-gps` | scene bundle + anchor ready + GPS 路网导航模式 |
 | Travel | `make launch-travel` | 静态地图导航框架，当前暂停 |
@@ -162,8 +164,7 @@ src/
 ├── perception/
 ├── planning/
 ├── navigation/
-├── bringup/
-└── third_party/
+└── bringup/
 ```
 
 说明：
@@ -172,7 +173,7 @@ src/
 - `planning/`: 历史 GPS 全局规划与坐标转换试验区
 - `navigation/`: `waypoint_collector` 与 scene-graph goal manager `gps_waypoint_dispatcher`
 - `bringup/`: 系统 launch、参数、地图、RViz 配置
-- `third_party/`: 上游依赖，不作为项目自定义开发区
+- 上游依赖通过 `vcs import < dependencies.repos` 拉取，不作为项目自定义开发区
 
 ## 10. 包构建类型
 
@@ -229,7 +230,7 @@ current_route.yaml
                                                       5. waypoint 内冻结 alignment，按段切 subgoals
                                                       6. 串行 NavigateToPose
                                                       v
-                                               Nav2 Explore stack (RPP controller)
+                                               Nav2 Explore stack (MPPI controller)
                                                -> planner/controller/costmaps
                                                -> /cmd_vel
 ```
@@ -247,7 +248,7 @@ current_route.yaml
 
 该模式的关键架构决策：
 - **独立 global aligner**: 与 PGO 解耦，平滑发布 `ENU→map` 变换
-- **Waypoint 内冻结 alignment**: 不在 subgoal 执行中途重算已执行进度
+- **Live alignment 重算 subgoal**: 运行中持续使用当前对齐结果重算有效 subgoal，不再使用 per-waypoint frozen 机制
 - **Bootstrap 启动**: 用 `yaw0 - radians(launch_yaw_deg)` 立即计算初始对齐，不等 GPS
 
 该模式的数据面：
