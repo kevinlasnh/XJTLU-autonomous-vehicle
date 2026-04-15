@@ -19,12 +19,16 @@ install(DIRECTORY rviz/
   DESTINATION share/${PROJECT_NAME}/rviz
 )
 
-install(DIRECTORY maps/
-  DESTINATION share/${PROJECT_NAME}/maps
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/maps")
+  install(DIRECTORY maps/
+    DESTINATION share/${PROJECT_NAME}/maps
+  )
+endif()
 
-install(DIRECTORY urdf/
-  DESTINATION share/${PROJECT_NAME}/urdf
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/urdf")
+  install(DIRECTORY urdf/
+    DESTINATION share/${PROJECT_NAME}/urdf
+  )
+endif()
 
 ament_package()
