@@ -119,6 +119,12 @@
 
 ## Recently Fixed
 
+33. **[Fixed] Missing optional directories caused bringup build failure**
+    - Symptom: During a full build on Jetson, the `bringup` package failed, reporting that `maps/` or `urdf/` directories were not found.
+    - Root cause: `src/bringup/CMakeLists.txt` lacked existence checks for these directories before the `install` command.
+    - Fix: commit `fe7e546` -- wrapped `install` commands with `if(EXISTS ...)` guards.
+    - Status: Fixed and verified on Jetson (2026-04-15)
+
 30. **[Fixed] GPS corridor alignment mechanism issues**
     - Symptom: Morning test on 2026-04-01 exposed three core issues: (1) startup stable GPS offset (~4.11m) not absorbed into bootstrap (2) waypoint calibration rotation flip (176.95deg) (3) per-waypoint frozen alignment caused live alignment rejection by guard
     - Fix: Evening 2026-04-01 completed four changes (commit `ebc26e2` + `fe3933e` + `e73c2bf` + `c0ea847`):
@@ -140,6 +146,7 @@
     - Root cause: Route default `startup_fix_spread_max_m: 3.0`, but current GPS device's 60-point window spread is typically ~4.8m, failing to meet the threshold
     - Fix: commit `d9b63dc` -- route collection script default relaxed from `2.0` to `5.0`; current running route changed from `3.0` to `5.0`
     - Status: Fixed, awaiting next clear-weather re-test for verification (2026-03-31)
+      - 2026-04-15 update: During the outdoor corridor smoke test, the code chain launched normally, but the system remained stuck at `WAITING_FOR_STABLE_FIX` due to the lack of a valid GNSS fix in the environment (continuously outputting empty NMEA `$GNGGA,,,,,,0,00,25.5,,,,,,*64`). This is a physical signal issue, not a code blocker.
 
 1. **[Fixed] PGO does not establish `map -> odom` after startup**
    - Symptom: Continuously prints `Received out of order message` after startup, no keyframes, no stable `map -> odom`; RViz under the `map` fixed frame appears blank.

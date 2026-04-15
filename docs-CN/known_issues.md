@@ -119,6 +119,12 @@
 
 ## 最近已修复
 
+33. **[已修复] 编译环境缺失 optional 目录导致 bringup 构建失败**
+   - 现象: 在 Jetson 上执行全量构建时，`bringup` 包构建失败，报错提示找不到 `maps/` 或 `urdf/` 目录。
+   - 根因: `src/bringup/CMakeLists.txt` 中对这些目录的 `install` 指令未做存在性检查。
+   - 修复: commit `fe7e546` — 在 `install` 前包裹 `if(EXISTS ...)` 判断，确保目录存在才安装。
+   - 状态: 已修复并在 Jetson 上验证通过（2026-04-15）
+
 30. **[已修复] GPS corridor 对齐机制问题**
    - 现象: 2026-04-01 上午测试暴露三个核心问题：(1) startup stable GPS offset (~4.11m) 未被 bootstrap 吸收 (2) waypoint calibration 旋转翻转 (176.95deg) (3) per-waypoint frozen alignment 导致 live alignment 被 guard 拒绝
    - 修复: 2026-04-01 晚间完成四项改动（commit `ebc26e2` + `fe3933e` + `e73c2bf` + `c0ea847`）：
@@ -140,6 +146,7 @@
    - 根因: route 默认 `startup_fix_spread_max_m: 3.0`，但当前 GPS 设备 60 点窗口 spread 典型值 ~4.8m，无法满足
    - 修复: commit `d9b63dc` — 路线采集脚本默认从 `2.0` 放宽到 `5.0`，当前运行 route 从 `3.0` 改为 `5.0`
    - 状态: 已修正，待下次晴天复测验证（2026-03-31）
+     - 2026-04-15 更新: 室外 corridor 烟测中代码链路正常启动，但由于现场无有效 GNSS fix（持续输出空 NMEA `$GNGGA,,,,,,0,00,25.5,,,,,,*64`），依旧卡在 `WAITING_FOR_STABLE_FIX`。这是现场环境信号限制，非代码阻塞。
 
 1. **[已修复] PGO 启动后 `map -> odom` 不建立**
    - 现象: 启动后持续刷 `Received out of order message`，没有关键帧，没有稳定 `map -> odom`，RViz 在 `map` fixed frame 下看起来像空白。
