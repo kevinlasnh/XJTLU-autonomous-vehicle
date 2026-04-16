@@ -35,8 +35,8 @@
 |------|------|
 | 系统结构与数据流 | [architecture.md](architecture.md) |
 | 常用命令 | [commands.md](commands.md) |
-| 开发规范 | [conventions.md](conventions.md) |
-| 执行工作流 | [workflow.md](workflow.md) |
+| 贡献指南（中文） | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| 贡献指南（英文） | [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) |
 | 已知问题与当前阻塞 | [known_issues.md](known_issues.md) |
 | 硬件规格参数 | [hardware_spec.md](hardware_spec.md) |
 
@@ -63,7 +63,8 @@
 | 文件 | 用途 |
 |------|------|
 | [`../README.md`](../README.md) | 仓库总览与快速开始 |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | 贡献流程与 PR 要求 |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | 贡献指南（中文） |
+| [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) | 贡献指南（英文） |
 
 ## 归档说明
 

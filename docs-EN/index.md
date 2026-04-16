@@ -35,8 +35,8 @@
 |-------|------|
 | System architecture and data flow | [architecture.md](architecture.md) |
 | Common commands | [commands.md](commands.md) |
-| Development conventions | [conventions.md](conventions.md) |
-| Execution workflow | [workflow.md](workflow.md) |
+| Contributing guide (CN) | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| Contributing guide (EN) | [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) |
 | Known issues and current blockers | [known_issues.md](known_issues.md) |
 | Hardware specifications | [hardware_spec.md](hardware_spec.md) |
 
@@ -63,7 +63,8 @@
 | File | Purpose |
 |------|---------|
 | [`../README.md`](../README.md) | Repository overview and quick start |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution process and PR requirements |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contributing guide (CN) |
+| [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) | Contributing guide (EN) |
 
 ## Archive Notes
 

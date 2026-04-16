@@ -85,8 +85,8 @@ Both directories have identical structure. When updating docs, update both.
 - [Documentation Index](docs-EN/index.md)
 - [System Architecture](docs-EN/architecture.md)
 - [Command Reference](docs-EN/commands.md)
-- [Development Conventions](docs-EN/conventions.md)
-- [Workflow Guide](docs-EN/workflow.md)
+- [Contributing Guide (CN)](CONTRIBUTING.md)
+- [Contributing Guide (EN)](CONTRIBUTING-EN.md)
 - [Known Issues](docs-EN/known_issues.md)
 - [PGO Notes](docs-EN/knowledge/pgo.md)
 - [GPS Planning Notes](docs-EN/knowledge/gps_planning.md)
@@ -101,7 +101,7 @@ Both directories have identical structure. When updating docs, update both.
 6. Merge through PR, then sync Jetson back to `main`.
 7. Update affected docs in **both** `docs-CN/` and `docs-EN/` before the session is considered complete.
 
-See [`docs-EN/workflow.md`](docs-EN/workflow.md) for the full executor workflow and documentation trigger rules.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full development conventions and documentation trigger rules.
 
 ## Hardware Snapshot
 
