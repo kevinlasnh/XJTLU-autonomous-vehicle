@@ -47,13 +47,20 @@ src/
 ├── perception/       FAST-LIO2, PGO GPS fusion, pointcloud processing
 ├── planning/         GNSS global planning, coordinate transforms
 ├── navigation/       waypoint_collector and navigation tools
-└── bringup/          launch files, Nav2 configs, maps, RViz assets
+├── bringup/          launch files, Nav2 configs, maps, RViz assets
+└── firmware/         STM32 RM C Board lower-controller snapshot
 
 docs-CN/              Active engineering documentation (Chinese)
 docs-EN/              Active engineering documentation (English)
 scripts/              Runtime helpers and data-collection tools
 dependencies.repos    vcs import manifest for upstream dependencies
 ```
+
+## Firmware Snapshot
+
+- Full STM32 RM C Board firmware snapshot is checked in under `src/firmware/rm_c_board/`
+- The directory currently keeps the saved source tree, project files, and companion build artifacts together as one repository-local snapshot
+- Firmware-local readme: [`src/firmware/rm_c_board/README.md`](src/firmware/rm_c_board/README.md)
 
 ## Operating Modes
 
@@ -85,6 +92,7 @@ Both directories have identical structure. When updating docs, update both.
 - [Documentation Index](docs-EN/index.md)
 - [System Architecture](docs-EN/architecture.md)
 - [Command Reference](docs-EN/commands.md)
+- [STM32 RM C Board Firmware Snapshot](src/firmware/rm_c_board/README.md)
 - [Contributing Guide (CN)](CONTRIBUTING.md)
 - [Contributing Guide (EN)](CONTRIBUTING-EN.md)
 - [Known Issues](docs-EN/known_issues.md)

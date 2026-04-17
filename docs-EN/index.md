@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-04-16
+> Last updated: 2026-04-17
 
 ## Current System Summary
 
@@ -65,6 +65,12 @@
 | [`../README.md`](../README.md) | Repository overview and quick start |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contributing guide (CN) |
 | [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) | Contributing guide (EN) |
+
+## Firmware Snapshot
+
+- The full STM32 RM C Board lower-controller directory is now checked into this repository: [`../src/firmware/rm_c_board/`](../src/firmware/rm_c_board/)
+- This path is intentionally preserved as a repository-local snapshot, including the saved source tree, project files, and the companion build artifacts already stored with it
+- Firmware-local readme: [`../src/firmware/rm_c_board/README.md`](../src/firmware/rm_c_board/README.md)
 
 ## Archive Notes
 

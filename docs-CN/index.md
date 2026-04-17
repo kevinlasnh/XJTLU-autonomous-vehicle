@@ -1,6 +1,6 @@
 # FYP 自主导航车辆文档索引
 
-> 最后更新: 2026-04-16
+> 最后更新: 2026-04-17
 
 ## 当前系统摘要
 
@@ -65,6 +65,12 @@
 | [`../README.md`](../README.md) | 仓库总览与快速开始 |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | 贡献指南（中文） |
 | [`../CONTRIBUTING-EN.md`](../CONTRIBUTING-EN.md) | 贡献指南（英文） |
+
+## 固件代码
+
+- STM32 RM C Board 下位机完整目录现已并入当前仓库：[`../src/firmware/rm_c_board/`](../src/firmware/rm_c_board/)
+- 该目录按仓库内快照保留了源码、工程文件以及同目录原有构建产物，方便直接回看和对照
+- 固件目录内说明见 [`../src/firmware/rm_c_board/README.md`](../src/firmware/rm_c_board/README.md)
 
 ## 归档说明
 
