@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   28:Core/Inc/FusionMath.h ****         float y;
   29:Core/Inc/FusionMath.h ****         float z;
   30:Core/Inc/FusionMath.h ****     } axis;
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 2
 
 
   31:Core/Inc/FusionMath.h **** } FusionVector;
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   85:Core/Inc/FusionMath.h **** 
   86:Core/Inc/FusionMath.h **** /**
   87:Core/Inc/FusionMath.h ****  * @brief Vector of ones.
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 3
 
 
   88:Core/Inc/FusionMath.h ****  */
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  142:Core/Inc/FusionMath.h **** 
  143:Core/Inc/FusionMath.h **** /**
  144:Core/Inc/FusionMath.h ****  * @brief Returns the arc sine of the value.
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 4
 
 
  145:Core/Inc/FusionMath.h ****  * @param value Value.
@@ -238,7 +238,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  199:Core/Inc/FusionMath.h ****  * @return Sum of two vectors.
  200:Core/Inc/FusionMath.h ****  */
  201:Core/Inc/FusionMath.h **** static inline FusionVector FusionVectorAdd(const FusionVector vectorA, const FusionVector vectorB) 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 5
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 5
 
 
  202:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
@@ -298,7 +298,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  256:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
  257:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x * vectorB.axis.x,
  258:Core/Inc/FusionMath.h ****             .y = vectorA.axis.y * vectorB.axis.y,
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 6
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 6
 
 
  259:Core/Inc/FusionMath.h ****             .z = vectorA.axis.z * vectorB.axis.z,
@@ -358,7 +358,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  313:Core/Inc/FusionMath.h ****  * @param vector Vector.
  314:Core/Inc/FusionMath.h ****  * @return Normalised vector.
  315:Core/Inc/FusionMath.h ****  */
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 7
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 7
 
 
  316:Core/Inc/FusionMath.h **** static inline FusionVector FusionVectorNormalise(const FusionVector vector) {
@@ -418,7 +418,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  370:Core/Inc/FusionMath.h ****  * @param vector Vector.
  371:Core/Inc/FusionMath.h ****  * @return Multiplication of a quaternion with a vector.
  372:Core/Inc/FusionMath.h ****  */
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 8
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 8
 
 
  373:Core/Inc/FusionMath.h **** static inline FusionQuaternion FusionQuaternionMultiplyVector(const FusionQuaternion quaternion, co
@@ -478,7 +478,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   37 0002 8EB0     		sub	sp, sp, #56
   38              	.LCFI1:
   39              		.cfi_def_cfa_offset 72
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 9
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 9
 
 
   40 0004 0DF1380C 		add	ip, sp, #56
@@ -538,7 +538,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   87 0068 DDED157A 		vldr.32	s15, [sp, #84]
   88              		.loc 2 423 46 view .LVU23
   89 006c 60EEA70A 		vmul.f32	s1, s1, s15
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 10
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 10
 
 
   90              		.loc 2 423 39 view .LVU24
@@ -598,7 +598,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   13:Core/Inc/FusionCalibration.h **** #include "FusionMath.h"
   14:Core/Inc/FusionCalibration.h **** 
   15:Core/Inc/FusionCalibration.h **** //------------------------------------------------------------------------------
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 11
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 11
 
 
   16:Core/Inc/FusionCalibration.h **** // Inline functions
@@ -658,7 +658,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  217:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x - vectorB.axis.x,
  166              		.loc 2 217 24 view .LVU39
  167 003e CDED150A 		vstr.32	s1, [sp, #84]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 12
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 12
 
 
  220:Core/Inc/FusionMath.h ****     }};
@@ -718,7 +718,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  208              		.loc 3 27 12 discriminator 2 view .LVU54
  209 008a EC46     		mov	ip, sp
  210 008c 0DF1B00E 		add	lr, sp, #176
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 13
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 13
 
 
  211 0090 BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
@@ -742,22 +742,19 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
  228              		.cfi_def_cfa_offset 20
  229              		@ sp needed
  230 00c2 5DF804EB 		ldr	lr, [sp], #4
- 231              	.LCFI8:
- 232              		.cfi_restore 14
- 233              		.cfi_def_cfa_offset 16
- 234 00c6 04B0     		add	sp, sp, #16
- 235              	.LCFI9:
- 236              		.cfi_def_cfa_offset 0
- 237 00c8 7047     		bx	lr
- 238              		.cfi_endproc
- 239              	.LFE159:
- 241              		.section	.text.FusionCalibrationMagnetic,"ax",%progbits
- 242              		.align	1
- 243              		.syntax unified
- 244              		.thumb
- 245              		.thumb_func
- 247              	FusionCalibrationMagnetic:
- 248              	.LFB160:
+ 231 00c6 04B0     		add	sp, sp, #16
+ 232              	.LCFI8:
+ 233              		.cfi_def_cfa_offset 4
+ 234 00c8 7047     		bx	lr
+ 235              		.cfi_endproc
+ 236              	.LFE159:
+ 238              		.section	.text.FusionCalibrationMagnetic,"ax",%progbits
+ 239              		.align	1
+ 240              		.syntax unified
+ 241              		.thumb
+ 242              		.thumb_func
+ 244              	FusionCalibrationMagnetic:
+ 245              	.LFB160:
   29:Core/Inc/FusionCalibration.h **** 
   30:Core/Inc/FusionCalibration.h **** /**
   31:Core/Inc/FusionCalibration.h ****  * @brief Magnetometer calibration model.
@@ -767,114 +764,111 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   35:Core/Inc/FusionCalibration.h ****  * @return Calibrated measurement.
   36:Core/Inc/FusionCalibration.h ****  */
   37:Core/Inc/FusionCalibration.h **** static inline FusionVector FusionCalibrationMagnetic(const FusionVector uncalibrated, const FusionM
- 249              		.loc 3 37 157 is_stmt 1 view -0
- 250              		.cfi_startproc
- 251              		@ args = 36, pretend = 16, frame = 88
- 252              		@ frame_needed = 0, uses_anonymous_args = 0
- 253 0000 84B0     		sub	sp, sp, #16
+ 246              		.loc 3 37 157 is_stmt 1 view -0
+ 247              		.cfi_startproc
+ 248              		@ args = 36, pretend = 16, frame = 88
+ 249              		@ frame_needed = 0, uses_anonymous_args = 0
+ 250 0000 84B0     		sub	sp, sp, #16
+ 251              	.LCFI9:
+ 252              		.cfi_def_cfa_offset 16
+ 253 0002 00B5     		push	{lr}
  254              	.LCFI10:
- 255              		.cfi_def_cfa_offset 16
- 256 0002 00B5     		push	{lr}
- 257              	.LCFI11:
- 258              		.cfi_def_cfa_offset 20
- 259              		.cfi_offset 14, -20
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 14
+ 255              		.cfi_def_cfa_offset 20
+ 256              		.cfi_offset 14, -20
+ 257 0004 9DB0     		sub	sp, sp, #116
+ 258              	.LCFI11:
+ 259              		.cfi_def_cfa_offset 136
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 14
 
 
- 260 0004 9DB0     		sub	sp, sp, #116
- 261              	.LCFI12:
- 262              		.cfi_def_cfa_offset 136
- 263 0006 0DF1780C 		add	ip, sp, #120
- 264 000a 8CE80F00 		stm	ip, {r0, r1, r2, r3}
- 265 000e 8DED0D0A 		vstr.32	s0, [sp, #52]
- 266 0012 CDED0E0A 		vstr.32	s1, [sp, #56]
- 267 0016 8DED0F1A 		vstr.32	s2, [sp, #60]
- 268 001a CDED0A1A 		vstr.32	s3, [sp, #40]
- 269 001e 8DED0B2A 		vstr.32	s4, [sp, #44]
- 270 0022 CDED0C2A 		vstr.32	s5, [sp, #48]
+ 260 0006 0DF1780C 		add	ip, sp, #120
+ 261 000a 8CE80F00 		stm	ip, {r0, r1, r2, r3}
+ 262 000e 8DED0D0A 		vstr.32	s0, [sp, #52]
+ 263 0012 CDED0E0A 		vstr.32	s1, [sp, #56]
+ 264 0016 8DED0F1A 		vstr.32	s2, [sp, #60]
+ 265 001a CDED0A1A 		vstr.32	s3, [sp, #40]
+ 266 001e 8DED0B2A 		vstr.32	s4, [sp, #44]
+ 267 0022 CDED0C2A 		vstr.32	s5, [sp, #48]
   38:Core/Inc/FusionCalibration.h ****     return FusionMatrixMultiplyVector(softIronMatrix, FusionVectorSubtract(uncalibrated, hardIronOf
- 271              		.loc 3 38 5 view .LVU57
- 272              	.LBB20:
- 273              	.LBI20:
+ 268              		.loc 3 38 5 view .LVU57
+ 269              	.LBB20:
+ 270              	.LBI20:
  216:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
- 274              		.loc 2 216 28 view .LVU58
- 275              	.LBB21:
+ 271              		.loc 2 216 28 view .LVU58
+ 272              	.LBB21:
  217:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x - vectorB.axis.x,
- 276              		.loc 2 217 5 view .LVU59
+ 273              		.loc 2 217 5 view .LVU59
  218:Core/Inc/FusionMath.h ****             .y = vectorA.axis.y - vectorB.axis.y,
- 277              		.loc 2 218 33 is_stmt 0 view .LVU60
- 278 0026 30EE610A 		vsub.f32	s0, s0, s3
+ 274              		.loc 2 218 33 is_stmt 0 view .LVU60
+ 275 0026 30EE610A 		vsub.f32	s0, s0, s3
  217:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x - vectorB.axis.x,
- 279              		.loc 2 217 24 view .LVU61
- 280 002a 8DED100A 		vstr.32	s0, [sp, #64]
+ 276              		.loc 2 217 24 view .LVU61
+ 277 002a 8DED100A 		vstr.32	s0, [sp, #64]
  219:Core/Inc/FusionMath.h ****             .z = vectorA.axis.z - vectorB.axis.z,
- 281              		.loc 2 219 33 view .LVU62
- 282 002e 70EEC20A 		vsub.f32	s1, s1, s4
+ 278              		.loc 2 219 33 view .LVU62
+ 279 002e 70EEC20A 		vsub.f32	s1, s1, s4
  217:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x - vectorB.axis.x,
- 283              		.loc 2 217 24 view .LVU63
- 284 0032 CDED110A 		vstr.32	s1, [sp, #68]
+ 280              		.loc 2 217 24 view .LVU63
+ 281 0032 CDED110A 		vstr.32	s1, [sp, #68]
  220:Core/Inc/FusionMath.h ****     }};
- 285              		.loc 2 220 33 view .LVU64
- 286 0036 31EE621A 		vsub.f32	s2, s2, s5
+ 282              		.loc 2 220 33 view .LVU64
+ 283 0036 31EE621A 		vsub.f32	s2, s2, s5
  217:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x - vectorB.axis.x,
- 287              		.loc 2 217 24 view .LVU65
- 288 003a 8DED121A 		vstr.32	s2, [sp, #72]
+ 284              		.loc 2 217 24 view .LVU65
+ 285 003a 8DED121A 		vstr.32	s2, [sp, #72]
  222:Core/Inc/FusionMath.h **** }
- 289              		.loc 2 222 5 is_stmt 1 view .LVU66
+ 286              		.loc 2 222 5 is_stmt 1 view .LVU66
  222:Core/Inc/FusionMath.h **** }
- 290              		.loc 2 222 12 is_stmt 0 view .LVU67
- 291 003e 19AB     		add	r3, sp, #100
- 292 0040 10AA     		add	r2, sp, #64
- 293 0042 07CA     		ldm	r2, {r0, r1, r2}
- 294 0044 83E80700 		stm	r3, {r0, r1, r2}
- 295 0048 0DF1580C 		add	ip, sp, #88
- 296 004c 8CE80700 		stm	ip, {r0, r1, r2}
- 297              	.LBE21:
- 298              	.LBE20:
- 299              		.loc 3 38 12 discriminator 1 view .LVU68
- 300 0050 EC46     		mov	ip, sp
- 301 0052 0DF1880E 		add	lr, sp, #136
- 302 0056 BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
- 303 005a ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
- 304 005e DEF80030 		ldr	r3, [lr]
- 305 0062 CCF80030 		str	r3, [ip]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 15
+ 287              		.loc 2 222 12 is_stmt 0 view .LVU67
+ 288 003e 19AB     		add	r3, sp, #100
+ 289 0040 10AA     		add	r2, sp, #64
+ 290 0042 07CA     		ldm	r2, {r0, r1, r2}
+ 291 0044 83E80700 		stm	r3, {r0, r1, r2}
+ 292 0048 0DF1580C 		add	ip, sp, #88
+ 293 004c 8CE80700 		stm	ip, {r0, r1, r2}
+ 294              	.LBE21:
+ 295              	.LBE20:
+ 296              		.loc 3 38 12 discriminator 1 view .LVU68
+ 297 0050 EC46     		mov	ip, sp
+ 298 0052 0DF1880E 		add	lr, sp, #136
+ 299 0056 BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
+ 300 005a ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
+ 301 005e DEF80030 		ldr	r3, [lr]
+ 302 0062 CCF80030 		str	r3, [ip]
+ 303 0066 1EAB     		add	r3, sp, #120
+ 304 0068 0FCB     		ldm	r3, {r0, r1, r2, r3}
+ 305 006a 9DED160A 		vldr.32	s0, [sp, #88]
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 15
 
 
- 306 0066 1EAB     		add	r3, sp, #120
- 307 0068 0FCB     		ldm	r3, {r0, r1, r2, r3}
- 308 006a 9DED160A 		vldr.32	s0, [sp, #88]
- 309 006e DDED170A 		vldr.32	s1, [sp, #92]
- 310 0072 9DED181A 		vldr.32	s2, [sp, #96]
- 311 0076 FFF7FEFF 		bl	FusionMatrixMultiplyVector
- 312              	.LVL1:
- 313 007a 8DED130A 		vstr.32	s0, [sp, #76]
- 314 007e CDED140A 		vstr.32	s1, [sp, #80]
- 315 0082 8DED151A 		vstr.32	s2, [sp, #84]
+ 306 006e DDED170A 		vldr.32	s1, [sp, #92]
+ 307 0072 9DED181A 		vldr.32	s2, [sp, #96]
+ 308 0076 FFF7FEFF 		bl	FusionMatrixMultiplyVector
+ 309              	.LVL1:
+ 310 007a 8DED130A 		vstr.32	s0, [sp, #76]
+ 311 007e CDED140A 		vstr.32	s1, [sp, #80]
+ 312 0082 8DED151A 		vstr.32	s2, [sp, #84]
   39:Core/Inc/FusionCalibration.h **** }
- 316              		.loc 3 39 1 view .LVU69
- 317 0086 1DB0     		add	sp, sp, #116
- 318              	.LCFI13:
- 319              		.cfi_def_cfa_offset 20
- 320              		@ sp needed
- 321 0088 5DF804EB 		ldr	lr, [sp], #4
- 322              	.LCFI14:
- 323              		.cfi_restore 14
- 324              		.cfi_def_cfa_offset 16
- 325 008c 04B0     		add	sp, sp, #16
- 326              	.LCFI15:
- 327              		.cfi_def_cfa_offset 0
- 328 008e 7047     		bx	lr
- 329              		.cfi_endproc
- 330              	.LFE160:
- 332              		.section	.text.IMU_update,"ax",%progbits
- 333              		.align	1
- 334              		.global	IMU_update
- 335              		.syntax unified
- 336              		.thumb
- 337              		.thumb_func
- 339              	IMU_update:
- 340              	.LFB162:
+ 313              		.loc 3 39 1 view .LVU69
+ 314 0086 1DB0     		add	sp, sp, #116
+ 315              	.LCFI12:
+ 316              		.cfi_def_cfa_offset 20
+ 317              		@ sp needed
+ 318 0088 5DF804EB 		ldr	lr, [sp], #4
+ 319 008c 04B0     		add	sp, sp, #16
+ 320              	.LCFI13:
+ 321              		.cfi_def_cfa_offset 4
+ 322 008e 7047     		bx	lr
+ 323              		.cfi_endproc
+ 324              	.LFE160:
+ 326              		.section	.text.IMU_update,"ax",%progbits
+ 327              		.align	1
+ 328              		.global	IMU_update
+ 329              		.syntax unified
+ 330              		.thumb
+ 331              		.thumb_func
+ 333              	IMU_update:
+ 334              	.LFB162:
    1:Core/Src/IMU.c **** //IMU.c
    2:Core/Src/IMU.c **** //2023.11.3
    3:Core/Src/IMU.c **** //by gjx
@@ -898,781 +892,781 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 1
   21:Core/Src/IMU.c **** // Define calibration (replace with actual calibration data if available)
   22:Core/Src/IMU.c **** const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}; 
   23:Core/Src/IMU.c **** const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.011047f}; // Done!
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 16
-
-
   24:Core/Src/IMU.c **** const FusionVector gyroscopeOffset = {0.067f, -0.045f, 0.038f}; // Done!
   25:Core/Src/IMU.c **** const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0
   26:Core/Src/IMU.c **** const FusionVector accelerometerSensitivity = {1.009082f, 1.006542f, 1.009082f}; // Done!
   27:Core/Src/IMU.c **** const FusionVector accelerometerOffset = {0.003f, -0.002f, -0.001f}; // Done!
   28:Core/Src/IMU.c **** const FusionMatrix softIronMatrix = {0.9580f, -0.0081f, 0.0222f, -0.0081f, 1.0402f, -0.0020f, 0.022
   29:Core/Src/IMU.c **** const FusionVector hardIronOffset = {-4.4666f, 2.9855f, 7.9047f};
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 16
+
+
   30:Core/Src/IMU.c **** 
   31:Core/Src/IMU.c **** 
   32:Core/Src/IMU.c **** void IMU_update()
   33:Core/Src/IMU.c **** {
- 341              		.loc 1 33 1 is_stmt 1 view -0
- 342              		.cfi_startproc
- 343              		@ args = 0, pretend = 0, frame = 48
- 344              		@ frame_needed = 0, uses_anonymous_args = 0
- 345 0000 2DE9F043 		push	{r4, r5, r6, r7, r8, r9, lr}
- 346              	.LCFI16:
- 347              		.cfi_def_cfa_offset 28
- 348              		.cfi_offset 4, -28
- 349              		.cfi_offset 5, -24
- 350              		.cfi_offset 6, -20
- 351              		.cfi_offset 7, -16
- 352              		.cfi_offset 8, -12
- 353              		.cfi_offset 9, -8
- 354              		.cfi_offset 14, -4
- 355 0004 2DED068B 		vpush.64	{d8, d9, d10}
- 356              	.LCFI17:
- 357              		.cfi_def_cfa_offset 52
- 358              		.cfi_offset 80, -52
- 359              		.cfi_offset 81, -48
- 360              		.cfi_offset 82, -44
- 361              		.cfi_offset 83, -40
- 362              		.cfi_offset 84, -36
- 363              		.cfi_offset 85, -32
- 364 0008 93B0     		sub	sp, sp, #76
- 365              	.LCFI18:
- 366              		.cfi_def_cfa_offset 128
+ 335              		.loc 1 33 1 is_stmt 1 view -0
+ 336              		.cfi_startproc
+ 337              		@ args = 0, pretend = 0, frame = 48
+ 338              		@ frame_needed = 0, uses_anonymous_args = 0
+ 339 0000 2DE9F043 		push	{r4, r5, r6, r7, r8, r9, lr}
+ 340              	.LCFI14:
+ 341              		.cfi_def_cfa_offset 28
+ 342              		.cfi_offset 4, -28
+ 343              		.cfi_offset 5, -24
+ 344              		.cfi_offset 6, -20
+ 345              		.cfi_offset 7, -16
+ 346              		.cfi_offset 8, -12
+ 347              		.cfi_offset 9, -8
+ 348              		.cfi_offset 14, -4
+ 349 0004 2DED068B 		vpush.64	{d8, d9, d10}
+ 350              	.LCFI15:
+ 351              		.cfi_def_cfa_offset 52
+ 352              		.cfi_offset 80, -52
+ 353              		.cfi_offset 81, -48
+ 354              		.cfi_offset 82, -44
+ 355              		.cfi_offset 83, -40
+ 356              		.cfi_offset 84, -36
+ 357              		.cfi_offset 85, -32
+ 358 0008 93B0     		sub	sp, sp, #76
+ 359              	.LCFI16:
+ 360              		.cfi_def_cfa_offset 128
   34:Core/Src/IMU.c **** 	BMI088_read(gyro, accel, &temp); // read IMU Date
- 367              		.loc 1 34 2 view .LVU71
- 368 000a 7A4C     		ldr	r4, .L9
- 369 000c 7A4D     		ldr	r5, .L9+4
- 370 000e 7B4A     		ldr	r2, .L9+8
- 371 0010 2146     		mov	r1, r4
- 372 0012 2846     		mov	r0, r5
- 373 0014 FFF7FEFF 		bl	BMI088_read
- 374              	.LVL2:
+ 361              		.loc 1 34 2 view .LVU71
+ 362 000a 7A4C     		ldr	r4, .L9
+ 363 000c 7A4D     		ldr	r5, .L9+4
+ 364 000e 7B4A     		ldr	r2, .L9+8
+ 365 0010 2146     		mov	r1, r4
+ 366 0012 2846     		mov	r0, r5
+ 367 0014 FFF7FEFF 		bl	BMI088_read
+ 368              	.LVL2:
   35:Core/Src/IMU.c **** 
   36:Core/Src/IMU.c **** 	gyroscope = (FusionVector){{FusionRadiansToDegrees(gyro[0]), FusionRadiansToDegrees(gyro[1]), Fusi
- 375              		.loc 1 36 2 view .LVU72
- 376              		.loc 1 36 30 is_stmt 0 view .LVU73
- 377 0018 95ED000A 		vldr.32	s0, [r5]
- 378              	.LVL3:
- 379              	.LBB22:
- 380              	.LBI22:
+ 369              		.loc 1 36 2 view .LVU72
+ 370              		.loc 1 36 57 is_stmt 0 view .LVU73
+ 371 0018 95ED000A 		vldr.32	s0, [r5]
+ 372              	.LVL3:
+ 373              	.LBB22:
+ 374              	.LBI22:
  136:Core/Inc/FusionMath.h ****     return radians * (180.0f / (float) M_PI);
- 381              		.loc 2 136 21 is_stmt 1 view .LVU74
- 382              	.LBB23:
+ 375              		.loc 2 136 21 is_stmt 1 view .LVU74
+ 376              	.LBB23:
  137:Core/Inc/FusionMath.h **** }
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 17
+ 377              		.loc 2 137 5 view .LVU75
+ 137:Core/Inc/FusionMath.h **** }
+ 378              		.loc 2 137 20 is_stmt 0 view .LVU76
+ 379 001c DFED787A 		vldr.32	s15, .L9+12
+ 380 0020 20EE270A 		vmul.f32	s0, s0, s15
+ 381              	.LVL4:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 17
 
 
- 383              		.loc 2 137 5 view .LVU75
  137:Core/Inc/FusionMath.h **** }
- 384              		.loc 2 137 20 is_stmt 0 view .LVU76
- 385 001c DFED787A 		vldr.32	s15, .L9+12
- 386 0020 20EE270A 		vmul.f32	s0, s0, s15
- 387              	.LVL4:
- 137:Core/Inc/FusionMath.h **** }
- 388              		.loc 2 137 20 view .LVU77
- 389              	.LBE23:
- 390              	.LBE22:
- 391              		.loc 1 36 63 discriminator 1 view .LVU78
- 392 0024 D5ED010A 		vldr.32	s1, [r5, #4]
- 393              	.LVL5:
- 394              	.LBB24:
- 395              	.LBI24:
+ 382              		.loc 2 137 20 view .LVU77
+ 383              	.LBE23:
+ 384              	.LBE22:
+ 385              		.loc 1 36 90 discriminator 1 view .LVU78
+ 386 0024 D5ED010A 		vldr.32	s1, [r5, #4]
+ 387              	.LVL5:
+ 388              	.LBB24:
+ 389              	.LBI24:
  136:Core/Inc/FusionMath.h ****     return radians * (180.0f / (float) M_PI);
- 396              		.loc 2 136 21 is_stmt 1 view .LVU79
- 397              	.LBB25:
+ 390              		.loc 2 136 21 is_stmt 1 view .LVU79
+ 391              	.LBB25:
  137:Core/Inc/FusionMath.h **** }
- 398              		.loc 2 137 5 view .LVU80
+ 392              		.loc 2 137 5 view .LVU80
  137:Core/Inc/FusionMath.h **** }
- 399              		.loc 2 137 20 is_stmt 0 view .LVU81
- 400 0028 60EEA70A 		vmul.f32	s1, s1, s15
- 401              	.LVL6:
+ 393              		.loc 2 137 20 is_stmt 0 view .LVU81
+ 394 0028 60EEA70A 		vmul.f32	s1, s1, s15
+ 395              	.LVL6:
  137:Core/Inc/FusionMath.h **** }
- 402              		.loc 2 137 20 view .LVU82
- 403              	.LBE25:
- 404              	.LBE24:
- 405              		.loc 1 36 96 discriminator 2 view .LVU83
- 406 002c 95ED021A 		vldr.32	s2, [r5, #8]
- 407              	.LVL7:
- 408              	.LBB26:
- 409              	.LBI26:
+ 396              		.loc 2 137 20 view .LVU82
+ 397              	.LBE25:
+ 398              	.LBE24:
+ 399              		.loc 1 36 123 discriminator 2 view .LVU83
+ 400 002c 95ED021A 		vldr.32	s2, [r5, #8]
+ 401              	.LVL7:
+ 402              	.LBB26:
+ 403              	.LBI26:
  136:Core/Inc/FusionMath.h ****     return radians * (180.0f / (float) M_PI);
- 410              		.loc 2 136 21 is_stmt 1 view .LVU84
- 411              	.LBB27:
+ 404              		.loc 2 136 21 is_stmt 1 view .LVU84
+ 405              	.LBB27:
  137:Core/Inc/FusionMath.h **** }
- 412              		.loc 2 137 5 view .LVU85
+ 406              		.loc 2 137 5 view .LVU85
  137:Core/Inc/FusionMath.h **** }
- 413              		.loc 2 137 20 is_stmt 0 view .LVU86
- 414 0030 21EE271A 		vmul.f32	s2, s2, s15
- 415              	.LVL8:
+ 407              		.loc 2 137 20 is_stmt 0 view .LVU86
+ 408 0030 21EE271A 		vmul.f32	s2, s2, s15
+ 409              	.LVL8:
  137:Core/Inc/FusionMath.h **** }
- 416              		.loc 2 137 20 view .LVU87
- 417              	.LBE27:
- 418              	.LBE26:
- 419              		.loc 1 36 12 discriminator 3 view .LVU88
- 420 0034 734E     		ldr	r6, .L9+16
- 421 0036 86ED000A 		vstr.32	s0, [r6]
- 422 003a C6ED010A 		vstr.32	s1, [r6, #4]
- 423 003e 86ED021A 		vstr.32	s2, [r6, #8]
+ 410              		.loc 2 137 20 view .LVU87
+ 411              	.LBE27:
+ 412              	.LBE26:
+ 413              		.loc 1 36 12 discriminator 3 view .LVU88
+ 414 0034 734E     		ldr	r6, .L9+16
+ 415 0036 86ED000A 		vstr.32	s0, [r6]
+ 416 003a C6ED010A 		vstr.32	s1, [r6, #4]
+ 417 003e 86ED021A 		vstr.32	s2, [r6, #8]
   37:Core/Src/IMU.c **** 	accelerometer = FusionVectorMultiplyScalar((FusionVector){{accel[0], accel[1], accel[2]}}, 1.0f / 
- 424              		.loc 1 37 2 is_stmt 1 view .LVU89
- 425              		.loc 1 37 66 is_stmt 0 view .LVU90
- 426 0042 D4ED006A 		vldr.32	s13, [r4]
- 427              		.loc 1 37 59 view .LVU91
- 428 0046 CDED096A 		vstr.32	s13, [sp, #36]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 18
+ 418              		.loc 1 37 2 is_stmt 1 view .LVU89
+ 419              		.loc 1 37 66 is_stmt 0 view .LVU90
+ 420 0042 D4ED006A 		vldr.32	s13, [r4]
+ 421              		.loc 1 37 59 view .LVU91
+ 422 0046 CDED096A 		vstr.32	s13, [sp, #36]
+ 423              		.loc 1 37 76 view .LVU92
+ 424 004a 94ED017A 		vldr.32	s14, [r4, #4]
+ 425              		.loc 1 37 59 view .LVU93
+ 426 004e 8DED0A7A 		vstr.32	s14, [sp, #40]
+ 427              		.loc 1 37 86 view .LVU94
+ 428 0052 D4ED027A 		vldr.32	s15, [r4, #8]
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 18
 
 
- 429              		.loc 1 37 76 view .LVU92
- 430 004a 94ED017A 		vldr.32	s14, [r4, #4]
- 431              		.loc 1 37 59 view .LVU93
- 432 004e 8DED0A7A 		vstr.32	s14, [sp, #40]
- 433              		.loc 1 37 86 view .LVU94
- 434 0052 D4ED027A 		vldr.32	s15, [r4, #8]
- 435              		.loc 1 37 59 view .LVU95
- 436 0056 CDED0B7A 		vstr.32	s15, [sp, #44]
- 437              	.LVL9:
- 438              	.LBB28:
- 439              	.LBI28:
+ 429              		.loc 1 37 59 view .LVU95
+ 430 0056 CDED0B7A 		vstr.32	s15, [sp, #44]
+ 431              	.LVL9:
+ 432              	.LBB28:
+ 433              	.LBI28:
  240:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
- 440              		.loc 2 240 28 is_stmt 1 view .LVU96
- 441              	.LBB29:
+ 434              		.loc 2 240 28 is_stmt 1 view .LVU96
+ 435              	.LBB29:
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
- 442              		.loc 2 241 5 view .LVU97
+ 436              		.loc 2 241 5 view .LVU97
  242:Core/Inc/FusionMath.h ****             .y = vector.axis.y * scalar,
- 443              		.loc 2 242 32 is_stmt 0 view .LVU98
- 444 005a 9FED6B6A 		vldr.32	s12, .L9+20
- 445 005e 66EE866A 		vmul.f32	s13, s13, s12
+ 437              		.loc 2 242 32 is_stmt 0 view .LVU98
+ 438 005a 9FED6B6A 		vldr.32	s12, .L9+20
+ 439 005e 66EE866A 		vmul.f32	s13, s13, s12
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
- 446              		.loc 2 241 24 view .LVU99
- 447 0062 CDED066A 		vstr.32	s13, [sp, #24]
+ 440              		.loc 2 241 24 view .LVU99
+ 441 0062 CDED066A 		vstr.32	s13, [sp, #24]
  243:Core/Inc/FusionMath.h ****             .z = vector.axis.z * scalar,
- 448              		.loc 2 243 32 view .LVU100
- 449 0066 27EE067A 		vmul.f32	s14, s14, s12
+ 442              		.loc 2 243 32 view .LVU100
+ 443 0066 27EE067A 		vmul.f32	s14, s14, s12
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
- 450              		.loc 2 241 24 view .LVU101
- 451 006a 8DED077A 		vstr.32	s14, [sp, #28]
+ 444              		.loc 2 241 24 view .LVU101
+ 445 006a 8DED077A 		vstr.32	s14, [sp, #28]
  244:Core/Inc/FusionMath.h ****     }};
- 452              		.loc 2 244 32 view .LVU102
- 453 006e 67EE867A 		vmul.f32	s15, s15, s12
+ 446              		.loc 2 244 32 view .LVU102
+ 447 006e 67EE867A 		vmul.f32	s15, s15, s12
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
- 454              		.loc 2 241 24 view .LVU103
- 455 0072 CDED087A 		vstr.32	s15, [sp, #32]
+ 448              		.loc 2 241 24 view .LVU103
+ 449 0072 CDED087A 		vstr.32	s15, [sp, #32]
  246:Core/Inc/FusionMath.h **** }
- 456              		.loc 2 246 5 is_stmt 1 view .LVU104
+ 450              		.loc 2 246 5 is_stmt 1 view .LVU104
  246:Core/Inc/FusionMath.h **** }
- 457              		.loc 2 246 12 is_stmt 0 view .LVU105
- 458 0076 0FAC     		add	r4, sp, #60
- 459 0078 06AB     		add	r3, sp, #24
- 460 007a 93E80700 		ldm	r3, {r0, r1, r2}
- 461 007e 84E80700 		stm	r4, {r0, r1, r2}
- 462 0082 0CAB     		add	r3, sp, #48
- 463 0084 83E80700 		stm	r3, {r0, r1, r2}
- 464              	.LVL10:
+ 451              		.loc 2 246 12 is_stmt 0 view .LVU105
+ 452 0076 0FAC     		add	r4, sp, #60
+ 453 0078 06AB     		add	r3, sp, #24
+ 454 007a 93E80700 		ldm	r3, {r0, r1, r2}
+ 455 007e 84E80700 		stm	r4, {r0, r1, r2}
+ 456 0082 0CAB     		add	r3, sp, #48
+ 457 0084 83E80700 		stm	r3, {r0, r1, r2}
+ 458              	.LVL10:
  246:Core/Inc/FusionMath.h **** }
- 465              		.loc 2 246 12 view .LVU106
- 466              	.LBE29:
- 467              	.LBE28:
- 468              		.loc 1 37 18 view .LVU107
- 469 0088 604C     		ldr	r4, .L9+24
- 470 008a 84E80700 		stm	r4, {r0, r1, r2}
+ 459              		.loc 2 246 12 view .LVU106
+ 460              	.LBE29:
+ 461              	.LBE28:
+ 462              		.loc 1 37 18 view .LVU107
+ 463 0088 604C     		ldr	r4, .L9+24
+ 464 008a 84E80700 		stm	r4, {r0, r1, r2}
   38:Core/Src/IMU.c **** 	magnetometer = (FusionVector){{IST8310data[0],IST8310data[1],-IST8310data[2]}};
- 471              		.loc 1 38 2 is_stmt 1 view .LVU108
- 472              		.loc 1 38 44 is_stmt 0 view .LVU109
- 473 008e 604B     		ldr	r3, .L9+28
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 19
+ 465              		.loc 1 38 2 is_stmt 1 view .LVU108
+ 466              		.loc 1 38 44 is_stmt 0 view .LVU109
+ 467 008e 604B     		ldr	r3, .L9+28
+ 468 0090 D3ED00AA 		vldr.32	s21, [r3]
+ 469              		.loc 1 38 59 view .LVU110
+ 470 0094 93ED01AA 		vldr.32	s20, [r3, #4]
+ 471              		.loc 1 38 75 view .LVU111
+ 472 0098 D3ED029A 		vldr.32	s19, [r3, #8]
+ 473              		.loc 1 38 63 view .LVU112
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 19
 
 
- 474 0090 D3ED00AA 		vldr.32	s21, [r3]
- 475              		.loc 1 38 59 view .LVU110
- 476 0094 93ED01AA 		vldr.32	s20, [r3, #4]
- 477              		.loc 1 38 75 view .LVU111
- 478 0098 D3ED029A 		vldr.32	s19, [r3, #8]
- 479              		.loc 1 38 63 view .LVU112
- 480 009c F1EE699A 		vneg.f32	s19, s19
- 481              		.loc 1 38 15 view .LVU113
- 482 00a0 5C4D     		ldr	r5, .L9+32
- 483 00a2 C5ED00AA 		vstr.32	s21, [r5]
- 484 00a6 85ED01AA 		vstr.32	s20, [r5, #4]
- 485 00aa C5ED029A 		vstr.32	s19, [r5, #8]
+ 474 009c F1EE699A 		vneg.f32	s19, s19
+ 475              		.loc 1 38 15 view .LVU113
+ 476 00a0 5C4D     		ldr	r5, .L9+32
+ 477 00a2 C5ED00AA 		vstr.32	s21, [r5]
+ 478 00a6 85ED01AA 		vstr.32	s20, [r5, #4]
+ 479 00aa C5ED029A 		vstr.32	s19, [r5, #8]
   39:Core/Src/IMU.c **** 	
   40:Core/Src/IMU.c **** 	// Apply calibration
   41:Core/Src/IMU.c **** 	gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyro
- 486              		.loc 1 41 2 is_stmt 1 view .LVU114
- 487              		.loc 1 41 14 is_stmt 0 view .LVU115
- 488 00ae DFF88091 		ldr	r9, .L9+60
- 489 00b2 DFF88081 		ldr	r8, .L9+64
- 490 00b6 584F     		ldr	r7, .L9+36
- 491 00b8 EC46     		mov	ip, sp
- 492 00ba 07F1100E 		add	lr, r7, #16
- 493 00be BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
- 494 00c2 ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
- 495 00c6 DEF80030 		ldr	r3, [lr]
- 496 00ca CCF80030 		str	r3, [ip]
- 497 00ce 97E80F00 		ldm	r7, {r0, r1, r2, r3}
- 498 00d2 99ED003A 		vldr.32	s6, [r9]
- 499 00d6 D9ED013A 		vldr.32	s7, [r9, #4]
- 500 00da 99ED024A 		vldr.32	s8, [r9, #8]
- 501 00de D8ED001A 		vldr.32	s3, [r8]
- 502 00e2 98ED012A 		vldr.32	s4, [r8, #4]
- 503 00e6 D8ED022A 		vldr.32	s5, [r8, #8]
- 504 00ea FFF7FEFF 		bl	FusionCalibrationInertial
- 505              	.LVL11:
- 506 00ee B0EE409A 		vmov.f32	s18, s0
- 507 00f2 F0EE608A 		vmov.f32	s17, s1
- 508 00f6 B0EE418A 		vmov.f32	s16, s2
- 509 00fa 86ED000A 		vstr.32	s0, [r6]
- 510 00fe C6ED010A 		vstr.32	s1, [r6, #4]
- 511 0102 86ED021A 		vstr.32	s2, [r6, #8]
+ 480              		.loc 1 41 2 is_stmt 1 view .LVU114
+ 481              		.loc 1 41 14 is_stmt 0 view .LVU115
+ 482 00ae DFF88091 		ldr	r9, .L9+60
+ 483 00b2 DFF88081 		ldr	r8, .L9+64
+ 484 00b6 584F     		ldr	r7, .L9+36
+ 485 00b8 EC46     		mov	ip, sp
+ 486 00ba 07F1100E 		add	lr, r7, #16
+ 487 00be BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
+ 488 00c2 ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
+ 489 00c6 DEF80030 		ldr	r3, [lr]
+ 490 00ca CCF80030 		str	r3, [ip]
+ 491 00ce 97E80F00 		ldm	r7, {r0, r1, r2, r3}
+ 492 00d2 99ED003A 		vldr.32	s6, [r9]
+ 493 00d6 D9ED013A 		vldr.32	s7, [r9, #4]
+ 494 00da 99ED024A 		vldr.32	s8, [r9, #8]
+ 495 00de D8ED001A 		vldr.32	s3, [r8]
+ 496 00e2 98ED012A 		vldr.32	s4, [r8, #4]
+ 497 00e6 D8ED022A 		vldr.32	s5, [r8, #8]
+ 498 00ea FFF7FEFF 		bl	FusionCalibrationInertial
+ 499              	.LVL11:
+ 500 00ee B0EE409A 		vmov.f32	s18, s0
+ 501 00f2 F0EE608A 		vmov.f32	s17, s1
+ 502 00f6 B0EE418A 		vmov.f32	s16, s2
+ 503 00fa 86ED000A 		vstr.32	s0, [r6]
+ 504 00fe C6ED010A 		vstr.32	s1, [r6, #4]
+ 505 0102 86ED021A 		vstr.32	s2, [r6, #8]
   42:Core/Src/IMU.c **** 	accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerS
- 512              		.loc 1 42 2 is_stmt 1 view .LVU116
- 513              		.loc 1 42 18 is_stmt 0 view .LVU117
- 514 0106 DFF83091 		ldr	r9, .L9+68
- 515 010a DFF83081 		ldr	r8, .L9+72
- 516 010e 434F     		ldr	r7, .L9+40
- 517 0110 EC46     		mov	ip, sp
- 518 0112 07F1100E 		add	lr, r7, #16
- 519 0116 BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
- 520 011a ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
- 521 011e DEF80030 		ldr	r3, [lr]
- 522 0122 CCF80030 		str	r3, [ip]
- 523 0126 97E80F00 		ldm	r7, {r0, r1, r2, r3}
- 524 012a 99ED003A 		vldr.32	s6, [r9]
- 525 012e D9ED013A 		vldr.32	s7, [r9, #4]
- 526 0132 99ED024A 		vldr.32	s8, [r9, #8]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 20
+ 506              		.loc 1 42 2 is_stmt 1 view .LVU116
+ 507              		.loc 1 42 18 is_stmt 0 view .LVU117
+ 508 0106 DFF83091 		ldr	r9, .L9+68
+ 509 010a DFF83081 		ldr	r8, .L9+72
+ 510 010e 434F     		ldr	r7, .L9+40
+ 511 0110 EC46     		mov	ip, sp
+ 512 0112 07F1100E 		add	lr, r7, #16
+ 513 0116 BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
+ 514 011a ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
+ 515 011e DEF80030 		ldr	r3, [lr]
+ 516 0122 CCF80030 		str	r3, [ip]
+ 517 0126 97E80F00 		ldm	r7, {r0, r1, r2, r3}
+ 518 012a 99ED003A 		vldr.32	s6, [r9]
+ 519 012e D9ED013A 		vldr.32	s7, [r9, #4]
+ 520 0132 99ED024A 		vldr.32	s8, [r9, #8]
+ 521 0136 D8ED001A 		vldr.32	s3, [r8]
+ 522 013a 98ED012A 		vldr.32	s4, [r8, #4]
+ 523 013e D8ED022A 		vldr.32	s5, [r8, #8]
+ 524 0142 94ED000A 		vldr.32	s0, [r4]
+ 525 0146 D4ED010A 		vldr.32	s1, [r4, #4]
+ 526 014a 94ED021A 		vldr.32	s2, [r4, #8]
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 20
 
 
- 527 0136 D8ED001A 		vldr.32	s3, [r8]
- 528 013a 98ED012A 		vldr.32	s4, [r8, #4]
- 529 013e D8ED022A 		vldr.32	s5, [r8, #8]
- 530 0142 94ED000A 		vldr.32	s0, [r4]
- 531 0146 D4ED010A 		vldr.32	s1, [r4, #4]
- 532 014a 94ED021A 		vldr.32	s2, [r4, #8]
- 533 014e FFF7FEFF 		bl	FusionCalibrationInertial
- 534              	.LVL12:
- 535 0152 84ED000A 		vstr.32	s0, [r4]
- 536 0156 C4ED010A 		vstr.32	s1, [r4, #4]
- 537 015a 84ED021A 		vstr.32	s2, [r4, #8]
+ 527 014e FFF7FEFF 		bl	FusionCalibrationInertial
+ 528              	.LVL12:
+ 529 0152 84ED000A 		vstr.32	s0, [r4]
+ 530 0156 C4ED010A 		vstr.32	s1, [r4, #4]
+ 531 015a 84ED021A 		vstr.32	s2, [r4, #8]
   43:Core/Src/IMU.c **** 	magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
- 538              		.loc 1 43 2 is_stmt 1 view .LVU118
- 539              		.loc 1 43 17 is_stmt 0 view .LVU119
- 540 015e DFF8E080 		ldr	r8, .L9+76
- 541 0162 2F4F     		ldr	r7, .L9+44
- 542 0164 EC46     		mov	ip, sp
- 543 0166 07F1100E 		add	lr, r7, #16
- 544 016a BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
- 545 016e ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
- 546 0172 DEF80030 		ldr	r3, [lr]
- 547 0176 CCF80030 		str	r3, [ip]
- 548 017a 97E80F00 		ldm	r7, {r0, r1, r2, r3}
- 549 017e D8ED001A 		vldr.32	s3, [r8]
- 550 0182 98ED012A 		vldr.32	s4, [r8, #4]
- 551 0186 D8ED022A 		vldr.32	s5, [r8, #8]
- 552 018a B0EE6A0A 		vmov.f32	s0, s21
- 553 018e F0EE4A0A 		vmov.f32	s1, s20
- 554 0192 B0EE691A 		vmov.f32	s2, s19
- 555 0196 FFF7FEFF 		bl	FusionCalibrationMagnetic
- 556              	.LVL13:
- 557 019a 85ED000A 		vstr.32	s0, [r5]
- 558 019e C5ED010A 		vstr.32	s1, [r5, #4]
- 559 01a2 85ED021A 		vstr.32	s2, [r5, #8]
+ 532              		.loc 1 43 2 is_stmt 1 view .LVU118
+ 533              		.loc 1 43 17 is_stmt 0 view .LVU119
+ 534 015e DFF8E080 		ldr	r8, .L9+76
+ 535 0162 2F4F     		ldr	r7, .L9+44
+ 536 0164 EC46     		mov	ip, sp
+ 537 0166 07F1100E 		add	lr, r7, #16
+ 538 016a BEE80F00 		ldmia	lr!, {r0, r1, r2, r3}
+ 539 016e ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
+ 540 0172 DEF80030 		ldr	r3, [lr]
+ 541 0176 CCF80030 		str	r3, [ip]
+ 542 017a 97E80F00 		ldm	r7, {r0, r1, r2, r3}
+ 543 017e D8ED001A 		vldr.32	s3, [r8]
+ 544 0182 98ED012A 		vldr.32	s4, [r8, #4]
+ 545 0186 D8ED022A 		vldr.32	s5, [r8, #8]
+ 546 018a B0EE6A0A 		vmov.f32	s0, s21
+ 547 018e F0EE4A0A 		vmov.f32	s1, s20
+ 548 0192 B0EE691A 		vmov.f32	s2, s19
+ 549 0196 FFF7FEFF 		bl	FusionCalibrationMagnetic
+ 550              	.LVL13:
+ 551 019a 85ED000A 		vstr.32	s0, [r5]
+ 552 019e C5ED010A 		vstr.32	s1, [r5, #4]
+ 553 01a2 85ED021A 		vstr.32	s2, [r5, #8]
   44:Core/Src/IMU.c **** 	
   45:Core/Src/IMU.c **** 	// Update gyroscope offset correction algorithm
   46:Core/Src/IMU.c **** 	gyroscope = FusionOffsetUpdate(&offset, gyroscope);
- 560              		.loc 1 46 2 is_stmt 1 view .LVU120
- 561              		.loc 1 46 14 is_stmt 0 view .LVU121
- 562 01a6 B0EE490A 		vmov.f32	s0, s18
- 563 01aa F0EE680A 		vmov.f32	s1, s17
- 564 01ae B0EE481A 		vmov.f32	s2, s16
- 565 01b2 1C48     		ldr	r0, .L9+48
- 566 01b4 FFF7FEFF 		bl	FusionOffsetUpdate
- 567              	.LVL14:
- 568 01b8 86ED000A 		vstr.32	s0, [r6]
- 569 01bc C6ED010A 		vstr.32	s1, [r6, #4]
- 570 01c0 86ED021A 		vstr.32	s2, [r6, #8]
+ 554              		.loc 1 46 2 is_stmt 1 view .LVU120
+ 555              		.loc 1 46 14 is_stmt 0 view .LVU121
+ 556 01a6 B0EE490A 		vmov.f32	s0, s18
+ 557 01aa F0EE680A 		vmov.f32	s1, s17
+ 558 01ae B0EE481A 		vmov.f32	s2, s16
+ 559 01b2 1C48     		ldr	r0, .L9+48
+ 560 01b4 FFF7FEFF 		bl	FusionOffsetUpdate
+ 561              	.LVL14:
+ 562 01b8 86ED000A 		vstr.32	s0, [r6]
+ 563 01bc C6ED010A 		vstr.32	s1, [r6, #4]
+ 564 01c0 86ED021A 		vstr.32	s2, [r6, #8]
   47:Core/Src/IMU.c **** 	
   48:Core/Src/IMU.c **** 	// FusionAhrsUpdateNoMagnetometer(&ahrs, gyroscope, accelerometer, IMUdeltaTime);
   49:Core/Src/IMU.c **** 	FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, IMUdeltaTime); // AHRS Calculation
- 571              		.loc 1 49 2 is_stmt 1 view .LVU122
- 572 01c4 184B     		ldr	r3, .L9+52
- 573 01c6 D3ED004A 		vldr.32	s9, [r3]
- 574 01ca 95ED003A 		vldr.32	s6, [r5]
- 575 01ce D5ED013A 		vldr.32	s7, [r5, #4]
- 576 01d2 95ED024A 		vldr.32	s8, [r5, #8]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 21
+ 565              		.loc 1 49 2 is_stmt 1 view .LVU122
+ 566 01c4 184B     		ldr	r3, .L9+52
+ 567 01c6 D3ED004A 		vldr.32	s9, [r3]
+ 568 01ca 95ED003A 		vldr.32	s6, [r5]
+ 569 01ce D5ED013A 		vldr.32	s7, [r5, #4]
+ 570 01d2 95ED024A 		vldr.32	s8, [r5, #8]
+ 571 01d6 D4ED001A 		vldr.32	s3, [r4]
+ 572 01da 94ED012A 		vldr.32	s4, [r4, #4]
+ 573 01de D4ED022A 		vldr.32	s5, [r4, #8]
+ 574 01e2 1248     		ldr	r0, .L9+56
+ 575 01e4 FFF7FEFF 		bl	FusionAhrsUpdate
+ 576              	.LVL15:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 21
 
 
- 577 01d6 D4ED001A 		vldr.32	s3, [r4]
- 578 01da 94ED012A 		vldr.32	s4, [r4, #4]
- 579 01de D4ED022A 		vldr.32	s5, [r4, #8]
- 580 01e2 1248     		ldr	r0, .L9+56
- 581 01e4 FFF7FEFF 		bl	FusionAhrsUpdate
- 582              	.LVL15:
   50:Core/Src/IMU.c **** }
- 583              		.loc 1 50 1 is_stmt 0 view .LVU123
- 584 01e8 13B0     		add	sp, sp, #76
- 585              	.LCFI19:
- 586              		.cfi_def_cfa_offset 52
- 587              		@ sp needed
- 588 01ea BDEC068B 		vldm	sp!, {d8-d10}
- 589              	.LCFI20:
- 590              		.cfi_restore 84
- 591              		.cfi_restore 85
- 592              		.cfi_restore 82
- 593              		.cfi_restore 83
- 594              		.cfi_restore 80
- 595              		.cfi_restore 81
- 596              		.cfi_def_cfa_offset 28
- 597 01ee BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
- 598              	.L10:
- 599 01f2 00BF     		.align	2
- 600              	.L9:
- 601 01f4 00000000 		.word	accel
- 602 01f8 00000000 		.word	gyro
- 603 01fc 00000000 		.word	temp
- 604 0200 E02E6542 		.word	1113927392
- 605 0204 00000000 		.word	gyroscope
- 606 0208 1616D13D 		.word	1037112854
- 607 020c 00000000 		.word	accelerometer
- 608 0210 00000000 		.word	IST8310data
- 609 0214 00000000 		.word	magnetometer
- 610 0218 00000000 		.word	gyroscopeMisalignment
- 611 021c 00000000 		.word	accelerometerMisalignment
- 612 0220 00000000 		.word	softIronMatrix
- 613 0224 00000000 		.word	offset
- 614 0228 00000000 		.word	IMUdeltaTime
- 615 022c 00000000 		.word	ahrs
- 616 0230 00000000 		.word	gyroscopeOffset
- 617 0234 00000000 		.word	gyroscopeSensitivity
- 618 0238 00000000 		.word	accelerometerOffset
- 619 023c 00000000 		.word	accelerometerSensitivity
- 620 0240 00000000 		.word	hardIronOffset
- 621              		.cfi_endproc
- 622              	.LFE162:
- 624              		.section	.rodata.IMU_print.str1.4,"aMS",%progbits,1
- 625              		.align	2
- 626              	.LC0:
- 627 0000 41636365 		.ascii	"Accel:X=%d,Y=%d,Z=%d\015\012GYRO:X=%d,Y=%d,Z=%d\015"
- 627      6C3A583D 
- 627      25642C59 
- 627      3D25642C 
- 627      5A3D2564 
- 628 002a 0A74656D 		.ascii	"\012temp=%d\015\012 \000"
- 628      703D2564 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 22
+ 577              		.loc 1 50 1 is_stmt 0 view .LVU123
+ 578 01e8 13B0     		add	sp, sp, #76
+ 579              	.LCFI17:
+ 580              		.cfi_def_cfa_offset 52
+ 581              		@ sp needed
+ 582 01ea BDEC068B 		vldm	sp!, {d8-d10}
+ 583              	.LCFI18:
+ 584              		.cfi_restore 84
+ 585              		.cfi_restore 85
+ 586              		.cfi_restore 82
+ 587              		.cfi_restore 83
+ 588              		.cfi_restore 80
+ 589              		.cfi_restore 81
+ 590              		.cfi_def_cfa_offset 28
+ 591 01ee BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 592              	.L10:
+ 593 01f2 00BF     		.align	2
+ 594              	.L9:
+ 595 01f4 00000000 		.word	accel
+ 596 01f8 00000000 		.word	gyro
+ 597 01fc 00000000 		.word	temp
+ 598 0200 E02E6542 		.word	1113927392
+ 599 0204 00000000 		.word	gyroscope
+ 600 0208 1616D13D 		.word	1037112854
+ 601 020c 00000000 		.word	accelerometer
+ 602 0210 00000000 		.word	IST8310data
+ 603 0214 00000000 		.word	magnetometer
+ 604 0218 00000000 		.word	gyroscopeMisalignment
+ 605 021c 00000000 		.word	accelerometerMisalignment
+ 606 0220 00000000 		.word	softIronMatrix
+ 607 0224 00000000 		.word	offset
+ 608 0228 00000000 		.word	IMUdeltaTime
+ 609 022c 00000000 		.word	ahrs
+ 610 0230 00000000 		.word	gyroscopeOffset
+ 611 0234 00000000 		.word	gyroscopeSensitivity
+ 612 0238 00000000 		.word	accelerometerOffset
+ 613 023c 00000000 		.word	accelerometerSensitivity
+ 614 0240 00000000 		.word	hardIronOffset
+ 615              		.cfi_endproc
+ 616              	.LFE162:
+ 618              		.section	.rodata.IMU_print.str1.4,"aMS",%progbits,1
+ 619              		.align	2
+ 620              	.LC0:
+ 621 0000 41636365 		.ascii	"Accel:X=%d,Y=%d,Z=%d\015\012GYRO:X=%d,Y=%d,Z=%d\015"
+ 621      6C3A583D 
+ 621      25642C59 
+ 621      3D25642C 
+ 621      5A3D2564 
+ 622 002a 0A74656D 		.ascii	"\012temp=%d\015\012 \000"
+ 622      703D2564 
+ 622      0D0A2000 
+ 623              		.section	.text.IMU_print,"ax",%progbits
+ 624              		.align	1
+ 625              		.global	IMU_print
+ 626              		.syntax unified
+ 627              		.thumb
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 22
 
 
- 628      0D0A2000 
- 629              		.section	.text.IMU_print,"ax",%progbits
- 630              		.align	1
- 631              		.global	IMU_print
- 632              		.syntax unified
- 633              		.thumb
- 634              		.thumb_func
- 636              	IMU_print:
- 637              	.LFB163:
+ 628              		.thumb_func
+ 630              	IMU_print:
+ 631              	.LFB163:
   51:Core/Src/IMU.c **** 
   52:Core/Src/IMU.c **** void IMU_print()
   53:Core/Src/IMU.c **** {
- 638              		.loc 1 53 1 is_stmt 1 view -0
- 639              		.cfi_startproc
- 640              		@ args = 0, pretend = 0, frame = 0
- 641              		@ frame_needed = 0, uses_anonymous_args = 0
- 642 0000 00B5     		push	{lr}
- 643              	.LCFI21:
- 644              		.cfi_def_cfa_offset 4
- 645              		.cfi_offset 14, -4
- 646 0002 85B0     		sub	sp, sp, #20
- 647              	.LCFI22:
- 648              		.cfi_def_cfa_offset 24
+ 632              		.loc 1 53 1 is_stmt 1 view -0
+ 633              		.cfi_startproc
+ 634              		@ args = 0, pretend = 0, frame = 0
+ 635              		@ frame_needed = 0, uses_anonymous_args = 0
+ 636 0000 00B5     		push	{lr}
+ 637              	.LCFI19:
+ 638              		.cfi_def_cfa_offset 4
+ 639              		.cfi_offset 14, -4
+ 640 0002 85B0     		sub	sp, sp, #20
+ 641              	.LCFI20:
+ 642              		.cfi_def_cfa_offset 24
   54:Core/Src/IMU.c **** 	usart_printf("Accel:X=%d,Y=%d,Z=%d\r\nGYRO:X=%d,Y=%d,Z=%d\r\ntemp=%d\r\n ",(int)(accel[0]*100),(in
- 649              		.loc 1 54 2 view .LVU125
- 650              		.loc 1 54 88 is_stmt 0 view .LVU126
- 651 0004 214B     		ldr	r3, .L13
- 652 0006 93ED005A 		vldr.32	s10, [r3]
- 653              		.loc 1 54 91 view .LVU127
- 654 000a DFED217A 		vldr.32	s15, .L13+4
- 655 000e 25EE275A 		vmul.f32	s10, s10, s15
- 656              		.loc 1 54 108 view .LVU128
- 657 0012 D3ED014A 		vldr.32	s9, [r3, #4]
- 658              		.loc 1 54 111 view .LVU129
- 659 0016 64EEA74A 		vmul.f32	s9, s9, s15
- 660              		.loc 1 54 128 view .LVU130
- 661 001a 93ED024A 		vldr.32	s8, [r3, #8]
- 662              		.loc 1 54 131 view .LVU131
- 663 001e 24EE274A 		vmul.f32	s8, s8, s15
- 664              		.loc 1 54 147 view .LVU132
- 665 0022 1C4B     		ldr	r3, .L13+8
- 666 0024 93ED007A 		vldr.32	s14, [r3]
- 667              		.loc 1 54 150 view .LVU133
- 668 0028 27EE277A 		vmul.f32	s14, s14, s15
- 669              		.loc 1 54 166 view .LVU134
- 670 002c D3ED016A 		vldr.32	s13, [r3, #4]
- 671              		.loc 1 54 169 view .LVU135
- 672 0030 66EEA76A 		vmul.f32	s13, s13, s15
- 673              		.loc 1 54 185 view .LVU136
- 674 0034 93ED026A 		vldr.32	s12, [r3, #8]
- 675              		.loc 1 54 188 view .LVU137
- 676 0038 26EE276A 		vmul.f32	s12, s12, s15
- 677              		.loc 1 54 204 view .LVU138
- 678 003c 164B     		ldr	r3, .L13+12
- 679 003e D3ED005A 		vldr.32	s11, [r3]
- 680 0042 65EEA77A 		vmul.f32	s15, s11, s15
- 681              		.loc 1 54 2 view .LVU139
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 23
+ 643              		.loc 1 54 2 view .LVU125
+ 644              		.loc 1 54 88 is_stmt 0 view .LVU126
+ 645 0004 204B     		ldr	r3, .L13
+ 646 0006 93ED005A 		vldr.32	s10, [r3]
+ 647              		.loc 1 54 91 view .LVU127
+ 648 000a DFED207A 		vldr.32	s15, .L13+4
+ 649 000e 25EE275A 		vmul.f32	s10, s10, s15
+ 650              		.loc 1 54 108 view .LVU128
+ 651 0012 D3ED014A 		vldr.32	s9, [r3, #4]
+ 652              		.loc 1 54 111 view .LVU129
+ 653 0016 64EEA74A 		vmul.f32	s9, s9, s15
+ 654              		.loc 1 54 128 view .LVU130
+ 655 001a 93ED024A 		vldr.32	s8, [r3, #8]
+ 656              		.loc 1 54 131 view .LVU131
+ 657 001e 24EE274A 		vmul.f32	s8, s8, s15
+ 658              		.loc 1 54 147 view .LVU132
+ 659 0022 1B4B     		ldr	r3, .L13+8
+ 660 0024 93ED007A 		vldr.32	s14, [r3]
+ 661              		.loc 1 54 150 view .LVU133
+ 662 0028 27EE277A 		vmul.f32	s14, s14, s15
+ 663              		.loc 1 54 166 view .LVU134
+ 664 002c D3ED016A 		vldr.32	s13, [r3, #4]
+ 665              		.loc 1 54 169 view .LVU135
+ 666 0030 66EEA76A 		vmul.f32	s13, s13, s15
+ 667              		.loc 1 54 185 view .LVU136
+ 668 0034 93ED026A 		vldr.32	s12, [r3, #8]
+ 669              		.loc 1 54 188 view .LVU137
+ 670 0038 26EE276A 		vmul.f32	s12, s12, s15
+ 671              		.loc 1 54 204 view .LVU138
+ 672 003c 154B     		ldr	r3, .L13+12
+ 673 003e D3ED005A 		vldr.32	s11, [r3]
+ 674 0042 65EEA77A 		vmul.f32	s15, s11, s15
+ 675              		.loc 1 54 2 view .LVU139
+ 676 0046 FDEEE77A 		vcvt.s32.f32	s15, s15
+ 677 004a CDED037A 		vstr.32	s15, [sp, #12]	@ int
+ 678 004e BDEEC66A 		vcvt.s32.f32	s12, s12
+ 679 0052 8DED026A 		vstr.32	s12, [sp, #8]	@ int
+ 680 0056 FDEEE66A 		vcvt.s32.f32	s13, s13
+ 681 005a CDED016A 		vstr.32	s13, [sp, #4]	@ int
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 23
 
 
- 682 0046 FDEEE77A 		vcvt.s32.f32	s15, s15
- 683 004a CDED037A 		vstr.32	s15, [sp, #12]	@ int
- 684 004e BDEEC66A 		vcvt.s32.f32	s12, s12
- 685 0052 8DED026A 		vstr.32	s12, [sp, #8]	@ int
- 686 0056 FDEEE66A 		vcvt.s32.f32	s13, s13
- 687 005a CDED016A 		vstr.32	s13, [sp, #4]	@ int
- 688 005e BDEEC77A 		vcvt.s32.f32	s14, s14
- 689 0062 8DED007A 		vstr.32	s14, [sp]	@ int
- 690 0066 FDEEC47A 		vcvt.s32.f32	s15, s8
- 691 006a 17EE903A 		vmov	r3, s15	@ int
- 692 006e FDEEE47A 		vcvt.s32.f32	s15, s9
- 693 0072 17EE902A 		vmov	r2, s15	@ int
- 694 0076 FDEEC57A 		vcvt.s32.f32	s15, s10
- 695 007a 17EE901A 		vmov	r1, s15	@ int
- 696 007e 0748     		ldr	r0, .L13+16
- 697 0080 FFF7FEFF 		bl	usart_printf
- 698              	.LVL16:
+ 682 005e BDEEC77A 		vcvt.s32.f32	s14, s14
+ 683 0062 8DED007A 		vstr.32	s14, [sp]	@ int
+ 684 0066 FDEEC47A 		vcvt.s32.f32	s15, s8
+ 685 006a 17EE903A 		vmov	r3, s15	@ int
+ 686 006e FDEEE47A 		vcvt.s32.f32	s15, s9
+ 687 0072 17EE902A 		vmov	r2, s15	@ int
+ 688 0076 FDEEC57A 		vcvt.s32.f32	s15, s10
+ 689 007a 17EE901A 		vmov	r1, s15	@ int
+ 690 007e 0648     		ldr	r0, .L13+16
+ 691 0080 FFF7FEFF 		bl	usart_printf
+ 692              	.LVL16:
   55:Core/Src/IMU.c **** }	
- 699              		.loc 1 55 1 view .LVU140
- 700 0084 05B0     		add	sp, sp, #20
- 701              	.LCFI23:
- 702              		.cfi_def_cfa_offset 4
- 703              		@ sp needed
- 704 0086 5DF804FB 		ldr	pc, [sp], #4
- 705              	.L14:
- 706 008a 00BF     		.align	2
- 707              	.L13:
- 708 008c 00000000 		.word	accel
- 709 0090 0000C842 		.word	1120403456
- 710 0094 00000000 		.word	gyro
- 711 0098 00000000 		.word	temp
- 712 009c 00000000 		.word	.LC0
- 713              		.cfi_endproc
- 714              	.LFE163:
- 716              		.section	.rodata.IMU_Vofa_print.str1.4,"aMS",%progbits,1
- 717              		.align	2
- 718              	.LC1:
- 719 0000 25642E25 		.ascii	"%d.%d,%d,%d,%d,%d,%d\012 \000"
- 719      642C2564 
- 719      2C25642C 
- 719      25642C25 
- 719      642C2564 
- 720              		.section	.text.IMU_Vofa_print,"ax",%progbits
- 721              		.align	1
- 722              		.global	IMU_Vofa_print
- 723              		.syntax unified
- 724              		.thumb
- 725              		.thumb_func
- 727              	IMU_Vofa_print:
- 728              	.LFB164:
+ 693              		.loc 1 55 1 view .LVU140
+ 694 0084 05B0     		add	sp, sp, #20
+ 695              	.LCFI21:
+ 696              		.cfi_def_cfa_offset 4
+ 697              		@ sp needed
+ 698 0086 00BD     		pop	{pc}
+ 699              	.L14:
+ 700              		.align	2
+ 701              	.L13:
+ 702 0088 00000000 		.word	accel
+ 703 008c 0000C842 		.word	1120403456
+ 704 0090 00000000 		.word	gyro
+ 705 0094 00000000 		.word	temp
+ 706 0098 00000000 		.word	.LC0
+ 707              		.cfi_endproc
+ 708              	.LFE163:
+ 710              		.section	.rodata.IMU_Vofa_print.str1.4,"aMS",%progbits,1
+ 711              		.align	2
+ 712              	.LC1:
+ 713 0000 25642E25 		.ascii	"%d.%d,%d,%d,%d,%d,%d\012 \000"
+ 713      642C2564 
+ 713      2C25642C 
+ 713      25642C25 
+ 713      642C2564 
+ 714              		.section	.text.IMU_Vofa_print,"ax",%progbits
+ 715              		.align	1
+ 716              		.global	IMU_Vofa_print
+ 717              		.syntax unified
+ 718              		.thumb
+ 719              		.thumb_func
+ 721              	IMU_Vofa_print:
+ 722              	.LFB164:
   56:Core/Src/IMU.c **** 		
   57:Core/Src/IMU.c **** void IMU_Vofa_print()
   58:Core/Src/IMU.c **** {
- 729              		.loc 1 58 1 is_stmt 1 view -0
- 730              		.cfi_startproc
- 731              		@ args = 0, pretend = 0, frame = 0
- 732              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 24
+ 723              		.loc 1 58 1 is_stmt 1 view -0
+ 724              		.cfi_startproc
+ 725              		@ args = 0, pretend = 0, frame = 0
+ 726              		@ frame_needed = 0, uses_anonymous_args = 0
+ 727 0000 00B5     		push	{lr}
+ 728              	.LCFI22:
+ 729              		.cfi_def_cfa_offset 4
+ 730              		.cfi_offset 14, -4
+ 731 0002 85B0     		sub	sp, sp, #20
+ 732              	.LCFI23:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 24
 
 
- 733 0000 00B5     		push	{lr}
- 734              	.LCFI24:
- 735              		.cfi_def_cfa_offset 4
- 736              		.cfi_offset 14, -4
- 737 0002 85B0     		sub	sp, sp, #20
- 738              	.LCFI25:
- 739              		.cfi_def_cfa_offset 24
+ 733              		.cfi_def_cfa_offset 24
   59:Core/Src/IMU.c **** 	usart_printf("%d.%d,%d,%d,%d,%d,%d\n ",(int)(accel[0]*100),(int)(accel[1]*100),(int)(accel[2]*100)
- 740              		.loc 1 59 2 view .LVU142
- 741              		.loc 1 59 52 is_stmt 0 view .LVU143
- 742 0004 214B     		ldr	r3, .L17
- 743 0006 93ED005A 		vldr.32	s10, [r3]
- 744              		.loc 1 59 55 view .LVU144
- 745 000a DFED217A 		vldr.32	s15, .L17+4
- 746 000e 25EE275A 		vmul.f32	s10, s10, s15
- 747              		.loc 1 59 72 view .LVU145
- 748 0012 D3ED014A 		vldr.32	s9, [r3, #4]
- 749              		.loc 1 59 75 view .LVU146
- 750 0016 64EEA74A 		vmul.f32	s9, s9, s15
- 751              		.loc 1 59 92 view .LVU147
- 752 001a 93ED024A 		vldr.32	s8, [r3, #8]
- 753              		.loc 1 59 95 view .LVU148
- 754 001e 24EE274A 		vmul.f32	s8, s8, s15
- 755              		.loc 1 59 111 view .LVU149
- 756 0022 1C4B     		ldr	r3, .L17+8
- 757 0024 93ED007A 		vldr.32	s14, [r3]
- 758              		.loc 1 59 114 view .LVU150
- 759 0028 27EE277A 		vmul.f32	s14, s14, s15
- 760              		.loc 1 59 130 view .LVU151
- 761 002c D3ED016A 		vldr.32	s13, [r3, #4]
- 762              		.loc 1 59 133 view .LVU152
- 763 0030 66EEA76A 		vmul.f32	s13, s13, s15
- 764              		.loc 1 59 149 view .LVU153
- 765 0034 93ED026A 		vldr.32	s12, [r3, #8]
- 766              		.loc 1 59 152 view .LVU154
- 767 0038 26EE276A 		vmul.f32	s12, s12, s15
- 768              		.loc 1 59 168 view .LVU155
- 769 003c 164B     		ldr	r3, .L17+12
- 770 003e D3ED005A 		vldr.32	s11, [r3]
- 771 0042 65EEA77A 		vmul.f32	s15, s11, s15
- 772              		.loc 1 59 2 view .LVU156
- 773 0046 FDEEE77A 		vcvt.s32.f32	s15, s15
- 774 004a CDED037A 		vstr.32	s15, [sp, #12]	@ int
- 775 004e BDEEC66A 		vcvt.s32.f32	s12, s12
- 776 0052 8DED026A 		vstr.32	s12, [sp, #8]	@ int
- 777 0056 FDEEE66A 		vcvt.s32.f32	s13, s13
- 778 005a CDED016A 		vstr.32	s13, [sp, #4]	@ int
- 779 005e BDEEC77A 		vcvt.s32.f32	s14, s14
- 780 0062 8DED007A 		vstr.32	s14, [sp]	@ int
- 781 0066 FDEEC47A 		vcvt.s32.f32	s15, s8
- 782 006a 17EE903A 		vmov	r3, s15	@ int
- 783 006e FDEEE47A 		vcvt.s32.f32	s15, s9
- 784 0072 17EE902A 		vmov	r2, s15	@ int
- 785 0076 FDEEC57A 		vcvt.s32.f32	s15, s10
- 786 007a 17EE901A 		vmov	r1, s15	@ int
- 787 007e 0748     		ldr	r0, .L17+16
- 788 0080 FFF7FEFF 		bl	usart_printf
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 25
-
-
- 789              	.LVL17:
+ 734              		.loc 1 59 2 view .LVU142
+ 735              		.loc 1 59 52 is_stmt 0 view .LVU143
+ 736 0004 204B     		ldr	r3, .L17
+ 737 0006 93ED005A 		vldr.32	s10, [r3]
+ 738              		.loc 1 59 55 view .LVU144
+ 739 000a DFED207A 		vldr.32	s15, .L17+4
+ 740 000e 25EE275A 		vmul.f32	s10, s10, s15
+ 741              		.loc 1 59 72 view .LVU145
+ 742 0012 D3ED014A 		vldr.32	s9, [r3, #4]
+ 743              		.loc 1 59 75 view .LVU146
+ 744 0016 64EEA74A 		vmul.f32	s9, s9, s15
+ 745              		.loc 1 59 92 view .LVU147
+ 746 001a 93ED024A 		vldr.32	s8, [r3, #8]
+ 747              		.loc 1 59 95 view .LVU148
+ 748 001e 24EE274A 		vmul.f32	s8, s8, s15
+ 749              		.loc 1 59 111 view .LVU149
+ 750 0022 1B4B     		ldr	r3, .L17+8
+ 751 0024 93ED007A 		vldr.32	s14, [r3]
+ 752              		.loc 1 59 114 view .LVU150
+ 753 0028 27EE277A 		vmul.f32	s14, s14, s15
+ 754              		.loc 1 59 130 view .LVU151
+ 755 002c D3ED016A 		vldr.32	s13, [r3, #4]
+ 756              		.loc 1 59 133 view .LVU152
+ 757 0030 66EEA76A 		vmul.f32	s13, s13, s15
+ 758              		.loc 1 59 149 view .LVU153
+ 759 0034 93ED026A 		vldr.32	s12, [r3, #8]
+ 760              		.loc 1 59 152 view .LVU154
+ 761 0038 26EE276A 		vmul.f32	s12, s12, s15
+ 762              		.loc 1 59 168 view .LVU155
+ 763 003c 154B     		ldr	r3, .L17+12
+ 764 003e D3ED005A 		vldr.32	s11, [r3]
+ 765 0042 65EEA77A 		vmul.f32	s15, s11, s15
+ 766              		.loc 1 59 2 view .LVU156
+ 767 0046 FDEEE77A 		vcvt.s32.f32	s15, s15
+ 768 004a CDED037A 		vstr.32	s15, [sp, #12]	@ int
+ 769 004e BDEEC66A 		vcvt.s32.f32	s12, s12
+ 770 0052 8DED026A 		vstr.32	s12, [sp, #8]	@ int
+ 771 0056 FDEEE66A 		vcvt.s32.f32	s13, s13
+ 772 005a CDED016A 		vstr.32	s13, [sp, #4]	@ int
+ 773 005e BDEEC77A 		vcvt.s32.f32	s14, s14
+ 774 0062 8DED007A 		vstr.32	s14, [sp]	@ int
+ 775 0066 FDEEC47A 		vcvt.s32.f32	s15, s8
+ 776 006a 17EE903A 		vmov	r3, s15	@ int
+ 777 006e FDEEE47A 		vcvt.s32.f32	s15, s9
+ 778 0072 17EE902A 		vmov	r2, s15	@ int
+ 779 0076 FDEEC57A 		vcvt.s32.f32	s15, s10
+ 780 007a 17EE901A 		vmov	r1, s15	@ int
+ 781 007e 0648     		ldr	r0, .L17+16
+ 782 0080 FFF7FEFF 		bl	usart_printf
+ 783              	.LVL17:
   60:Core/Src/IMU.c **** }	...
- 790              		.loc 1 60 1 view .LVU157
- 791 0084 05B0     		add	sp, sp, #20
- 792              	.LCFI26:
- 793              		.cfi_def_cfa_offset 4
- 794              		@ sp needed
- 795 0086 5DF804FB 		ldr	pc, [sp], #4
- 796              	.L18:
- 797 008a 00BF     		.align	2
- 798              	.L17:
- 799 008c 00000000 		.word	accel
- 800 0090 0000C842 		.word	1120403456
- 801 0094 00000000 		.word	gyro
- 802 0098 00000000 		.word	temp
- 803 009c 00000000 		.word	.LC1
- 804              		.cfi_endproc
- 805              	.LFE164:
- 807              		.global	hardIronOffset
- 808              		.section	.rodata.hardIronOffset,"a"
- 809              		.align	2
- 812              	hardIronOffset:
- 813 0000 63EE8EC0 		.word	-1064374685
- 814 0004 6F123F40 		.word	1077875311
- 815 0008 4DF3FC40 		.word	1090319181
- 816              		.global	softIronMatrix
- 817              		.section	.rodata.softIronMatrix,"a"
- 818              		.align	2
- 821              	softIronMatrix:
- 822 0000 7D3F753F 		.word	1064648573
- 823 0004 DDB504BC 		.word	-1140541987
- 824 0008 C6DCB53C 		.word	1018551494
- 825 000c DDB504BC 		.word	-1140541987
- 826 0010 4625853F 		.word	1065690438
- 827 0014 6F1203BB 		.word	-1157426577
- 828 0018 C6DCB53C 		.word	1018551494
- 829 001c 6F1203BB 		.word	-1157426577
- 830 0020 5986803F 		.word	1065387609
- 831              		.global	accelerometerOffset
- 832              		.section	.rodata.accelerometerOffset,"a"
- 833              		.align	2
- 836              	accelerometerOffset:
- 837 0000 A69B443B 		.word	994352038
- 838 0004 6F1203BB 		.word	-1157426577
- 839 0008 6F1283BA 		.word	-1165815185
- 840              		.global	accelerometerSensitivity
- 841              		.section	.rodata.accelerometerSensitivity,"a"
- 842              		.align	2
- 845              	accelerometerSensitivity:
- 846 0000 9929813F 		.word	1065429401
- 847 0004 5ED6803F 		.word	1065408094
- 848 0008 9929813F 		.word	1065429401
- 849              		.global	accelerometerMisalignment
- 850              		.section	.rodata.accelerometerMisalignment,"a"
- 851              		.align	2
- 854              	accelerometerMisalignment:
- 855 0000 0000803F 		.word	1065353216
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 26
+ 784              		.loc 1 60 1 view .LVU157
+ 785 0084 05B0     		add	sp, sp, #20
+ 786              	.LCFI24:
+ 787              		.cfi_def_cfa_offset 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 25
 
 
- 856 0004 00000000 		.word	0
- 857 0008 00000000 		.word	0
- 858 000c 00000000 		.word	0
- 859 0010 0000803F 		.word	1065353216
- 860 0014 00000000 		.word	0
- 861 0018 00000000 		.word	0
- 862 001c 00000000 		.word	0
- 863 0020 0000803F 		.word	1065353216
- 864              		.global	gyroscopeOffset
- 865              		.section	.rodata.gyroscopeOffset,"a"
- 866              		.align	2
- 869              	gyroscopeOffset:
- 870 0000 4C37893D 		.word	1032402764
- 871 0004 EC5138BD 		.word	-1120382484
- 872 0008 E3A51B3D 		.word	1025222115
- 873              		.global	gyroscopeSensitivity
- 874              		.section	.rodata.gyroscopeSensitivity,"a"
- 875              		.align	2
- 878              	gyroscopeSensitivity:
- 879 0000 0000803F 		.word	1065353216
- 880 0004 0000803F 		.word	1065353216
- 881 0008 FD69813F 		.word	1065445885
- 882              		.global	gyroscopeMisalignment
- 883              		.section	.rodata.gyroscopeMisalignment,"a"
- 884              		.align	2
- 887              	gyroscopeMisalignment:
- 888 0000 0000803F 		.word	1065353216
- 889 0004 00000000 		.word	0
- 890 0008 00000000 		.word	0
- 891 000c 00000000 		.word	0
- 892 0010 0000803F 		.word	1065353216
- 893 0014 00000000 		.word	0
- 894 0018 00000000 		.word	0
- 895 001c 00000000 		.word	0
- 896 0020 0000803F 		.word	1065353216
- 897              		.global	magnetometer
- 898              		.section	.bss.magnetometer,"aw",%nobits
- 899              		.align	2
- 902              	magnetometer:
- 903 0000 00000000 		.space	12
- 903      00000000 
- 903      00000000 
- 904              		.global	accelerometer
- 905              		.section	.bss.accelerometer,"aw",%nobits
- 906              		.align	2
- 909              	accelerometer:
- 910 0000 00000000 		.space	12
- 910      00000000 
- 910      00000000 
- 911              		.global	gyroscope
- 912              		.section	.bss.gyroscope,"aw",%nobits
- 913              		.align	2
- 916              	gyroscope:
- 917 0000 00000000 		.space	12
- 917      00000000 
- 917      00000000 
- 918              		.global	temp
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 27
+ 788              		@ sp needed
+ 789 0086 00BD     		pop	{pc}
+ 790              	.L18:
+ 791              		.align	2
+ 792              	.L17:
+ 793 0088 00000000 		.word	accel
+ 794 008c 0000C842 		.word	1120403456
+ 795 0090 00000000 		.word	gyro
+ 796 0094 00000000 		.word	temp
+ 797 0098 00000000 		.word	.LC1
+ 798              		.cfi_endproc
+ 799              	.LFE164:
+ 801              		.global	hardIronOffset
+ 802              		.section	.rodata.hardIronOffset,"a"
+ 803              		.align	2
+ 806              	hardIronOffset:
+ 807 0000 63EE8EC0 		.word	-1064374685
+ 808 0004 6F123F40 		.word	1077875311
+ 809 0008 4DF3FC40 		.word	1090319181
+ 810              		.global	softIronMatrix
+ 811              		.section	.rodata.softIronMatrix,"a"
+ 812              		.align	2
+ 815              	softIronMatrix:
+ 816 0000 7D3F753F 		.word	1064648573
+ 817 0004 DDB504BC 		.word	-1140541987
+ 818 0008 C6DCB53C 		.word	1018551494
+ 819 000c DDB504BC 		.word	-1140541987
+ 820 0010 4625853F 		.word	1065690438
+ 821 0014 6F1203BB 		.word	-1157426577
+ 822 0018 C6DCB53C 		.word	1018551494
+ 823 001c 6F1203BB 		.word	-1157426577
+ 824 0020 5986803F 		.word	1065387609
+ 825              		.global	accelerometerOffset
+ 826              		.section	.rodata.accelerometerOffset,"a"
+ 827              		.align	2
+ 830              	accelerometerOffset:
+ 831 0000 A69B443B 		.word	994352038
+ 832 0004 6F1203BB 		.word	-1157426577
+ 833 0008 6F1283BA 		.word	-1165815185
+ 834              		.global	accelerometerSensitivity
+ 835              		.section	.rodata.accelerometerSensitivity,"a"
+ 836              		.align	2
+ 839              	accelerometerSensitivity:
+ 840 0000 9929813F 		.word	1065429401
+ 841 0004 5ED6803F 		.word	1065408094
+ 842 0008 9929813F 		.word	1065429401
+ 843              		.global	accelerometerMisalignment
+ 844              		.section	.rodata.accelerometerMisalignment,"a"
+ 845              		.align	2
+ 848              	accelerometerMisalignment:
+ 849 0000 0000803F 		.word	1065353216
+ 850 0004 00000000 		.word	0
+ 851 0008 00000000 		.word	0
+ 852 000c 00000000 		.word	0
+ 853 0010 0000803F 		.word	1065353216
+ 854 0014 00000000 		.word	0
+ 855 0018 00000000 		.word	0
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 26
 
 
- 919              		.section	.bss.temp,"aw",%nobits
- 920              		.align	2
- 923              	temp:
- 924 0000 00000000 		.space	4
- 925              		.global	accel
- 926              		.section	.bss.accel,"aw",%nobits
- 927              		.align	2
- 930              	accel:
- 931 0000 00000000 		.space	12
- 931      00000000 
- 931      00000000 
- 932              		.global	gyro
- 933              		.section	.bss.gyro,"aw",%nobits
- 934              		.align	2
- 937              	gyro:
- 938 0000 00000000 		.space	12
- 938      00000000 
- 938      00000000 
- 939              		.global	IMUdeltaTime
- 940              		.section	.data.IMUdeltaTime,"aw"
- 941              		.align	2
- 944              	IMUdeltaTime:
- 945 0000 6F12033B 		.word	990057071
- 946              		.global	offset
- 947              		.section	.bss.offset,"aw",%nobits
- 948              		.align	2
- 951              	offset:
- 952 0000 00000000 		.space	24
- 952      00000000 
- 952      00000000 
- 952      00000000 
- 952      00000000 
- 953              		.global	ahrs
- 954              		.section	.bss.ahrs,"aw",%nobits
- 955              		.align	2
- 958              	ahrs:
- 959 0000 00000000 		.space	116
- 959      00000000 
- 959      00000000 
- 959      00000000 
- 959      00000000 
- 960              		.text
- 961              	.Letext0:
- 962              		.file 4 "Core/Inc/struct_typedef.h"
- 963              		.file 5 "Core/Inc/FusionConvention.h"
- 964              		.file 6 "Core/Inc/FusionAhrs.h"
- 965              		.file 7 "Core/Inc/FusionOffset.h"
- 966              		.file 8 "Core/Inc/main.h"
- 967              		.file 9 "Core/Inc/IMU.h"
- 968              		.file 10 "Core/Inc/user_usart.h"
- 969              		.file 11 "Core/Inc/BMI088driver.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 28
+ 856 001c 00000000 		.word	0
+ 857 0020 0000803F 		.word	1065353216
+ 858              		.global	gyroscopeOffset
+ 859              		.section	.rodata.gyroscopeOffset,"a"
+ 860              		.align	2
+ 863              	gyroscopeOffset:
+ 864 0000 4C37893D 		.word	1032402764
+ 865 0004 EC5138BD 		.word	-1120382484
+ 866 0008 E3A51B3D 		.word	1025222115
+ 867              		.global	gyroscopeSensitivity
+ 868              		.section	.rodata.gyroscopeSensitivity,"a"
+ 869              		.align	2
+ 872              	gyroscopeSensitivity:
+ 873 0000 0000803F 		.word	1065353216
+ 874 0004 0000803F 		.word	1065353216
+ 875 0008 FD69813F 		.word	1065445885
+ 876              		.global	gyroscopeMisalignment
+ 877              		.section	.rodata.gyroscopeMisalignment,"a"
+ 878              		.align	2
+ 881              	gyroscopeMisalignment:
+ 882 0000 0000803F 		.word	1065353216
+ 883 0004 00000000 		.word	0
+ 884 0008 00000000 		.word	0
+ 885 000c 00000000 		.word	0
+ 886 0010 0000803F 		.word	1065353216
+ 887 0014 00000000 		.word	0
+ 888 0018 00000000 		.word	0
+ 889 001c 00000000 		.word	0
+ 890 0020 0000803F 		.word	1065353216
+ 891              		.global	magnetometer
+ 892              		.section	.bss.magnetometer,"aw",%nobits
+ 893              		.align	2
+ 896              	magnetometer:
+ 897 0000 00000000 		.space	12
+ 897      00000000 
+ 897      00000000 
+ 898              		.global	accelerometer
+ 899              		.section	.bss.accelerometer,"aw",%nobits
+ 900              		.align	2
+ 903              	accelerometer:
+ 904 0000 00000000 		.space	12
+ 904      00000000 
+ 904      00000000 
+ 905              		.global	gyroscope
+ 906              		.section	.bss.gyroscope,"aw",%nobits
+ 907              		.align	2
+ 910              	gyroscope:
+ 911 0000 00000000 		.space	12
+ 911      00000000 
+ 911      00000000 
+ 912              		.global	temp
+ 913              		.section	.bss.temp,"aw",%nobits
+ 914              		.align	2
+ 917              	temp:
+ 918 0000 00000000 		.space	4
+ 919              		.global	accel
+ 920              		.section	.bss.accel,"aw",%nobits
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 27
+
+
+ 921              		.align	2
+ 924              	accel:
+ 925 0000 00000000 		.space	12
+ 925      00000000 
+ 925      00000000 
+ 926              		.global	gyro
+ 927              		.section	.bss.gyro,"aw",%nobits
+ 928              		.align	2
+ 931              	gyro:
+ 932 0000 00000000 		.space	12
+ 932      00000000 
+ 932      00000000 
+ 933              		.global	IMUdeltaTime
+ 934              		.section	.data.IMUdeltaTime,"aw"
+ 935              		.align	2
+ 938              	IMUdeltaTime:
+ 939 0000 6F12033B 		.word	990057071
+ 940              		.global	offset
+ 941              		.section	.bss.offset,"aw",%nobits
+ 942              		.align	2
+ 945              	offset:
+ 946 0000 00000000 		.space	24
+ 946      00000000 
+ 946      00000000 
+ 946      00000000 
+ 946      00000000 
+ 947              		.global	ahrs
+ 948              		.section	.bss.ahrs,"aw",%nobits
+ 949              		.align	2
+ 952              	ahrs:
+ 953 0000 00000000 		.space	116
+ 953      00000000 
+ 953      00000000 
+ 953      00000000 
+ 953      00000000 
+ 954              		.text
+ 955              	.Letext0:
+ 956              		.file 4 "Core/Inc/struct_typedef.h"
+ 957              		.file 5 "Core/Inc/FusionConvention.h"
+ 958              		.file 6 "Core/Inc/FusionAhrs.h"
+ 959              		.file 7 "Core/Inc/FusionOffset.h"
+ 960              		.file 8 "Core/Inc/main.h"
+ 961              		.file 9 "Core/Inc/IMU.h"
+ 962              		.file 10 "Core/Inc/user_usart.h"
+ 963              		.file 11 "Core/Inc/BMI088driver.h"
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 28
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 IMU.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:21     .text.FusionMatrixMultiplyVector:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:26     .text.FusionMatrixMultiplyVector:00000000 FusionMatrixMultiplyVector
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:121    .text.FusionCalibrationInertial:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:126    .text.FusionCalibrationInertial:00000000 FusionCalibrationInertial
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:242    .text.FusionCalibrationMagnetic:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:247    .text.FusionCalibrationMagnetic:00000000 FusionCalibrationMagnetic
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:333    .text.IMU_update:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:339    .text.IMU_update:00000000 IMU_update
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:601    .text.IMU_update:000001f4 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:930    .bss.accel:00000000 accel
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:937    .bss.gyro:00000000 gyro
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:923    .bss.temp:00000000 temp
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:916    .bss.gyroscope:00000000 gyroscope
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:909    .bss.accelerometer:00000000 accelerometer
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:902    .bss.magnetometer:00000000 magnetometer
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:887    .rodata.gyroscopeMisalignment:00000000 gyroscopeMisalignment
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:854    .rodata.accelerometerMisalignment:00000000 accelerometerMisalignment
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:821    .rodata.softIronMatrix:00000000 softIronMatrix
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:951    .bss.offset:00000000 offset
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:944    .data.IMUdeltaTime:00000000 IMUdeltaTime
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:958    .bss.ahrs:00000000 ahrs
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:869    .rodata.gyroscopeOffset:00000000 gyroscopeOffset
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:878    .rodata.gyroscopeSensitivity:00000000 gyroscopeSensitivity
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:836    .rodata.accelerometerOffset:00000000 accelerometerOffset
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:845    .rodata.accelerometerSensitivity:00000000 accelerometerSensitivity
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:812    .rodata.hardIronOffset:00000000 hardIronOffset
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:625    .rodata.IMU_print.str1.4:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:630    .text.IMU_print:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:636    .text.IMU_print:00000000 IMU_print
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:708    .text.IMU_print:0000008c $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:717    .rodata.IMU_Vofa_print.str1.4:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:721    .text.IMU_Vofa_print:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:727    .text.IMU_Vofa_print:00000000 IMU_Vofa_print
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:799    .text.IMU_Vofa_print:0000008c $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:809    .rodata.hardIronOffset:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:818    .rodata.softIronMatrix:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:833    .rodata.accelerometerOffset:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:842    .rodata.accelerometerSensitivity:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:851    .rodata.accelerometerMisalignment:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:866    .rodata.gyroscopeOffset:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:875    .rodata.gyroscopeSensitivity:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:884    .rodata.gyroscopeMisalignment:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:899    .bss.magnetometer:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:906    .bss.accelerometer:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:913    .bss.gyroscope:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:920    .bss.temp:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:927    .bss.accel:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:934    .bss.gyro:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:941    .data.IMUdeltaTime:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:948    .bss.offset:00000000 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s:955    .bss.ahrs:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:21     .text.FusionMatrixMultiplyVector:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:26     .text.FusionMatrixMultiplyVector:00000000 FusionMatrixMultiplyVector
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:121    .text.FusionCalibrationInertial:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:126    .text.FusionCalibrationInertial:00000000 FusionCalibrationInertial
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:239    .text.FusionCalibrationMagnetic:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:244    .text.FusionCalibrationMagnetic:00000000 FusionCalibrationMagnetic
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:327    .text.IMU_update:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:333    .text.IMU_update:00000000 IMU_update
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:595    .text.IMU_update:000001f4 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:924    .bss.accel:00000000 accel
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:931    .bss.gyro:00000000 gyro
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:917    .bss.temp:00000000 temp
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:910    .bss.gyroscope:00000000 gyroscope
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:903    .bss.accelerometer:00000000 accelerometer
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:896    .bss.magnetometer:00000000 magnetometer
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:881    .rodata.gyroscopeMisalignment:00000000 gyroscopeMisalignment
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:848    .rodata.accelerometerMisalignment:00000000 accelerometerMisalignment
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:815    .rodata.softIronMatrix:00000000 softIronMatrix
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:945    .bss.offset:00000000 offset
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:938    .data.IMUdeltaTime:00000000 IMUdeltaTime
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:952    .bss.ahrs:00000000 ahrs
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:863    .rodata.gyroscopeOffset:00000000 gyroscopeOffset
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:872    .rodata.gyroscopeSensitivity:00000000 gyroscopeSensitivity
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:830    .rodata.accelerometerOffset:00000000 accelerometerOffset
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:839    .rodata.accelerometerSensitivity:00000000 accelerometerSensitivity
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:806    .rodata.hardIronOffset:00000000 hardIronOffset
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:619    .rodata.IMU_print.str1.4:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:624    .text.IMU_print:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:630    .text.IMU_print:00000000 IMU_print
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:702    .text.IMU_print:00000088 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:711    .rodata.IMU_Vofa_print.str1.4:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:715    .text.IMU_Vofa_print:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:721    .text.IMU_Vofa_print:00000000 IMU_Vofa_print
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:793    .text.IMU_Vofa_print:00000088 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:803    .rodata.hardIronOffset:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:812    .rodata.softIronMatrix:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:827    .rodata.accelerometerOffset:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:836    .rodata.accelerometerSensitivity:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:845    .rodata.accelerometerMisalignment:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:860    .rodata.gyroscopeOffset:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:869    .rodata.gyroscopeSensitivity:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:878    .rodata.gyroscopeMisalignment:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:893    .bss.magnetometer:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:900    .bss.accelerometer:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:907    .bss.gyroscope:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:914    .bss.temp:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:921    .bss.accel:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:928    .bss.gyro:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:935    .data.IMUdeltaTime:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:942    .bss.offset:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s:949    .bss.ahrs:00000000 $d
 
 UNDEFINED SYMBOLS
 BMI088_read
 FusionOffsetUpdate
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cct7Nwj7.s 			page 29
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccPNP0cO.s 			page 29
 
 
 FusionAhrsUpdate

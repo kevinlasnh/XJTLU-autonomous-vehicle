@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
   28:Core/Src/ist8310driver.c **** 
   29:Core/Src/ist8310driver.c **** #define IST8310_WRITE_REG_NUM 4 
   30:Core/Src/ist8310driver.c **** 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 2
 
 
   31:Core/Src/ist8310driver.c **** //the first column:the registers of IST8310. ��һ��:IST8310�ļĴ���
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
   51              		.loc 1 62 5 view .LVU7
   52 000a FFF7FEFF 		bl	ist8310_RST_L
   53              	.LVL3:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 3
 
 
   63:Core/Src/ist8310driver.c ****     ist8310_delay_ms(sleepTime);
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
   77:Core/Src/ist8310driver.c ****         ist8310_delay_us(wait_time);
   94              		.loc 1 77 9 is_stmt 1 view .LVU21
   95 0042 9620     		movs	r0, #150
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 4
 
 
   96 0044 FFF7FEFF 		bl	ist8310_delay_us
@@ -212,57 +212,58 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
   74:Core/Src/ist8310driver.c ****     {
  119              		.loc 1 74 66 discriminator 2 view .LVU29
  120 005e E4E7     		b	.L3
- 121              	.L9:
+ 121              	.LVL16:
+ 122              	.L9:
   81:Core/Src/ist8310driver.c ****         {
   82:Core/Src/ist8310driver.c ****             return ist8310_write_reg_data_error[writeNum][2];
- 122              		.loc 1 82 13 is_stmt 1 view .LVU30
- 123              		.loc 1 82 58 is_stmt 0 view .LVU31
- 124 0060 04EB4404 		add	r4, r4, r4, lsl #1
- 125              	.LVL16:
- 126              		.loc 1 82 58 view .LVU32
- 127 0064 034B     		ldr	r3, .L10
- 128 0066 2344     		add	r3, r3, r4
- 129 0068 9878     		ldrb	r0, [r3, #2]	@ zero_extendqisi2
- 130 006a 00E0     		b	.L2
- 131              	.LVL17:
- 132              	.L8:
+ 123              		.loc 1 82 13 is_stmt 1 view .LVU30
+ 124              		.loc 1 82 58 is_stmt 0 view .LVU31
+ 125 0060 04EB4404 		add	r4, r4, r4, lsl #1
+ 126              	.LVL17:
+ 127              		.loc 1 82 58 view .LVU32
+ 128 0064 034B     		ldr	r3, .L10
+ 129 0066 2344     		add	r3, r3, r4
+ 130 0068 9878     		ldrb	r0, [r3, #2]	@ zero_extendqisi2
+ 131 006a 00E0     		b	.L2
+ 132              	.LVL18:
+ 133              	.L8:
   83:Core/Src/ist8310driver.c ****         }
   84:Core/Src/ist8310driver.c ****     }
   85:Core/Src/ist8310driver.c ****     return IST8310_NO_ERROR;
- 133              		.loc 1 85 12 view .LVU33
- 134 006c 0020     		movs	r0, #0
- 135              	.LVL18:
- 136              	.L2:
+ 134              		.loc 1 85 12 view .LVU33
+ 135 006c 0020     		movs	r0, #0
+ 136              	.LVL19:
+ 137              	.L2:
   86:Core/Src/ist8310driver.c **** }
- 137              		.loc 1 86 1 view .LVU34
- 138 006e 70BD     		pop	{r4, r5, r6, pc}
- 139              	.LVL19:
- 140              	.L6:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 5
+ 138              		.loc 1 86 1 view .LVU34
+ 139 006e 70BD     		pop	{r4, r5, r6, pc}
+ 140              	.LVL20:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 5
 
 
+ 141              	.L6:
   70:Core/Src/ist8310driver.c ****     }
- 141              		.loc 1 70 16 view .LVU35
- 142 0070 4020     		movs	r0, #64
- 143              	.LVL20:
+ 142              		.loc 1 70 16 view .LVU35
+ 143 0070 4020     		movs	r0, #64
+ 144              	.LVL21:
   70:Core/Src/ist8310driver.c ****     }
- 144              		.loc 1 70 16 view .LVU36
- 145 0072 FCE7     		b	.L2
- 146              	.L11:
- 147              		.align	2
- 148              	.L10:
- 149 0074 00000000 		.word	ist8310_write_reg_data_error
- 150              		.cfi_endproc
- 151              	.LFE162:
- 153              		.section	.text.ist8310_read_over,"ax",%progbits
- 154              		.align	1
- 155              		.global	ist8310_read_over
- 156              		.syntax unified
- 157              		.thumb
- 158              		.thumb_func
- 160              	ist8310_read_over:
- 161              	.LVL21:
- 162              	.LFB163:
+ 145              		.loc 1 70 16 view .LVU36
+ 146 0072 FCE7     		b	.L2
+ 147              	.L11:
+ 148              		.align	2
+ 149              	.L10:
+ 150 0074 00000000 		.word	ist8310_write_reg_data_error
+ 151              		.cfi_endproc
+ 152              	.LFE162:
+ 154              		.section	.text.ist8310_read_over,"ax",%progbits
+ 155              		.align	1
+ 156              		.global	ist8310_read_over
+ 157              		.syntax unified
+ 158              		.thumb
+ 159              		.thumb_func
+ 161              	ist8310_read_over:
+ 162              	.LVL22:
+ 163              	.LFB163:
   87:Core/Src/ist8310driver.c **** 
   88:Core/Src/ist8310driver.c **** /**
   89:Core/Src/ist8310driver.c ****   * @brief          if you have read the data from STAT1 to DATAZL usaully by I2C DMA , you can use
@@ -278,149 +279,149 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
   99:Core/Src/ist8310driver.c ****   */
  100:Core/Src/ist8310driver.c **** void ist8310_read_over(uint8_t *status_buf, ist8310_real_data_t *ist8310_real_data)
  101:Core/Src/ist8310driver.c **** {
- 163              		.loc 1 101 1 is_stmt 1 view -0
- 164              		.cfi_startproc
- 165              		@ args = 0, pretend = 0, frame = 0
- 166              		@ frame_needed = 0, uses_anonymous_args = 0
- 167              		@ link register save eliminated.
+ 164              		.loc 1 101 1 is_stmt 1 view -0
+ 165              		.cfi_startproc
+ 166              		@ args = 0, pretend = 0, frame = 0
+ 167              		@ frame_needed = 0, uses_anonymous_args = 0
+ 168              		@ link register save eliminated.
  102:Core/Src/ist8310driver.c **** 
  103:Core/Src/ist8310driver.c ****     if (status_buf[0] & 0x01)
- 168              		.loc 1 103 5 view .LVU38
- 169              		.loc 1 103 19 is_stmt 0 view .LVU39
- 170 0000 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
- 171              		.loc 1 103 8 view .LVU40
- 172 0002 13F0010F 		tst	r3, #1
- 173 0006 2DD0     		beq	.L13
- 174              	.LBB2:
+ 169              		.loc 1 103 5 view .LVU38
+ 170              		.loc 1 103 19 is_stmt 0 view .LVU39
+ 171 0000 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
+ 172              		.loc 1 103 8 view .LVU40
+ 173 0002 13F0010F 		tst	r3, #1
+ 174 0006 2DD0     		beq	.L13
+ 175              	.LBB2:
  104:Core/Src/ist8310driver.c ****     {
  105:Core/Src/ist8310driver.c ****         int16_t temp_ist8310_data = 0;
- 175              		.loc 1 105 9 is_stmt 1 view .LVU41
- 176              	.LVL22:
+ 176              		.loc 1 105 9 is_stmt 1 view .LVU41
+ 177              	.LVL23:
  106:Core/Src/ist8310driver.c ****         ist8310_real_data->status |= 1 << IST8310_DATA_READY_BIT;
- 177              		.loc 1 106 9 view .LVU42
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 6
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 6
 
 
- 178              		.loc 1 106 26 is_stmt 0 view .LVU43
- 179 0008 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
- 180              		.loc 1 106 35 view .LVU44
- 181 000a 43F00403 		orr	r3, r3, #4
- 182 000e 0B70     		strb	r3, [r1]
+ 178              		.loc 1 106 9 view .LVU42
+ 179              		.loc 1 106 26 is_stmt 0 view .LVU43
+ 180 0008 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 181              		.loc 1 106 35 view .LVU44
+ 182 000a 43F00403 		orr	r3, r3, #4
+ 183 000e 0B70     		strb	r3, [r1]
  107:Core/Src/ist8310driver.c **** 
  108:Core/Src/ist8310driver.c ****         temp_ist8310_data = (int16_t)((status_buf[2] << 8) | status_buf[1]);
- 183              		.loc 1 108 9 is_stmt 1 view .LVU45
- 184              		.loc 1 108 50 is_stmt 0 view .LVU46
- 185 0010 8378     		ldrb	r3, [r0, #2]	@ zero_extendqisi2
- 186              		.loc 1 108 29 view .LVU47
- 187 0012 1B02     		lsls	r3, r3, #8
- 188 0014 1BB2     		sxth	r3, r3
- 189              		.loc 1 108 72 view .LVU48
- 190 0016 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
- 191              		.loc 1 108 27 view .LVU49
- 192 0018 1343     		orrs	r3, r3, r2
- 193 001a 07EE903A 		vmov	s15, r3	@ int
- 194              	.LVL23:
+ 184              		.loc 1 108 9 is_stmt 1 view .LVU45
+ 185              		.loc 1 108 50 is_stmt 0 view .LVU46
+ 186 0010 8378     		ldrb	r3, [r0, #2]	@ zero_extendqisi2
+ 187              		.loc 1 108 29 view .LVU47
+ 188 0012 1B02     		lsls	r3, r3, #8
+ 189 0014 1BB2     		sxth	r3, r3
+ 190              		.loc 1 108 72 view .LVU48
+ 191 0016 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
+ 192              		.loc 1 108 27 view .LVU49
+ 193 0018 1343     		orrs	r3, r3, r2
+ 194 001a 07EE903A 		vmov	s15, r3	@ int
+ 195              	.LVL24:
  109:Core/Src/ist8310driver.c ****         ist8310_real_data->mag[0] = MAG_SEN * temp_ist8310_data;
- 195              		.loc 1 109 9 is_stmt 1 view .LVU50
- 196              		.loc 1 109 45 is_stmt 0 view .LVU51
- 197 001e F8EEE77A 		vcvt.f32.s32	s15, s15
- 198              	.LVL24:
- 199              		.loc 1 109 45 view .LVU52
- 200 0022 9FED137A 		vldr.32	s14, .L15
- 201 0026 67EE877A 		vmul.f32	s15, s15, s14
- 202              		.loc 1 109 35 view .LVU53
- 203 002a C1ED017A 		vstr.32	s15, [r1, #4]
+ 196              		.loc 1 109 9 is_stmt 1 view .LVU50
+ 197              		.loc 1 109 45 is_stmt 0 view .LVU51
+ 198 001e F8EEE77A 		vcvt.f32.s32	s15, s15
+ 199              	.LVL25:
+ 200              		.loc 1 109 45 view .LVU52
+ 201 0022 9FED137A 		vldr.32	s14, .L15
+ 202 0026 67EE877A 		vmul.f32	s15, s15, s14
+ 203              		.loc 1 109 35 view .LVU53
+ 204 002a C1ED017A 		vstr.32	s15, [r1, #4]
  110:Core/Src/ist8310driver.c ****         temp_ist8310_data = (int16_t)((status_buf[4] << 8) | status_buf[3]);
- 204              		.loc 1 110 9 is_stmt 1 view .LVU54
- 205              		.loc 1 110 50 is_stmt 0 view .LVU55
- 206 002e 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
- 207              	.LVL25:
- 208              		.loc 1 110 29 view .LVU56
- 209 0030 1B02     		lsls	r3, r3, #8
- 210 0032 1BB2     		sxth	r3, r3
- 211              		.loc 1 110 72 view .LVU57
- 212 0034 C278     		ldrb	r2, [r0, #3]	@ zero_extendqisi2
- 213              		.loc 1 110 27 view .LVU58
- 214 0036 1343     		orrs	r3, r3, r2
- 215 0038 07EE903A 		vmov	s15, r3	@ int
- 216              	.LVL26:
+ 205              		.loc 1 110 9 is_stmt 1 view .LVU54
+ 206              		.loc 1 110 50 is_stmt 0 view .LVU55
+ 207 002e 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 208              	.LVL26:
+ 209              		.loc 1 110 29 view .LVU56
+ 210 0030 1B02     		lsls	r3, r3, #8
+ 211 0032 1BB2     		sxth	r3, r3
+ 212              		.loc 1 110 72 view .LVU57
+ 213 0034 C278     		ldrb	r2, [r0, #3]	@ zero_extendqisi2
+ 214              		.loc 1 110 27 view .LVU58
+ 215 0036 1343     		orrs	r3, r3, r2
+ 216 0038 07EE903A 		vmov	s15, r3	@ int
+ 217              	.LVL27:
  111:Core/Src/ist8310driver.c ****         ist8310_real_data->mag[1] = MAG_SEN * temp_ist8310_data;
- 217              		.loc 1 111 9 is_stmt 1 view .LVU59
- 218              		.loc 1 111 45 is_stmt 0 view .LVU60
- 219 003c F8EEE77A 		vcvt.f32.s32	s15, s15
- 220              	.LVL27:
- 221              		.loc 1 111 45 view .LVU61
- 222 0040 67EE877A 		vmul.f32	s15, s15, s14
- 223              		.loc 1 111 35 view .LVU62
- 224 0044 C1ED027A 		vstr.32	s15, [r1, #8]
+ 218              		.loc 1 111 9 is_stmt 1 view .LVU59
+ 219              		.loc 1 111 45 is_stmt 0 view .LVU60
+ 220 003c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 221              	.LVL28:
+ 222              		.loc 1 111 45 view .LVU61
+ 223 0040 67EE877A 		vmul.f32	s15, s15, s14
+ 224              		.loc 1 111 35 view .LVU62
+ 225 0044 C1ED027A 		vstr.32	s15, [r1, #8]
  112:Core/Src/ist8310driver.c ****         temp_ist8310_data = (int16_t)((status_buf[6] << 8) | status_buf[5]);
- 225              		.loc 1 112 9 is_stmt 1 view .LVU63
- 226              		.loc 1 112 50 is_stmt 0 view .LVU64
- 227 0048 8379     		ldrb	r3, [r0, #6]	@ zero_extendqisi2
- 228              	.LVL28:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 7
+ 226              		.loc 1 112 9 is_stmt 1 view .LVU63
+ 227              		.loc 1 112 50 is_stmt 0 view .LVU64
+ 228 0048 8379     		ldrb	r3, [r0, #6]	@ zero_extendqisi2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 7
 
 
- 229              		.loc 1 112 29 view .LVU65
- 230 004a 1B02     		lsls	r3, r3, #8
- 231 004c 1BB2     		sxth	r3, r3
- 232              		.loc 1 112 72 view .LVU66
- 233 004e 4279     		ldrb	r2, [r0, #5]	@ zero_extendqisi2
- 234              		.loc 1 112 27 view .LVU67
- 235 0050 1343     		orrs	r3, r3, r2
- 236 0052 07EE903A 		vmov	s15, r3	@ int
- 237              	.LVL29:
+ 229              	.LVL29:
+ 230              		.loc 1 112 29 view .LVU65
+ 231 004a 1B02     		lsls	r3, r3, #8
+ 232 004c 1BB2     		sxth	r3, r3
+ 233              		.loc 1 112 72 view .LVU66
+ 234 004e 4279     		ldrb	r2, [r0, #5]	@ zero_extendqisi2
+ 235              		.loc 1 112 27 view .LVU67
+ 236 0050 1343     		orrs	r3, r3, r2
+ 237 0052 07EE903A 		vmov	s15, r3	@ int
+ 238              	.LVL30:
  113:Core/Src/ist8310driver.c ****         ist8310_real_data->mag[2] = MAG_SEN * temp_ist8310_data;
- 238              		.loc 1 113 9 is_stmt 1 view .LVU68
- 239              		.loc 1 113 45 is_stmt 0 view .LVU69
- 240 0056 F8EEE77A 		vcvt.f32.s32	s15, s15
- 241              	.LVL30:
- 242              		.loc 1 113 45 view .LVU70
- 243 005a 67EE877A 		vmul.f32	s15, s15, s14
- 244              		.loc 1 113 35 view .LVU71
- 245 005e C1ED037A 		vstr.32	s15, [r1, #12]
- 246              	.LBE2:
- 247 0062 7047     		bx	lr
- 248              	.LVL31:
- 249              	.L13:
+ 239              		.loc 1 113 9 is_stmt 1 view .LVU68
+ 240              		.loc 1 113 45 is_stmt 0 view .LVU69
+ 241 0056 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 242              	.LVL31:
+ 243              		.loc 1 113 45 view .LVU70
+ 244 005a 67EE877A 		vmul.f32	s15, s15, s14
+ 245              		.loc 1 113 35 view .LVU71
+ 246 005e C1ED037A 		vstr.32	s15, [r1, #12]
+ 247              	.LBE2:
+ 248 0062 7047     		bx	lr
+ 249              	.LVL32:
+ 250              	.L13:
  114:Core/Src/ist8310driver.c ****     }
  115:Core/Src/ist8310driver.c ****     else
  116:Core/Src/ist8310driver.c ****     {
  117:Core/Src/ist8310driver.c ****         ist8310_real_data->status &= ~(1 << IST8310_DATA_READY_BIT);
- 250              		.loc 1 117 9 is_stmt 1 view .LVU72
- 251              		.loc 1 117 26 is_stmt 0 view .LVU73
- 252 0064 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
- 253              		.loc 1 117 35 view .LVU74
- 254 0066 23F00403 		bic	r3, r3, #4
- 255 006a 0B70     		strb	r3, [r1]
+ 251              		.loc 1 117 9 is_stmt 1 view .LVU72
+ 252              		.loc 1 117 26 is_stmt 0 view .LVU73
+ 253 0064 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 254              		.loc 1 117 35 view .LVU74
+ 255 0066 23F00403 		bic	r3, r3, #4
+ 256 006a 0B70     		strb	r3, [r1]
  118:Core/Src/ist8310driver.c ****     }
  119:Core/Src/ist8310driver.c **** }
- 256              		.loc 1 119 1 view .LVU75
- 257 006c 7047     		bx	lr
- 258              	.L16:
- 259 006e 00BF     		.align	2
- 260              	.L15:
- 261 0070 9A99993E 		.word	1050253722
- 262              		.cfi_endproc
- 263              	.LFE163:
- 265              		.section	.text.ist8310_read_mag,"ax",%progbits
- 266              		.align	1
- 267              		.global	ist8310_read_mag
- 268              		.syntax unified
- 269              		.thumb
- 270              		.thumb_func
- 272              	ist8310_read_mag:
- 273              	.LVL32:
- 274              	.LFB164:
+ 257              		.loc 1 119 1 view .LVU75
+ 258 006c 7047     		bx	lr
+ 259              	.L16:
+ 260 006e 00BF     		.align	2
+ 261              	.L15:
+ 262 0070 9A99993E 		.word	1050253722
+ 263              		.cfi_endproc
+ 264              	.LFE163:
+ 266              		.section	.text.ist8310_read_mag,"ax",%progbits
+ 267              		.align	1
+ 268              		.global	ist8310_read_mag
+ 269              		.syntax unified
+ 270              		.thumb
+ 271              		.thumb_func
+ 273              	ist8310_read_mag:
+ 274              	.LVL33:
+ 275              	.LFB164:
  120:Core/Src/ist8310driver.c **** 
  121:Core/Src/ist8310driver.c **** /**
  122:Core/Src/ist8310driver.c ****   * @brief          read mag magnetic field strength data of IST8310 by I2C
  123:Core/Src/ist8310driver.c ****   * @param[out]     mag variable
  124:Core/Src/ist8310driver.c ****   * @retval         none
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 8
+
+
  125:Core/Src/ist8310driver.c ****   */
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 8
-
-
  126:Core/Src/ist8310driver.c **** /**
  127:Core/Src/ist8310driver.c ****   * @brief          ͨ����ȡ�ų�����
  128:Core/Src/ist8310driver.c ****   * @param[out]     �ų�����
@@ -428,157 +429,157 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 1
  130:Core/Src/ist8310driver.c ****   */
  131:Core/Src/ist8310driver.c **** void ist8310_read_mag(fp32 mag[3])
  132:Core/Src/ist8310driver.c **** {
- 275              		.loc 1 132 1 is_stmt 1 view -0
- 276              		.cfi_startproc
- 277              		@ args = 0, pretend = 0, frame = 8
- 278              		@ frame_needed = 0, uses_anonymous_args = 0
- 279              		.loc 1 132 1 is_stmt 0 view .LVU77
- 280 0000 10B5     		push	{r4, lr}
- 281              	.LCFI1:
- 282              		.cfi_def_cfa_offset 8
- 283              		.cfi_offset 4, -8
- 284              		.cfi_offset 14, -4
- 285 0002 82B0     		sub	sp, sp, #8
- 286              	.LCFI2:
- 287              		.cfi_def_cfa_offset 16
- 288 0004 0446     		mov	r4, r0
+ 276              		.loc 1 132 1 is_stmt 1 view -0
+ 277              		.cfi_startproc
+ 278              		@ args = 0, pretend = 0, frame = 8
+ 279              		@ frame_needed = 0, uses_anonymous_args = 0
+ 280              		.loc 1 132 1 is_stmt 0 view .LVU77
+ 281 0000 10B5     		push	{r4, lr}
+ 282              	.LCFI1:
+ 283              		.cfi_def_cfa_offset 8
+ 284              		.cfi_offset 4, -8
+ 285              		.cfi_offset 14, -4
+ 286 0002 82B0     		sub	sp, sp, #8
+ 287              	.LCFI2:
+ 288              		.cfi_def_cfa_offset 16
+ 289 0004 0446     		mov	r4, r0
  133:Core/Src/ist8310driver.c ****     uint8_t buf[6];
- 289              		.loc 1 133 5 is_stmt 1 view .LVU78
+ 290              		.loc 1 133 5 is_stmt 1 view .LVU78
  134:Core/Src/ist8310driver.c ****     int16_t temp_ist8310_data = 0;
- 290              		.loc 1 134 5 view .LVU79
- 291              	.LVL33:
+ 291              		.loc 1 134 5 view .LVU79
+ 292              	.LVL34:
  135:Core/Src/ist8310driver.c ****     //read the "DATAXL" register (0x03)
  136:Core/Src/ist8310driver.c ****     ist8310_IIC_read_muli_reg(0x03, buf, 6);
- 292              		.loc 1 136 5 view .LVU80
- 293 0006 0622     		movs	r2, #6
- 294 0008 6946     		mov	r1, sp
- 295 000a 0320     		movs	r0, #3
- 296              	.LVL34:
- 297              		.loc 1 136 5 is_stmt 0 view .LVU81
- 298 000c FFF7FEFF 		bl	ist8310_IIC_read_muli_reg
- 299              	.LVL35:
+ 293              		.loc 1 136 5 view .LVU80
+ 294 0006 0622     		movs	r2, #6
+ 295 0008 6946     		mov	r1, sp
+ 296 000a 0320     		movs	r0, #3
+ 297              	.LVL35:
+ 298              		.loc 1 136 5 is_stmt 0 view .LVU81
+ 299 000c FFF7FEFF 		bl	ist8310_IIC_read_muli_reg
+ 300              	.LVL36:
  137:Core/Src/ist8310driver.c **** 
  138:Core/Src/ist8310driver.c ****     temp_ist8310_data = (int16_t)((buf[1] << 8) | buf[0]);
- 300              		.loc 1 138 5 is_stmt 1 view .LVU82
- 301              		.loc 1 138 39 is_stmt 0 view .LVU83
- 302 0010 9DF80130 		ldrb	r3, [sp, #1]	@ zero_extendqisi2
- 303              		.loc 1 138 25 view .LVU84
- 304 0014 1B02     		lsls	r3, r3, #8
- 305 0016 1BB2     		sxth	r3, r3
- 306              		.loc 1 138 54 view .LVU85
- 307 0018 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
- 308              		.loc 1 138 23 view .LVU86
- 309 001c 1343     		orrs	r3, r3, r2
- 310 001e 07EE903A 		vmov	s15, r3	@ int
- 311              	.LVL36:
+ 301              		.loc 1 138 5 is_stmt 1 view .LVU82
+ 302              		.loc 1 138 39 is_stmt 0 view .LVU83
+ 303 0010 9DF80130 		ldrb	r3, [sp, #1]	@ zero_extendqisi2
+ 304              		.loc 1 138 25 view .LVU84
+ 305 0014 1B02     		lsls	r3, r3, #8
+ 306 0016 1BB2     		sxth	r3, r3
+ 307              		.loc 1 138 54 view .LVU85
+ 308 0018 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
+ 309              		.loc 1 138 23 view .LVU86
+ 310 001c 1343     		orrs	r3, r3, r2
+ 311 001e 07EE903A 		vmov	s15, r3	@ int
+ 312              	.LVL37:
  139:Core/Src/ist8310driver.c ****     mag[0] = MAG_SEN * temp_ist8310_data;
- 312              		.loc 1 139 5 is_stmt 1 view .LVU87
- 313              		.loc 1 139 22 is_stmt 0 view .LVU88
- 314 0022 F8EEE77A 		vcvt.f32.s32	s15, s15
- 315              	.LVL37:
- 316              		.loc 1 139 22 view .LVU89
- 317 0026 9FED137A 		vldr.32	s14, .L19
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 9
+ 313              		.loc 1 139 5 is_stmt 1 view .LVU87
+ 314              		.loc 1 139 22 is_stmt 0 view .LVU88
+ 315 0022 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 316              	.LVL38:
+ 317              		.loc 1 139 22 view .LVU89
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 9
 
 
- 318 002a 67EE877A 		vmul.f32	s15, s15, s14
- 319              		.loc 1 139 12 view .LVU90
- 320 002e C4ED007A 		vstr.32	s15, [r4]
+ 318 0026 9FED137A 		vldr.32	s14, .L19
+ 319 002a 67EE877A 		vmul.f32	s15, s15, s14
+ 320              		.loc 1 139 12 view .LVU90
+ 321 002e C4ED007A 		vstr.32	s15, [r4]
  140:Core/Src/ist8310driver.c ****     temp_ist8310_data = (int16_t)((buf[3] << 8) | buf[2]);
- 321              		.loc 1 140 5 is_stmt 1 view .LVU91
- 322              		.loc 1 140 39 is_stmt 0 view .LVU92
- 323 0032 9DF80330 		ldrb	r3, [sp, #3]	@ zero_extendqisi2
- 324              	.LVL38:
- 325              		.loc 1 140 25 view .LVU93
- 326 0036 1B02     		lsls	r3, r3, #8
- 327 0038 1BB2     		sxth	r3, r3
- 328              		.loc 1 140 54 view .LVU94
- 329 003a 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
- 330              		.loc 1 140 23 view .LVU95
- 331 003e 1343     		orrs	r3, r3, r2
- 332 0040 07EE903A 		vmov	s15, r3	@ int
- 333              	.LVL39:
+ 322              		.loc 1 140 5 is_stmt 1 view .LVU91
+ 323              		.loc 1 140 39 is_stmt 0 view .LVU92
+ 324 0032 9DF80330 		ldrb	r3, [sp, #3]	@ zero_extendqisi2
+ 325              	.LVL39:
+ 326              		.loc 1 140 25 view .LVU93
+ 327 0036 1B02     		lsls	r3, r3, #8
+ 328 0038 1BB2     		sxth	r3, r3
+ 329              		.loc 1 140 54 view .LVU94
+ 330 003a 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
+ 331              		.loc 1 140 23 view .LVU95
+ 332 003e 1343     		orrs	r3, r3, r2
+ 333 0040 07EE903A 		vmov	s15, r3	@ int
+ 334              	.LVL40:
  141:Core/Src/ist8310driver.c ****     mag[1] = MAG_SEN * temp_ist8310_data;
- 334              		.loc 1 141 5 is_stmt 1 view .LVU96
- 335              		.loc 1 141 22 is_stmt 0 view .LVU97
- 336 0044 F8EEE77A 		vcvt.f32.s32	s15, s15
- 337              	.LVL40:
- 338              		.loc 1 141 22 view .LVU98
- 339 0048 67EE877A 		vmul.f32	s15, s15, s14
- 340              		.loc 1 141 12 view .LVU99
- 341 004c C4ED017A 		vstr.32	s15, [r4, #4]
+ 335              		.loc 1 141 5 is_stmt 1 view .LVU96
+ 336              		.loc 1 141 22 is_stmt 0 view .LVU97
+ 337 0044 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 338              	.LVL41:
+ 339              		.loc 1 141 22 view .LVU98
+ 340 0048 67EE877A 		vmul.f32	s15, s15, s14
+ 341              		.loc 1 141 12 view .LVU99
+ 342 004c C4ED017A 		vstr.32	s15, [r4, #4]
  142:Core/Src/ist8310driver.c ****     temp_ist8310_data = (int16_t)((buf[5] << 8) | buf[4]);
- 342              		.loc 1 142 5 is_stmt 1 view .LVU100
- 343              		.loc 1 142 39 is_stmt 0 view .LVU101
- 344 0050 9DF80530 		ldrb	r3, [sp, #5]	@ zero_extendqisi2
- 345              	.LVL41:
- 346              		.loc 1 142 25 view .LVU102
- 347 0054 1B02     		lsls	r3, r3, #8
- 348 0056 1BB2     		sxth	r3, r3
- 349              		.loc 1 142 54 view .LVU103
- 350 0058 9DF80420 		ldrb	r2, [sp, #4]	@ zero_extendqisi2
- 351              	.LVL42:
- 352              		.loc 1 142 23 view .LVU104
- 353 005c 1343     		orrs	r3, r3, r2
- 354 005e 07EE903A 		vmov	s15, r3	@ int
- 355              	.LVL43:
+ 343              		.loc 1 142 5 is_stmt 1 view .LVU100
+ 344              		.loc 1 142 39 is_stmt 0 view .LVU101
+ 345 0050 9DF80530 		ldrb	r3, [sp, #5]	@ zero_extendqisi2
+ 346              	.LVL42:
+ 347              		.loc 1 142 25 view .LVU102
+ 348 0054 1B02     		lsls	r3, r3, #8
+ 349 0056 1BB2     		sxth	r3, r3
+ 350              		.loc 1 142 54 view .LVU103
+ 351 0058 9DF80420 		ldrb	r2, [sp, #4]	@ zero_extendqisi2
+ 352              	.LVL43:
+ 353              		.loc 1 142 23 view .LVU104
+ 354 005c 1343     		orrs	r3, r3, r2
+ 355 005e 07EE903A 		vmov	s15, r3	@ int
+ 356              	.LVL44:
  143:Core/Src/ist8310driver.c ****     mag[2] = MAG_SEN * temp_ist8310_data;
- 356              		.loc 1 143 5 is_stmt 1 view .LVU105
- 357              		.loc 1 143 22 is_stmt 0 view .LVU106
- 358 0062 F8EEE77A 		vcvt.f32.s32	s15, s15
- 359              	.LVL44:
- 360              		.loc 1 143 22 view .LVU107
- 361 0066 67EE877A 		vmul.f32	s15, s15, s14
- 362              		.loc 1 143 12 view .LVU108
- 363 006a C4ED027A 		vstr.32	s15, [r4, #8]
+ 357              		.loc 1 143 5 is_stmt 1 view .LVU105
+ 358              		.loc 1 143 22 is_stmt 0 view .LVU106
+ 359 0062 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 360              	.LVL45:
+ 361              		.loc 1 143 22 view .LVU107
+ 362 0066 67EE877A 		vmul.f32	s15, s15, s14
+ 363              		.loc 1 143 12 view .LVU108
+ 364 006a C4ED027A 		vstr.32	s15, [r4, #8]
  144:Core/Src/ist8310driver.c **** }
- 364              		.loc 1 144 1 view .LVU109
- 365 006e 02B0     		add	sp, sp, #8
- 366              	.LCFI3:
- 367              		.cfi_def_cfa_offset 8
- 368              		@ sp needed
- 369 0070 10BD     		pop	{r4, pc}
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 10
+ 365              		.loc 1 144 1 view .LVU109
+ 366 006e 02B0     		add	sp, sp, #8
+ 367              	.LCFI3:
+ 368              		.cfi_def_cfa_offset 8
+ 369              		@ sp needed
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 10
 
 
- 370              	.LVL45:
- 371              	.L20:
- 372              		.loc 1 144 1 view .LVU110
- 373 0072 00BF     		.align	2
- 374              	.L19:
- 375 0074 9A99993E 		.word	1050253722
- 376              		.cfi_endproc
- 377              	.LFE164:
- 379              		.section	.rodata.ist8310_write_reg_data_error,"a"
- 380              		.align	2
- 383              	ist8310_write_reg_data_error:
- 384 0000 0B0801   		.ascii	"\013\010\001"
- 385 0003 410902   		.ascii	"A\011\002"
- 386 0006 42C003   		.ascii	"B\300\003"
- 387 0009 0A0B04   		.ascii	"\012\013\004"
- 388              		.text
- 389              	.Letext0:
- 390              		.file 2 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_defa
- 391              		.file 3 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/sys/_stdint.h
- 392              		.file 4 "Core/Inc/struct_typedef.h"
- 393              		.file 5 "Core/Inc/ist8310driver.h"
- 394              		.file 6 "Core/Inc/ist8310driver_middleWare.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s 			page 11
+ 370 0070 10BD     		pop	{r4, pc}
+ 371              	.LVL46:
+ 372              	.L20:
+ 373              		.loc 1 144 1 view .LVU110
+ 374 0072 00BF     		.align	2
+ 375              	.L19:
+ 376 0074 9A99993E 		.word	1050253722
+ 377              		.cfi_endproc
+ 378              	.LFE164:
+ 380              		.section	.rodata.ist8310_write_reg_data_error,"a"
+ 381              		.align	2
+ 384              	ist8310_write_reg_data_error:
+ 385 0000 0B0801   		.ascii	"\013\010\001"
+ 386 0003 410902   		.ascii	"A\011\002"
+ 387 0006 42C003   		.ascii	"B\300\003"
+ 388 0009 0A0B04   		.ascii	"\012\013\004"
+ 389              		.text
+ 390              	.Letext0:
+ 391              		.file 2 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/machine/_default_ty
+ 392              		.file 3 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/sys/_stdint.h"
+ 393              		.file 4 "Core/Inc/struct_typedef.h"
+ 394              		.file 5 "Core/Inc/ist8310driver.h"
+ 395              		.file 6 "Core/Inc/ist8310driver_middleWare.h"
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s 			page 11
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 ist8310driver.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:21     .text.ist8310_init:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:27     .text.ist8310_init:00000000 ist8310_init
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:149    .text.ist8310_init:00000074 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:383    .rodata.ist8310_write_reg_data_error:00000000 ist8310_write_reg_data_error
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:154    .text.ist8310_read_over:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:160    .text.ist8310_read_over:00000000 ist8310_read_over
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:261    .text.ist8310_read_over:00000070 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:266    .text.ist8310_read_mag:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:272    .text.ist8310_read_mag:00000000 ist8310_read_mag
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:375    .text.ist8310_read_mag:00000074 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccIZ4EkS.s:380    .rodata.ist8310_write_reg_data_error:00000000 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:21     .text.ist8310_init:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:27     .text.ist8310_init:00000000 ist8310_init
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:150    .text.ist8310_init:00000074 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:384    .rodata.ist8310_write_reg_data_error:00000000 ist8310_write_reg_data_error
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:155    .text.ist8310_read_over:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:161    .text.ist8310_read_over:00000000 ist8310_read_over
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:262    .text.ist8310_read_over:00000070 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:267    .text.ist8310_read_mag:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:273    .text.ist8310_read_mag:00000000 ist8310_read_mag
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:376    .text.ist8310_read_mag:00000074 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccOcb5HY.s:381    .rodata.ist8310_write_reg_data_error:00000000 $d
 
 UNDEFINED SYMBOLS
 ist8310_GPIO_init

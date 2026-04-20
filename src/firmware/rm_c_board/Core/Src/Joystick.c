@@ -1,16 +1,18 @@
 #include "Joystick.h"
+#include "pid.h"
 
 #define max_count 3
 float MAX_rotate_Speed = 1;
 float Max_speed[max_count] = {0.5, 1, 2, 3, 4, 5};
 int speed_count = 0;
 
-extern int control_mode; 
+extern int control_mode;
 extern float Vcx;
 extern float Wc;
 extern int motor_ready;
 extern int motor_shutdown;
 extern int free_flag;
+extern PID_TypeDef motor_pid[4];
 
 float MAX_Speed = 0;
 int flagg = 0;
@@ -52,14 +54,25 @@ void Joystick_motor_start(void)
         led_red_start();
     }
 
-    if (PS2_KEY == 14) // B按钮按下急停
+    if (PS2_KEY == 14) // B按钮 — 两阶段受控制动
     {
         control_mode = 0;
-        motor_shutdown = 0; // 设置使能
-        motor_ready = 0;    // 电机不准备好输入，电机固定
-        free_flag = 0;      // 禁止自由滑行模式
-        
-        led_pink_blink();   // 闪烁粉色LED
+        motor_shutdown = 0;  // 保持电机使能（制动阶段需要下发电流）
+        motor_ready = 0;     // 不接受外部输入
+        free_flag = 0;       // 先进入制动阶段
+
+        // 强制速度指令归零
+        Vcx = 0;
+        Wc = 0;
+
+        // 清零 PID 积分器（消除残留驱动力，防止反转）
+        for (int i = 0; i < 4; i++) {
+            motor_pid[i].iout = 0;
+            motor_pid[i].output = 0;
+            motor_pid[i].calculate_output = 0;
+        }
+
+        // 非阻塞 LED 指示（直接设置颜色，不调用 blink）
         led_pink_start();
     }
 }

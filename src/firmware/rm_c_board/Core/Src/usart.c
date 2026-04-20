@@ -81,11 +81,12 @@ void USART1_IRQHandler(void)
 
         // 拷贝到安全地方
         if (dataLength) {
-            // 如果超过 UART1_RX_Buffer 能力，需自行处理
-            if (dataLength <= UART_RX_BUF_SIZE) {
+            // 预留 \0 的空间
+            if (dataLength <= UART_RX_BUF_SIZE - 1) {
                 memcpy(UART1_RX_Buffer, DMA_RX_Buffer, dataLength);
+                UART1_RX_Buffer[dataLength] = '\0';  // 补 \0 终止符
                 UART1_RX_Size = dataLength;
-                new_serial_data_received = 1; // 告知主循环或任务“有数据了”
+                new_serial_data_received = 1; // 告知主循环或任务”有数据了”
             }
         }
 

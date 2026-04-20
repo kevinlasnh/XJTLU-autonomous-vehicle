@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 1
   11:Core/Src/BMI088Middleware.c **** {
   48              		.loc 1 11 1 view -0
   49              		.cfi_startproc
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 2
 
 
   50              		@ args = 0, pretend = 0, frame = 0
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 1
   85              		.loc 1 32 12 is_stmt 0 view .LVU12
   86 0002 4FF0E023 		mov	r3, #-536813568
   87 0006 5C69     		ldr	r4, [r3, #20]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 3
 
 
   88              	.LVL2:
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 1
  123              	.L4:
   35:Core/Src/BMI088Middleware.c ****     {
  124              		.loc 1 35 5 is_stmt 1 view .LVU26
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 4
 
 
   37:Core/Src/BMI088Middleware.c ****         if (tnow != told)
@@ -224,323 +224,320 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 1
   57:Core/Src/BMI088Middleware.c **** }
  148              		.loc 1 57 1 view .LVU37
  149 0032 5DF8044B 		ldr	r4, [sp], #4
- 150              	.LCFI1:
- 151              		.cfi_restore 4
- 152              		.cfi_def_cfa_offset 0
- 153              	.LVL14:
- 154              		.loc 1 57 1 view .LVU38
- 155 0036 7047     		bx	lr
- 156              		.cfi_endproc
- 157              	.LFE165:
- 159              		.section	.text.BMI088_delay_ms,"ax",%progbits
- 160              		.align	1
- 161              		.global	BMI088_delay_ms
- 162              		.syntax unified
- 163              		.thumb
- 164              		.thumb_func
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 5
+ 150              	.LVL14:
+ 151              		.loc 1 57 1 view .LVU38
+ 152 0036 7047     		bx	lr
+ 153              		.cfi_endproc
+ 154              	.LFE165:
+ 156              		.section	.text.BMI088_delay_ms,"ax",%progbits
+ 157              		.align	1
+ 158              		.global	BMI088_delay_ms
+ 159              		.syntax unified
+ 160              		.thumb
+ 161              		.thumb_func
+ 163              	BMI088_delay_ms:
+ 164              	.LVL15:
+ 165              	.LFB164:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 5
 
 
- 166              	BMI088_delay_ms:
- 167              	.LVL15:
- 168              	.LFB164:
   17:Core/Src/BMI088Middleware.c ****     while(ms--)
- 169              		.loc 1 17 1 is_stmt 1 view -0
- 170              		.cfi_startproc
- 171              		@ args = 0, pretend = 0, frame = 0
- 172              		@ frame_needed = 0, uses_anonymous_args = 0
+ 166              		.loc 1 17 1 is_stmt 1 view -0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 0
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
   17:Core/Src/BMI088Middleware.c ****     while(ms--)
- 173              		.loc 1 17 1 is_stmt 0 view .LVU40
- 174 0000 10B5     		push	{r4, lr}
- 175              	.LCFI2:
- 176              		.cfi_def_cfa_offset 8
- 177              		.cfi_offset 4, -8
- 178              		.cfi_offset 14, -4
+ 170              		.loc 1 17 1 is_stmt 0 view .LVU40
+ 171 0000 10B5     		push	{r4, lr}
+ 172              	.LCFI1:
+ 173              		.cfi_def_cfa_offset 8
+ 174              		.cfi_offset 4, -8
+ 175              		.cfi_offset 14, -4
   18:Core/Src/BMI088Middleware.c ****     {
- 179              		.loc 1 18 5 is_stmt 1 view .LVU41
+ 176              		.loc 1 18 5 is_stmt 1 view .LVU41
   18:Core/Src/BMI088Middleware.c ****     {
- 180              		.loc 1 18 10 is_stmt 0 view .LVU42
- 181 0002 04E0     		b	.L11
- 182              	.LVL16:
- 183              	.L12:
+ 177              		.loc 1 18 10 is_stmt 0 view .LVU42
+ 178 0002 04E0     		b	.L11
+ 179              	.LVL16:
+ 180              	.L12:
   20:Core/Src/BMI088Middleware.c ****     }
- 184              		.loc 1 20 9 is_stmt 1 view .LVU43
- 185 0004 4FF47A70 		mov	r0, #1000
- 186 0008 FFF7FEFF 		bl	BMI088_delay_us
- 187              	.LVL17:
+ 181              		.loc 1 20 9 is_stmt 1 view .LVU43
+ 182 0004 4FF47A70 		mov	r0, #1000
+ 183 0008 FFF7FEFF 		bl	BMI088_delay_us
+ 184              	.LVL17:
   18:Core/Src/BMI088Middleware.c ****     {
- 188              		.loc 1 18 13 is_stmt 0 view .LVU44
- 189 000c 2046     		mov	r0, r4
- 190              	.LVL18:
- 191              	.L11:
+ 185              		.loc 1 18 13 is_stmt 0 view .LVU44
+ 186 000c 2046     		mov	r0, r4
+ 187              	.LVL18:
+ 188              	.L11:
   18:Core/Src/BMI088Middleware.c ****     {
- 192              		.loc 1 18 11 is_stmt 1 view .LVU45
+ 189              		.loc 1 18 11 is_stmt 1 view .LVU45
   18:Core/Src/BMI088Middleware.c ****     {
- 193              		.loc 1 18 13 is_stmt 0 view .LVU46
- 194 000e 431E     		subs	r3, r0, #1
- 195 0010 9CB2     		uxth	r4, r3
- 196              	.LVL19:
+ 190              		.loc 1 18 13 is_stmt 0 view .LVU46
+ 191 000e 431E     		subs	r3, r0, #1
+ 192 0010 9CB2     		uxth	r4, r3
+ 193              	.LVL19:
   18:Core/Src/BMI088Middleware.c ****     {
- 197              		.loc 1 18 11 view .LVU47
- 198 0012 0028     		cmp	r0, #0
- 199 0014 F6D1     		bne	.L12
+ 194              		.loc 1 18 11 view .LVU47
+ 195 0012 0028     		cmp	r0, #0
+ 196 0014 F6D1     		bne	.L12
   22:Core/Src/BMI088Middleware.c **** 
- 200              		.loc 1 22 1 view .LVU48
- 201 0016 10BD     		pop	{r4, pc}
+ 197              		.loc 1 22 1 view .LVU48
+ 198 0016 10BD     		pop	{r4, pc}
   22:Core/Src/BMI088Middleware.c **** 
- 202              		.loc 1 22 1 view .LVU49
- 203              		.cfi_endproc
- 204              	.LFE164:
- 206              		.section	.text.BMI088_ACCEL_NS_L,"ax",%progbits
- 207              		.align	1
- 208              		.global	BMI088_ACCEL_NS_L
- 209              		.syntax unified
- 210              		.thumb
- 211              		.thumb_func
- 213              	BMI088_ACCEL_NS_L:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 6
-
-
- 214              	.LFB166:
+ 199              		.loc 1 22 1 view .LVU49
+ 200              		.cfi_endproc
+ 201              	.LFE164:
+ 203              		.section	.text.BMI088_ACCEL_NS_L,"ax",%progbits
+ 204              		.align	1
+ 205              		.global	BMI088_ACCEL_NS_L
+ 206              		.syntax unified
+ 207              		.thumb
+ 208              		.thumb_func
+ 210              	BMI088_ACCEL_NS_L:
+ 211              	.LFB166:
   58:Core/Src/BMI088Middleware.c **** 
   59:Core/Src/BMI088Middleware.c **** 
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 6
+
+
   60:Core/Src/BMI088Middleware.c **** 
   61:Core/Src/BMI088Middleware.c **** 
   62:Core/Src/BMI088Middleware.c **** void BMI088_ACCEL_NS_L(void)
   63:Core/Src/BMI088Middleware.c **** {
- 215              		.loc 1 63 1 is_stmt 1 view -0
- 216              		.cfi_startproc
- 217              		@ args = 0, pretend = 0, frame = 0
- 218              		@ frame_needed = 0, uses_anonymous_args = 0
- 219 0000 08B5     		push	{r3, lr}
- 220              	.LCFI3:
- 221              		.cfi_def_cfa_offset 8
- 222              		.cfi_offset 3, -8
- 223              		.cfi_offset 14, -4
+ 212              		.loc 1 63 1 is_stmt 1 view -0
+ 213              		.cfi_startproc
+ 214              		@ args = 0, pretend = 0, frame = 0
+ 215              		@ frame_needed = 0, uses_anonymous_args = 0
+ 216 0000 08B5     		push	{r3, lr}
+ 217              	.LCFI2:
+ 218              		.cfi_def_cfa_offset 8
+ 219              		.cfi_offset 3, -8
+ 220              		.cfi_offset 14, -4
   64:Core/Src/BMI088Middleware.c ****     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
- 224              		.loc 1 64 5 view .LVU51
- 225 0002 0022     		movs	r2, #0
- 226 0004 1021     		movs	r1, #16
- 227 0006 0248     		ldr	r0, .L16
- 228 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 229              	.LVL20:
+ 221              		.loc 1 64 5 view .LVU51
+ 222 0002 0022     		movs	r2, #0
+ 223 0004 1021     		movs	r1, #16
+ 224 0006 0248     		ldr	r0, .L16
+ 225 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 226              	.LVL20:
   65:Core/Src/BMI088Middleware.c **** }
- 230              		.loc 1 65 1 is_stmt 0 view .LVU52
- 231 000c 08BD     		pop	{r3, pc}
- 232              	.L17:
- 233 000e 00BF     		.align	2
- 234              	.L16:
- 235 0010 00000240 		.word	1073872896
- 236              		.cfi_endproc
- 237              	.LFE166:
- 239              		.section	.text.BMI088_ACCEL_NS_H,"ax",%progbits
- 240              		.align	1
- 241              		.global	BMI088_ACCEL_NS_H
- 242              		.syntax unified
- 243              		.thumb
- 244              		.thumb_func
- 246              	BMI088_ACCEL_NS_H:
- 247              	.LFB167:
+ 227              		.loc 1 65 1 is_stmt 0 view .LVU52
+ 228 000c 08BD     		pop	{r3, pc}
+ 229              	.L17:
+ 230 000e 00BF     		.align	2
+ 231              	.L16:
+ 232 0010 00000240 		.word	1073872896
+ 233              		.cfi_endproc
+ 234              	.LFE166:
+ 236              		.section	.text.BMI088_ACCEL_NS_H,"ax",%progbits
+ 237              		.align	1
+ 238              		.global	BMI088_ACCEL_NS_H
+ 239              		.syntax unified
+ 240              		.thumb
+ 241              		.thumb_func
+ 243              	BMI088_ACCEL_NS_H:
+ 244              	.LFB167:
   66:Core/Src/BMI088Middleware.c **** void BMI088_ACCEL_NS_H(void)
   67:Core/Src/BMI088Middleware.c **** {
- 248              		.loc 1 67 1 is_stmt 1 view -0
- 249              		.cfi_startproc
- 250              		@ args = 0, pretend = 0, frame = 0
- 251              		@ frame_needed = 0, uses_anonymous_args = 0
- 252 0000 08B5     		push	{r3, lr}
- 253              	.LCFI4:
- 254              		.cfi_def_cfa_offset 8
- 255              		.cfi_offset 3, -8
- 256              		.cfi_offset 14, -4
+ 245              		.loc 1 67 1 is_stmt 1 view -0
+ 246              		.cfi_startproc
+ 247              		@ args = 0, pretend = 0, frame = 0
+ 248              		@ frame_needed = 0, uses_anonymous_args = 0
+ 249 0000 08B5     		push	{r3, lr}
+ 250              	.LCFI3:
+ 251              		.cfi_def_cfa_offset 8
+ 252              		.cfi_offset 3, -8
+ 253              		.cfi_offset 14, -4
   68:Core/Src/BMI088Middleware.c ****     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
- 257              		.loc 1 68 5 view .LVU54
- 258 0002 0122     		movs	r2, #1
- 259 0004 1021     		movs	r1, #16
- 260 0006 0248     		ldr	r0, .L20
- 261 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 7
-
-
- 262              	.LVL21:
+ 254              		.loc 1 68 5 view .LVU54
+ 255 0002 0122     		movs	r2, #1
+ 256 0004 1021     		movs	r1, #16
+ 257 0006 0248     		ldr	r0, .L20
+ 258 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 259              	.LVL21:
   69:Core/Src/BMI088Middleware.c **** }
- 263              		.loc 1 69 1 is_stmt 0 view .LVU55
- 264 000c 08BD     		pop	{r3, pc}
- 265              	.L21:
- 266 000e 00BF     		.align	2
- 267              	.L20:
- 268 0010 00000240 		.word	1073872896
- 269              		.cfi_endproc
- 270              	.LFE167:
- 272              		.section	.text.BMI088_GYRO_NS_L,"ax",%progbits
- 273              		.align	1
- 274              		.global	BMI088_GYRO_NS_L
- 275              		.syntax unified
- 276              		.thumb
- 277              		.thumb_func
- 279              	BMI088_GYRO_NS_L:
- 280              	.LFB168:
+ 260              		.loc 1 69 1 is_stmt 0 view .LVU55
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 7
+
+
+ 261 000c 08BD     		pop	{r3, pc}
+ 262              	.L21:
+ 263 000e 00BF     		.align	2
+ 264              	.L20:
+ 265 0010 00000240 		.word	1073872896
+ 266              		.cfi_endproc
+ 267              	.LFE167:
+ 269              		.section	.text.BMI088_GYRO_NS_L,"ax",%progbits
+ 270              		.align	1
+ 271              		.global	BMI088_GYRO_NS_L
+ 272              		.syntax unified
+ 273              		.thumb
+ 274              		.thumb_func
+ 276              	BMI088_GYRO_NS_L:
+ 277              	.LFB168:
   70:Core/Src/BMI088Middleware.c **** 
   71:Core/Src/BMI088Middleware.c **** void BMI088_GYRO_NS_L(void)
   72:Core/Src/BMI088Middleware.c **** {
- 281              		.loc 1 72 1 is_stmt 1 view -0
- 282              		.cfi_startproc
- 283              		@ args = 0, pretend = 0, frame = 0
- 284              		@ frame_needed = 0, uses_anonymous_args = 0
- 285 0000 08B5     		push	{r3, lr}
- 286              	.LCFI5:
- 287              		.cfi_def_cfa_offset 8
- 288              		.cfi_offset 3, -8
- 289              		.cfi_offset 14, -4
+ 278              		.loc 1 72 1 is_stmt 1 view -0
+ 279              		.cfi_startproc
+ 280              		@ args = 0, pretend = 0, frame = 0
+ 281              		@ frame_needed = 0, uses_anonymous_args = 0
+ 282 0000 08B5     		push	{r3, lr}
+ 283              	.LCFI4:
+ 284              		.cfi_def_cfa_offset 8
+ 285              		.cfi_offset 3, -8
+ 286              		.cfi_offset 14, -4
   73:Core/Src/BMI088Middleware.c ****     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
- 290              		.loc 1 73 5 view .LVU57
- 291 0002 0022     		movs	r2, #0
- 292 0004 0121     		movs	r1, #1
- 293 0006 0248     		ldr	r0, .L24
- 294 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 295              	.LVL22:
+ 287              		.loc 1 73 5 view .LVU57
+ 288 0002 0022     		movs	r2, #0
+ 289 0004 0121     		movs	r1, #1
+ 290 0006 0248     		ldr	r0, .L24
+ 291 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 292              	.LVL22:
   74:Core/Src/BMI088Middleware.c **** }
- 296              		.loc 1 74 1 is_stmt 0 view .LVU58
- 297 000c 08BD     		pop	{r3, pc}
- 298              	.L25:
- 299 000e 00BF     		.align	2
- 300              	.L24:
- 301 0010 00040240 		.word	1073873920
- 302              		.cfi_endproc
- 303              	.LFE168:
- 305              		.section	.text.BMI088_GYRO_NS_H,"ax",%progbits
- 306              		.align	1
- 307              		.global	BMI088_GYRO_NS_H
- 308              		.syntax unified
- 309              		.thumb
- 310              		.thumb_func
- 312              	BMI088_GYRO_NS_H:
- 313              	.LFB169:
+ 293              		.loc 1 74 1 is_stmt 0 view .LVU58
+ 294 000c 08BD     		pop	{r3, pc}
+ 295              	.L25:
+ 296 000e 00BF     		.align	2
+ 297              	.L24:
+ 298 0010 00040240 		.word	1073873920
+ 299              		.cfi_endproc
+ 300              	.LFE168:
+ 302              		.section	.text.BMI088_GYRO_NS_H,"ax",%progbits
+ 303              		.align	1
+ 304              		.global	BMI088_GYRO_NS_H
+ 305              		.syntax unified
+ 306              		.thumb
+ 307              		.thumb_func
+ 309              	BMI088_GYRO_NS_H:
+ 310              	.LFB169:
   75:Core/Src/BMI088Middleware.c **** void BMI088_GYRO_NS_H(void)
   76:Core/Src/BMI088Middleware.c **** {
- 314              		.loc 1 76 1 is_stmt 1 view -0
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 8
+ 311              		.loc 1 76 1 is_stmt 1 view -0
+ 312              		.cfi_startproc
+ 313              		@ args = 0, pretend = 0, frame = 0
+ 314              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 8
 
 
- 315              		.cfi_startproc
- 316              		@ args = 0, pretend = 0, frame = 0
- 317              		@ frame_needed = 0, uses_anonymous_args = 0
- 318 0000 08B5     		push	{r3, lr}
- 319              	.LCFI6:
- 320              		.cfi_def_cfa_offset 8
- 321              		.cfi_offset 3, -8
- 322              		.cfi_offset 14, -4
+ 315 0000 08B5     		push	{r3, lr}
+ 316              	.LCFI5:
+ 317              		.cfi_def_cfa_offset 8
+ 318              		.cfi_offset 3, -8
+ 319              		.cfi_offset 14, -4
   77:Core/Src/BMI088Middleware.c ****     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
- 323              		.loc 1 77 5 view .LVU60
- 324 0002 0122     		movs	r2, #1
- 325 0004 1146     		mov	r1, r2
- 326 0006 0248     		ldr	r0, .L28
- 327 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 328              	.LVL23:
+ 320              		.loc 1 77 5 view .LVU60
+ 321 0002 0122     		movs	r2, #1
+ 322 0004 1146     		mov	r1, r2
+ 323 0006 0248     		ldr	r0, .L28
+ 324 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 325              	.LVL23:
   78:Core/Src/BMI088Middleware.c **** }
- 329              		.loc 1 78 1 is_stmt 0 view .LVU61
- 330 000c 08BD     		pop	{r3, pc}
- 331              	.L29:
- 332 000e 00BF     		.align	2
- 333              	.L28:
- 334 0010 00040240 		.word	1073873920
- 335              		.cfi_endproc
- 336              	.LFE169:
- 338              		.section	.text.BMI088_read_write_byte,"ax",%progbits
- 339              		.align	1
- 340              		.global	BMI088_read_write_byte
- 341              		.syntax unified
- 342              		.thumb
- 343              		.thumb_func
- 345              	BMI088_read_write_byte:
- 346              	.LVL24:
- 347              	.LFB170:
+ 326              		.loc 1 78 1 is_stmt 0 view .LVU61
+ 327 000c 08BD     		pop	{r3, pc}
+ 328              	.L29:
+ 329 000e 00BF     		.align	2
+ 330              	.L28:
+ 331 0010 00040240 		.word	1073873920
+ 332              		.cfi_endproc
+ 333              	.LFE169:
+ 335              		.section	.text.BMI088_read_write_byte,"ax",%progbits
+ 336              		.align	1
+ 337              		.global	BMI088_read_write_byte
+ 338              		.syntax unified
+ 339              		.thumb
+ 340              		.thumb_func
+ 342              	BMI088_read_write_byte:
+ 343              	.LVL24:
+ 344              	.LFB170:
   79:Core/Src/BMI088Middleware.c **** 
   80:Core/Src/BMI088Middleware.c **** uint8_t BMI088_read_write_byte(uint8_t txdata)
   81:Core/Src/BMI088Middleware.c **** {
- 348              		.loc 1 81 1 is_stmt 1 view -0
- 349              		.cfi_startproc
- 350              		@ args = 0, pretend = 0, frame = 16
- 351              		@ frame_needed = 0, uses_anonymous_args = 0
- 352              		.loc 1 81 1 is_stmt 0 view .LVU63
- 353 0000 00B5     		push	{lr}
- 354              	.LCFI7:
- 355              		.cfi_def_cfa_offset 4
- 356              		.cfi_offset 14, -4
- 357 0002 87B0     		sub	sp, sp, #28
- 358              	.LCFI8:
- 359              		.cfi_def_cfa_offset 32
- 360 0004 8DF80F00 		strb	r0, [sp, #15]
+ 345              		.loc 1 81 1 is_stmt 1 view -0
+ 346              		.cfi_startproc
+ 347              		@ args = 0, pretend = 0, frame = 16
+ 348              		@ frame_needed = 0, uses_anonymous_args = 0
+ 349              		.loc 1 81 1 is_stmt 0 view .LVU63
+ 350 0000 00B5     		push	{lr}
+ 351              	.LCFI6:
+ 352              		.cfi_def_cfa_offset 4
+ 353              		.cfi_offset 14, -4
+ 354 0002 87B0     		sub	sp, sp, #28
+ 355              	.LCFI7:
+ 356              		.cfi_def_cfa_offset 32
+ 357 0004 8DF80F00 		strb	r0, [sp, #15]
   82:Core/Src/BMI088Middleware.c ****     uint8_t rx_data;
- 361              		.loc 1 82 5 is_stmt 1 view .LVU64
+ 358              		.loc 1 82 5 is_stmt 1 view .LVU64
   83:Core/Src/BMI088Middleware.c ****     HAL_SPI_TransmitReceive(&hspi1, &txdata, &rx_data, 1, 1000);
- 362              		.loc 1 83 5 view .LVU65
- 363 0008 4FF47A73 		mov	r3, #1000
- 364 000c 0093     		str	r3, [sp]
- 365 000e 0123     		movs	r3, #1
- 366 0010 0DF11702 		add	r2, sp, #23
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 9
+ 359              		.loc 1 83 5 view .LVU65
+ 360 0008 4FF47A73 		mov	r3, #1000
+ 361 000c 0093     		str	r3, [sp]
+ 362 000e 0123     		movs	r3, #1
+ 363 0010 0DF11702 		add	r2, sp, #23
+ 364 0014 0DF10F01 		add	r1, sp, #15
+ 365 0018 0348     		ldr	r0, .L32
+ 366              	.LVL25:
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 9
 
 
- 367 0014 0DF10F01 		add	r1, sp, #15
- 368 0018 0348     		ldr	r0, .L32
- 369              	.LVL25:
- 370              		.loc 1 83 5 is_stmt 0 view .LVU66
- 371 001a FFF7FEFF 		bl	HAL_SPI_TransmitReceive
- 372              	.LVL26:
+ 367              		.loc 1 83 5 is_stmt 0 view .LVU66
+ 368 001a FFF7FEFF 		bl	HAL_SPI_TransmitReceive
+ 369              	.LVL26:
   84:Core/Src/BMI088Middleware.c ****     return rx_data;
- 373              		.loc 1 84 5 is_stmt 1 view .LVU67
+ 370              		.loc 1 84 5 is_stmt 1 view .LVU67
   85:Core/Src/BMI088Middleware.c **** }
- 374              		.loc 1 85 1 is_stmt 0 view .LVU68
- 375 001e 9DF81700 		ldrb	r0, [sp, #23]	@ zero_extendqisi2
- 376 0022 07B0     		add	sp, sp, #28
- 377              	.LCFI9:
- 378              		.cfi_def_cfa_offset 4
- 379              		@ sp needed
- 380 0024 5DF804FB 		ldr	pc, [sp], #4
- 381              	.L33:
- 382              		.align	2
- 383              	.L32:
- 384 0028 00000000 		.word	hspi1
- 385              		.cfi_endproc
- 386              	.LFE170:
- 388              		.text
- 389              	.Letext0:
- 390              		.file 2 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_defa
- 391              		.file 3 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/sys/_stdint.h
- 392              		.file 4 "Drivers/CMSIS/Include/core_cm4.h"
- 393              		.file 5 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
- 394              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
- 395              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
- 396              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
- 397              		.file 9 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s 			page 10
+ 371              		.loc 1 85 1 is_stmt 0 view .LVU68
+ 372 001e 9DF81700 		ldrb	r0, [sp, #23]	@ zero_extendqisi2
+ 373 0022 07B0     		add	sp, sp, #28
+ 374              	.LCFI8:
+ 375              		.cfi_def_cfa_offset 4
+ 376              		@ sp needed
+ 377 0024 00BD     		pop	{pc}
+ 378              	.L33:
+ 379 0026 00BF     		.align	2
+ 380              	.L32:
+ 381 0028 00000000 		.word	hspi1
+ 382              		.cfi_endproc
+ 383              	.LFE170:
+ 385              		.text
+ 386              	.Letext0:
+ 387              		.file 2 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/machine/_default_ty
+ 388              		.file 3 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/sys/_stdint.h"
+ 389              		.file 4 "Drivers/CMSIS/Include/core_cm4.h"
+ 390              		.file 5 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
+ 391              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 392              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
+ 393              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 394              		.file 9 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h"
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s 			page 10
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 BMI088Middleware.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:21     .text.BMI088_GPIO_init:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:27     .text.BMI088_GPIO_init:00000000 BMI088_GPIO_init
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:40     .text.BMI088_com_init:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:46     .text.BMI088_com_init:00000000 BMI088_com_init
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:59     .text.BMI088_delay_us:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:65     .text.BMI088_delay_us:00000000 BMI088_delay_us
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:160    .text.BMI088_delay_ms:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:166    .text.BMI088_delay_ms:00000000 BMI088_delay_ms
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:207    .text.BMI088_ACCEL_NS_L:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:213    .text.BMI088_ACCEL_NS_L:00000000 BMI088_ACCEL_NS_L
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:235    .text.BMI088_ACCEL_NS_L:00000010 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:240    .text.BMI088_ACCEL_NS_H:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:246    .text.BMI088_ACCEL_NS_H:00000000 BMI088_ACCEL_NS_H
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:268    .text.BMI088_ACCEL_NS_H:00000010 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:273    .text.BMI088_GYRO_NS_L:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:279    .text.BMI088_GYRO_NS_L:00000000 BMI088_GYRO_NS_L
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:301    .text.BMI088_GYRO_NS_L:00000010 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:306    .text.BMI088_GYRO_NS_H:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:312    .text.BMI088_GYRO_NS_H:00000000 BMI088_GYRO_NS_H
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:334    .text.BMI088_GYRO_NS_H:00000010 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:339    .text.BMI088_read_write_byte:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:345    .text.BMI088_read_write_byte:00000000 BMI088_read_write_byte
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccYZjDsw.s:384    .text.BMI088_read_write_byte:00000028 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:21     .text.BMI088_GPIO_init:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:27     .text.BMI088_GPIO_init:00000000 BMI088_GPIO_init
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:40     .text.BMI088_com_init:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:46     .text.BMI088_com_init:00000000 BMI088_com_init
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:59     .text.BMI088_delay_us:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:65     .text.BMI088_delay_us:00000000 BMI088_delay_us
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:157    .text.BMI088_delay_ms:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:163    .text.BMI088_delay_ms:00000000 BMI088_delay_ms
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:204    .text.BMI088_ACCEL_NS_L:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:210    .text.BMI088_ACCEL_NS_L:00000000 BMI088_ACCEL_NS_L
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:232    .text.BMI088_ACCEL_NS_L:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:237    .text.BMI088_ACCEL_NS_H:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:243    .text.BMI088_ACCEL_NS_H:00000000 BMI088_ACCEL_NS_H
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:265    .text.BMI088_ACCEL_NS_H:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:270    .text.BMI088_GYRO_NS_L:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:276    .text.BMI088_GYRO_NS_L:00000000 BMI088_GYRO_NS_L
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:298    .text.BMI088_GYRO_NS_L:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:303    .text.BMI088_GYRO_NS_H:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:309    .text.BMI088_GYRO_NS_H:00000000 BMI088_GYRO_NS_H
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:331    .text.BMI088_GYRO_NS_H:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:336    .text.BMI088_read_write_byte:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:342    .text.BMI088_read_write_byte:00000000 BMI088_read_write_byte
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cc9WqV6b.s:381    .text.BMI088_read_write_byte:00000028 $d
 
 UNDEFINED SYMBOLS
 HAL_GPIO_WritePin

@@ -9,10 +9,10 @@ float set_spdR;// rpm  ���ֽ��ٶȣ�ת�٣�
 float set_spdL1;
 float set_spdR1;
 
-extern float Vcx;   //   m/s 
-extern float Wc;    //   rad/s 
-float C = 0.46;     //   m 
-float r = 0.1;     //   m 
+extern float Vcx;   //   m/s
+extern float Wc;    //   rad/s
+float C = 0.46;     //   m
+float r = 0.1;     //   m
 int flaggg = 0;
 
 int motor_ready = 0; //电机被控制
@@ -20,6 +20,11 @@ int motor_shutdown = 0; //电机使能
 int free_flag = 0; // 0不允许自由滑动
 
 extern int control_mode;  // 0: 手柄控制, 1: 串口控制
+
+// 急停近零速释放参数
+#define ESTOP_RELEASE_RPM 20.0f
+#define ESTOP_RELEASE_COUNT 3
+static uint8_t estop_release_counter = 0;
 
 
 
@@ -47,15 +52,25 @@ float low_pass_filter(float value, float fc, float Ts)
 }
 
 
-// C = 0.46;     //   m 
-// r = 0.1;     //   m 
- 
+// C = 0.46;     //   m
+// r = 0.1;     //   m
+
+#define SERIAL_CMD_TIMEOUT_MS 500
+
 void Motor_Speed_Calc()
 {
+    // 串口模式超时保护
+    extern uint32_t last_serial_cmd_tick;
+    if (control_mode == 1 &&
+        (HAL_GetTick() - last_serial_cmd_tick > SERIAL_CMD_TIMEOUT_MS)) {
+        Vcx = 0;
+        Wc = 0;
+    }
+
     if (motor_shutdown == 1)
     {
-        led_white_start;
-        Set_free;
+        led_white_start();
+        Set_free();
     }
     else if (motor_shutdown == 0 && motor_ready == 1) 
     {
@@ -72,10 +87,14 @@ void Motor_Speed_Calc()
     {
         set_spdL = 0;
         set_spdR = 0;
+        // 防御性清零：确保任何进入此状态的路径都不会有积分残留
+        for (int i = 0; i < 4; i++) {
+            motor_pid[i].iout = 0;
+        }
     }
     else
     {
-        Set_free;
+        Set_free();
     }
 }
 
@@ -141,24 +160,53 @@ void Speed_set()
     if(free_flag == 0)
     {
         Motor_Speed_Calc();
-                motor_pid[0].target = set_spdL;
-                motor_pid[1].target = set_spdL;
-                motor_pid[2].target = -set_spdR;
-                motor_pid[3].target = -set_spdR;
-                for(int i=0; i<4; i++)
-                {
-                    motor_pid[i].f_cal_pid(&motor_pid[i],motor_chassis[i].speed_rpm);
-                }
+        motor_pid[0].target = set_spdL;
+        motor_pid[1].target = set_spdL;
+        motor_pid[2].target = -set_spdR;
+        motor_pid[3].target = -set_spdR;
+        for(int i=0; i<4; i++)
+        {
+            motor_pid[i].f_cal_pid(&motor_pid[i],motor_chassis[i].speed_rpm);
+        }
 
-                CAN_cmd_chassis(motor_pid[0].output,
-                                motor_pid[1].output,
-                                motor_pid[2].output,
-                                motor_pid[3].output);
+        // 急停近零速释放判据：motor_ready==0 时检测是否所有轮速都已接近零
+        if (motor_ready == 0 && motor_shutdown == 0)
+        {
+            int all_below = 1;
+            for (int i = 0; i < 4; i++) {
+                float spd = motor_chassis[i].speed_rpm;
+                if (spd < 0) spd = -spd;
+                if (spd > ESTOP_RELEASE_RPM) {
+                    all_below = 0;
+                    break;
+                }
+            }
+            if (all_below) {
+                estop_release_counter++;
+                if (estop_release_counter >= ESTOP_RELEASE_COUNT) {
+                    // 进入零电流释放阶段
+                    Set_free();
+                    estop_release_counter = 0;
+                    return;
+                }
+            } else {
+                estop_release_counter = 0;
+            }
+        }
+        else
+        {
+            estop_release_counter = 0;
+        }
+
+        CAN_cmd_chassis(motor_pid[0].output,
+                        motor_pid[1].output,
+                        motor_pid[2].output,
+                        motor_pid[3].output);
     }
 
     if(free_flag == 1)
     {
-    Set_free;
+        Set_free();
     }
 
     
@@ -248,13 +296,13 @@ void Speed_set()
 //Using motor_speed(rpm) to calculate the velocity(m/s) and angular velocity(rad/s) of the car
 void MOTORrpm2vw(float left_motor_speed,float right_motor_speed,float *vcx,float*w)
 {
-	const float c = 0.5;	 //m
-	const float r = 0.1;   //m
+	const float c = 0.46f;	 //m (与正运动学一致)
+	const float r = 0.1f;   //m
 	float left_wheel_w = left_motor_speed/19.0f/9.55f;  //motor_speed(rpm)->wheel_speed(rad/s)
 	float right_wheel_w = right_motor_speed/19.0f/9.55f;
 	float vL = left_wheel_w * r;
 	float vR = right_wheel_w * r;
-	*vcx = 0.5*vL + 0.5*vR;;   //  m/s
+	*vcx = 0.5f*vL + 0.5f*vR;   //  m/s
 	*w = -vL/c + vR/c;           //  rad/s
 }
 void speed_print()

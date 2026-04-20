@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
   27:Core/Src/FusionOffset.c **** /**
   28:Core/Src/FusionOffset.c ****  * @brief Threshold in degrees per second.
   29:Core/Src/FusionOffset.c ****  */
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 2
 
 
   30:Core/Src/FusionOffset.c **** #define THRESHOLD (3.0f)
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
   68 0030 FDAD003E 		.word	1040231933
   69              		.cfi_endproc
   70              	.LFE22:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 3
 
 
   72              		.section	.text.FusionOffsetUpdate,"ax",%progbits
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
    7:Core/Inc/FusionMath.h **** #ifndef FUSION_MATH_H
    8:Core/Inc/FusionMath.h **** #define FUSION_MATH_H
    9:Core/Inc/FusionMath.h **** 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 4
 
 
   10:Core/Inc/FusionMath.h **** //------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
   64:Core/Inc/FusionMath.h ****     } element;
   65:Core/Inc/FusionMath.h **** } FusionMatrix;
   66:Core/Inc/FusionMath.h **** 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 5
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 5
 
 
   67:Core/Inc/FusionMath.h **** /**
@@ -298,7 +298,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  121:Core/Inc/FusionMath.h **** 
  122:Core/Inc/FusionMath.h **** /**
  123:Core/Inc/FusionMath.h ****  * @brief Converts degrees to radians.
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 6
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 6
 
 
  124:Core/Inc/FusionMath.h ****  * @param degrees Degrees.
@@ -358,7 +358,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  178:Core/Inc/FusionMath.h ****     return union32.f * (1.69000231f - 0.714158168f * x * union32.f * union32.f);
  179:Core/Inc/FusionMath.h **** }
  180:Core/Inc/FusionMath.h **** 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 7
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 7
 
 
  181:Core/Inc/FusionMath.h **** #endif
@@ -418,7 +418,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  122              		.loc 2 217 24 view .LVU25
  123 0034 CDED0C0A 		vstr.32	s1, [sp, #48]
  220:Core/Inc/FusionMath.h ****             .z = vectorA.axis.z - vectorB.axis.z,
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 8
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 8
 
 
  124              		.loc 2 220 47 view .LVU26
@@ -478,7 +478,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  166              		.loc 1 66 8 view .LVU41
  167 008e 8A42     		cmp	r2, r1
  168 0090 53D3     		bcc	.L12
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 9
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 9
 
 
   67:Core/Src/FusionOffset.c ****         offset->timer++;
@@ -488,11 +488,11 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
   71:Core/Src/FusionOffset.c ****     // Adjust offset if timer has elapsed
   72:Core/Src/FusionOffset.c ****     offset->gyroscopeOffset = FusionVectorAdd(offset->gyroscopeOffset, FusionVectorMultiplyScalar(g
  169              		.loc 1 72 5 is_stmt 1 view .LVU42
- 170              		.loc 1 72 31 is_stmt 0 view .LVU43
+ 170              		.loc 1 72 116 is_stmt 0 view .LVU43
  171 0092 1A46     		mov	r2, r3
  172 0094 0C33     		adds	r3, r3, #12
  173              	.LVL4:
- 174              		.loc 1 72 31 view .LVU44
+ 174              		.loc 1 72 116 view .LVU44
  175 0096 D2ED007A 		vldr.32	s15, [r2]
  176              	.LVL5:
  177              	.LBB10:
@@ -538,7 +538,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  193              		.loc 2 241 24 view .LVU52
  194 00ae CDED0D7A 		vstr.32	s15, [sp, #52]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 10
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 10
 
 
  245:Core/Inc/FusionMath.h ****     }};
@@ -598,7 +598,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  235              		.loc 2 207 5 is_stmt 1 view .LVU68
  207:Core/Inc/FusionMath.h **** }
  236              		.loc 2 207 12 is_stmt 0 view .LVU69
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 11
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 11
 
 
  237 00f8 0DF1680E 		add	lr, sp, #104
@@ -658,7 +658,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
   67:Core/Src/FusionOffset.c ****         return gyroscope;
  284              		.loc 1 67 9 is_stmt 1 view .LVU80
   67:Core/Src/FusionOffset.c ****         return gyroscope;
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 12
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 12
 
 
  285              		.loc 1 67 22 is_stmt 0 view .LVU81
@@ -681,15 +681,15 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 1
  300              		.text
  301              	.Letext0:
  302              		.file 3 "Core/Inc/FusionOffset.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s 			page 13
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s 			page 13
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 FusionOffset.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s:21     .text.FusionOffsetInitialise:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s:27     .text.FusionOffsetInitialise:00000000 FusionOffsetInitialise
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s:68     .text.FusionOffsetInitialise:00000030 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s:73     .text.FusionOffsetUpdate:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccgYLudh.s:79     .text.FusionOffsetUpdate:00000000 FusionOffsetUpdate
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s:21     .text.FusionOffsetInitialise:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s:27     .text.FusionOffsetInitialise:00000000 FusionOffsetInitialise
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s:68     .text.FusionOffsetInitialise:00000030 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s:73     .text.FusionOffsetUpdate:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//cclzi2gA.s:79     .text.FusionOffsetUpdate:00000000 FusionOffsetUpdate
 
 NO UNDEFINED SYMBOLS

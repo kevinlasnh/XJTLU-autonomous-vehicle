@@ -71,8 +71,12 @@ int control_mode = 1;  // 0: 手柄控制, 1: 串口控制
 
 int SERIAL_PERIOD_MS = 10; // 100HZ
 
-float Vcx = 0;   //   m/s 
-float Wc = 0;    //   rad/s 
+float Vcx = 0;   //   m/s
+float Wc = 0;    //   rad/s
+
+// 串口指令超时保护
+uint32_t last_serial_cmd_tick = 0;
+#define SERIAL_CMD_TIMEOUT_MS 500
 
 /* USER CODE END PV */
 
@@ -260,15 +264,26 @@ float x, y, z; // local pose
 
 
 void Serial_Output(){
+  static uint32_t last_output_tick = 0;
+  uint32_t now = HAL_GetTick();
+  float dt = (now - last_output_tick) / 1000.0f;
+  if (dt <= 0.0f || dt > 0.1f) dt = (float)SERIAL_PERIOD_MS / 1000.0f; // 首次或异常保护
+  last_output_tick = now;
+
   const FusionQuaternion Q = FusionAhrsGetQuaternion(&ahrs);
   const FusionEuler euler = FusionQuaternionToEuler(Q);
   const FusionVector LinearAcc = FusionAhrsGetLinearAcceleration(&ahrs);
-  MOTORrpm2vw(motor_chassis[0].speed_rpm,-motor_chassis[2].speed_rpm,&real_vc,&real_w);
+
+  // 使用全部 4 个电机计算 real_vc/real_w
+  float avg_left_rpm  = (motor_chassis[0].speed_rpm + motor_chassis[1].speed_rpm) / 2.0f;
+  float avg_right_rpm = ((-motor_chassis[2].speed_rpm) + (-motor_chassis[3].speed_rpm)) / 2.0f;
+  MOTORrpm2vw(avg_left_rpm, avg_right_rpm, &real_vc, &real_w);
+
   float yaw = FusionDegreesToRadians(euler.angle.yaw), pitch = FusionDegreesToRadians(euler.angle.pitch), roll = FusionDegreesToRadians(euler.angle.roll);
   float cos_yaw = cos(yaw), sin_yaw = sin(yaw);
   float cos_pitch = cos(pitch), sin_pitch = sin(pitch);
   float cos_roll = cos(roll), sin_roll = sin(roll);
-  float delta_s = real_vc * (float)SERIAL_PERIOD_MS / 1000.0f;
+  float delta_s = real_vc * dt;
   // pose integration
   x += (cos_yaw * sin_pitch * sin_roll - sin_yaw * cos_roll) * delta_s;
   y += (sin_yaw * sin_pitch * sin_roll + cos_yaw * cos_roll) * delta_s;
@@ -399,21 +414,16 @@ char record_input_buffer[BUFFER_SIZE];
 void Serial_Input(const char* input_data)
 {
     if (control_mode == 1)
-    {   
-        // led_green_start();
+    {
         float temp_vcx, temp_wc;
         snprintf(record_input_buffer, sizeof(record_input_buffer), "%s", input_data);
 
-        // Attempt to parse the input data
-        if (sscanf(input_data, "vcx=%f,wc=%f\n", &temp_vcx, &temp_wc) == 2) {
-            // If parsing is successful, update Vcx and Wc
+        if (sscanf(input_data, "vcx=%f,wc=%f", &temp_vcx, &temp_wc) == 2) {
             Vcx = temp_vcx;
             Wc = temp_wc;
-            
-            // Parsing succeeded, exit the function
-        } 
-        else {      // If parsing fails, print an error message
-            // led_red_start();
+            last_serial_cmd_tick = HAL_GetTick();
+        }
+        else {
             snprintf(failed_input_buffer, sizeof(failed_input_buffer), "Failed input: %s", input_data);
         }
     }

@@ -40,7 +40,7 @@ build/Joystick.o: Core/Src/Joystick.c Core/Inc/Joystick.h \
  Core/Inc/IST.h Core/Inc/User_init.h Core/Inc/FusionCompass.h \
  Core/Inc/FusionOffset.h Core/Inc/FusionCalibration.h Core/Inc/Fusion.h \
  Core/Inc/FusionAxes.h Core/Inc/pid.h Core/Inc/Motor_Speed_pid.h \
- Core/Inc/sweep.h Core/Inc/gps.h Core/Inc/Task.h
+ Core/Inc/sweep.h Core/Inc/gps.h Core/Inc/Task.h Core/Inc/pid.h
 Core/Inc/Joystick.h:
 Core/Inc/headfile.h:
 Core/Inc/stm32f4xx_it.h:
@@ -110,3 +110,4 @@ Core/Inc/Motor_Speed_pid.h:
 Core/Inc/sweep.h:
 Core/Inc/gps.h:
 Core/Inc/Task.h:
+Core/Inc/pid.h:

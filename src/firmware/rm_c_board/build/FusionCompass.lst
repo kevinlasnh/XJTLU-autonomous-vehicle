@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   28:Core/Inc/FusionMath.h ****         float y;
   29:Core/Inc/FusionMath.h ****         float z;
   30:Core/Inc/FusionMath.h ****     } axis;
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 2
 
 
   31:Core/Inc/FusionMath.h **** } FusionVector;
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   85:Core/Inc/FusionMath.h **** 
   86:Core/Inc/FusionMath.h **** /**
   87:Core/Inc/FusionMath.h ****  * @brief Vector of ones.
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 3
 
 
   88:Core/Inc/FusionMath.h ****  */
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  142:Core/Inc/FusionMath.h **** 
  143:Core/Inc/FusionMath.h **** /**
  144:Core/Inc/FusionMath.h ****  * @brief Returns the arc sine of the value.
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 4
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 4
 
 
  145:Core/Inc/FusionMath.h ****  * @param value Value.
@@ -238,7 +238,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  199:Core/Inc/FusionMath.h ****  * @return Sum of two vectors.
  200:Core/Inc/FusionMath.h ****  */
  201:Core/Inc/FusionMath.h **** static inline FusionVector FusionVectorAdd(const FusionVector vectorA, const FusionVector vectorB) 
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 5
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 5
 
 
  202:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
@@ -298,7 +298,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  256:Core/Inc/FusionMath.h ****     const FusionVector result = {.axis = {
  257:Core/Inc/FusionMath.h ****             .x = vectorA.axis.x * vectorB.axis.x,
  258:Core/Inc/FusionMath.h ****             .y = vectorA.axis.y * vectorB.axis.y,
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 6
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 6
 
 
  259:Core/Inc/FusionMath.h ****             .z = vectorA.axis.z * vectorB.axis.z,
@@ -358,7 +358,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   63 003e 60EEA10A 		vmul.f32	s1, s1, s3
   64              		.loc 2 276 28 view .LVU12
   65 0042 32EE602A 		vsub.f32	s4, s4, s1
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 7
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 7
 
 
  273:Core/Inc/FusionMath.h ****             .x = A.y * B.z - A.z * B.y,
@@ -418,7 +418,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   99 0000 8EB0     		sub	sp, sp, #56
  100              	.LCFI2:
  101              		.cfi_def_cfa_offset 56
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 8
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 8
 
 
  102 0002 8DED010A 		vstr.32	s0, [sp, #4]
@@ -478,7 +478,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  300:Core/Inc/FusionMath.h **** }
  142              		.loc 2 300 1 view .LVU32
  143 003c 30EE010A 		vadd.f32	s0, s0, s2
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 9
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 9
 
 
  144 0040 0EB0     		add	sp, sp, #56
@@ -538,12 +538,12 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  317:Core/Inc/FusionMath.h **** #ifdef FUSION_USE_NORMAL_SQRT
  318:Core/Inc/FusionMath.h ****     const float magnitudeReciprocal = 1.0f / sqrtf(FusionVectorMagnitudeSquared(vector));
  319:Core/Inc/FusionMath.h **** #else
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 10
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 10
 
 
  320:Core/Inc/FusionMath.h ****     const float magnitudeReciprocal = FusionFastInverseSqrt(FusionVectorMagnitudeSquared(vector));
  184              		.loc 2 320 5 view .LVU34
- 185              		.loc 2 320 39 is_stmt 0 view .LVU35
+ 185              		.loc 2 320 61 is_stmt 0 view .LVU35
  186 0020 FFF7FEFF 		bl	FusionVectorMagnitudeSquared
  187              	.LVL0:
  188              	.LBB27:
@@ -559,13 +559,13 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  194              		.loc 2 177 5 view .LVU39
  178:Core/Inc/FusionMath.h **** }
  195              		.loc 2 178 5 view .LVU40
- 196 0024 1A4B     		ldr	r3, .L7
+ 196 0024 194B     		ldr	r3, .L7
  197 0026 10EE102A 		vmov	r2, s0	@ int
  198 002a A3EB6203 		sub	r3, r3, r2, asr #1
  199 002e 07EE103A 		vmov	s14, r3	@ int
  178:Core/Inc/FusionMath.h **** }
  200              		.loc 2 178 52 is_stmt 0 view .LVU41
- 201 0032 DFED187A 		vldr.32	s15, .L7+4
+ 201 0032 DFED177A 		vldr.32	s15, .L7+4
  202 0036 60EE277A 		vmul.f32	s15, s0, s15
  178:Core/Inc/FusionMath.h **** }
  203              		.loc 2 178 56 view .LVU42
@@ -575,7 +575,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  206 003e 67EE277A 		vmul.f32	s15, s14, s15
  178:Core/Inc/FusionMath.h **** }
  207              		.loc 2 178 37 view .LVU44
- 208 0042 DFED156A 		vldr.32	s13, .L7+8
+ 208 0042 DFED146A 		vldr.32	s13, .L7+8
  209 0046 76EEE77A 		vsub.f32	s15, s13, s15
  178:Core/Inc/FusionMath.h **** }
  210              		.loc 2 178 22 view .LVU45
@@ -598,7 +598,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  242:Core/Inc/FusionMath.h ****             .y = vector.axis.y * scalar,
  222              		.loc 2 242 32 is_stmt 0 view .LVU50
  223 004e 29EE279A 		vmul.f32	s18, s18, s15
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 11
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 11
 
 
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
@@ -647,18 +647,18 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  258              		.cfi_restore 80
  259              		.cfi_restore 81
  260              		.cfi_def_cfa_offset 4
- 261 008a 5DF804FB 		ldr	pc, [sp], #4
+ 261 008a 00BD     		pop	{pc}
  262              	.L8:
- 263 008e 00BF     		.align	2
+ 263              		.align	2
  264              	.L7:
- 265 0090 12141F5F 		.word	1595872274
- 266 0094 12D3363F 		.word	1060557586
- 267 0098 FF51D83F 		.word	1071141375
+ 265 008c 12141F5F 		.word	1595872274
+ 266 0090 12D3363F 		.word	1060557586
+ 267 0094 FF51D83F 		.word	1071141375
  268              		.cfi_endproc
  269              	.LFE14:
  271              		.section	.text.FusionCompassCalculateHeading,"ax",%progbits
  272              		.align	1
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 12
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 12
 
 
  273              		.global	FusionCompassCalculateHeading
@@ -718,7 +718,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  303 000c CDED040A 		vstr.32	s1, [sp, #16]
  304 0010 8DED051A 		vstr.32	s2, [sp, #20]
  305 0014 CDED001A 		vstr.32	s3, [sp]
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 13
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 13
 
 
  306 0018 8DED012A 		vstr.32	s4, [sp, #4]
@@ -726,22 +726,22 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   26:Core/Src/FusionCompass.c ****     switch (convention) {
  308              		.loc 1 26 5 is_stmt 1 view .LVU62
  309 0020 0128     		cmp	r0, #1
- 310 0022 42D0     		beq	.L10
+ 310 0022 41D0     		beq	.L10
  311 0024 0228     		cmp	r0, #2
- 312 0026 00F09880 		beq	.L11
+ 312 0026 00F09780 		beq	.L11
  313 002a 0028     		cmp	r0, #0
- 314 002c 40F0F580 		bne	.L13
+ 314 002c 40F0F480 		bne	.L13
  315              	.LBB31:
   27:Core/Src/FusionCompass.c ****         case FusionConventionNwu: {
   28:Core/Src/FusionCompass.c ****             const FusionVector west = FusionVectorNormalise(FusionVectorCrossProduct(accelerometer,
  316              		.loc 1 28 13 view .LVU63
- 317              		.loc 1 28 39 is_stmt 0 view .LVU64
+ 317              		.loc 1 28 61 is_stmt 0 view .LVU64
  318 0030 F0EE409A 		vmov.f32	s19, s0
  319 0034 B0EE609A 		vmov.f32	s18, s1
  320 0038 F0EE418A 		vmov.f32	s17, s2
  321 003c FFF7FEFF 		bl	FusionVectorCrossProduct
  322              	.LVL4:
- 323              		.loc 1 28 39 view .LVU65
+ 323              		.loc 1 28 61 view .LVU65
  324 0040 8DED100A 		vstr.32	s0, [sp, #64]
  325 0044 CDED110A 		vstr.32	s1, [sp, #68]
  326 0048 8DED121A 		vstr.32	s2, [sp, #72]
@@ -754,7 +754,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  333 005c 8DED0C1A 		vstr.32	s2, [sp, #48]
   29:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, acceler
  334              		.loc 1 29 13 is_stmt 1 view .LVU67
- 335              		.loc 1 29 40 is_stmt 0 view .LVU68
+ 335              		.loc 1 29 62 is_stmt 0 view .LVU68
  336 0060 F0EE691A 		vmov.f32	s3, s19
  337 0064 B0EE492A 		vmov.f32	s4, s18
  338 0068 F0EE682A 		vmov.f32	s5, s17
@@ -771,14 +771,14 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  349 0088 8DED0F1A 		vstr.32	s2, [sp, #60]
   30:Core/Src/FusionCompass.c ****             return FusionRadiansToDegrees(atan2f(west.axis.x, north.axis.x));
  350              		.loc 1 30 13 is_stmt 1 view .LVU70
- 351              		.loc 1 30 20 is_stmt 0 view .LVU71
+ 351              		.loc 1 30 43 is_stmt 0 view .LVU71
  352 008c F0EE400A 		vmov.f32	s1, s0
  353 0090 B0EE480A 		vmov.f32	s0, s16
  354 0094 FFF7FEFF 		bl	atan2f
  355              	.LVL8:
  356              	.LBB32:
  357              	.LBI32:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 14
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 14
 
 
  136:Core/Inc/FusionMath.h ****     return radians * (180.0f / (float) M_PI);
@@ -828,7 +828,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  382              		.cfi_restore 80
  383              		.cfi_restore 81
  384              		.cfi_def_cfa_offset 4
- 385 00a6 5DF804FB 		ldr	pc, [sp], #4
+ 385 00a6 00BD     		pop	{pc}
  386              	.LVL10:
  387              	.L10:
  388              	.LCFI14:
@@ -837,55 +837,55 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   33:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, acceler
  391              		.loc 1 33 13 is_stmt 1 view .LVU77
   33:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, acceler
- 392              		.loc 1 33 39 is_stmt 0 view .LVU78
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 15
+ 392              		.loc 1 33 61 is_stmt 0 view .LVU78
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 15
 
 
- 393 00aa DDED03AA 		vldr.32	s21, [sp, #12]
- 394 00ae 9DED04AA 		vldr.32	s20, [sp, #16]
- 395 00b2 DDED059A 		vldr.32	s19, [sp, #20]
- 396 00b6 DDED001A 		vldr.32	s3, [sp]
- 397 00ba 9DED012A 		vldr.32	s4, [sp, #4]
- 398 00be DDED022A 		vldr.32	s5, [sp, #8]
- 399 00c2 B0EE6A0A 		vmov.f32	s0, s21
- 400 00c6 F0EE4A0A 		vmov.f32	s1, s20
- 401 00ca B0EE691A 		vmov.f32	s2, s19
- 402 00ce FFF7FEFF 		bl	FusionVectorCrossProduct
+ 393 00a8 DDED03AA 		vldr.32	s21, [sp, #12]
+ 394 00ac 9DED04AA 		vldr.32	s20, [sp, #16]
+ 395 00b0 DDED059A 		vldr.32	s19, [sp, #20]
+ 396 00b4 DDED001A 		vldr.32	s3, [sp]
+ 397 00b8 9DED012A 		vldr.32	s4, [sp, #4]
+ 398 00bc DDED022A 		vldr.32	s5, [sp, #8]
+ 399 00c0 B0EE6A0A 		vmov.f32	s0, s21
+ 400 00c4 F0EE4A0A 		vmov.f32	s1, s20
+ 401 00c8 B0EE691A 		vmov.f32	s2, s19
+ 402 00cc FFF7FEFF 		bl	FusionVectorCrossProduct
  403              	.LVL11:
   33:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, acceler
- 404              		.loc 1 33 39 view .LVU79
- 405 00d2 8DED160A 		vstr.32	s0, [sp, #88]
- 406 00d6 CDED170A 		vstr.32	s1, [sp, #92]
- 407 00da 8DED181A 		vstr.32	s2, [sp, #96]
+ 404              		.loc 1 33 61 view .LVU79
+ 405 00d0 8DED160A 		vstr.32	s0, [sp, #88]
+ 406 00d4 CDED170A 		vstr.32	s1, [sp, #92]
+ 407 00d8 8DED181A 		vstr.32	s2, [sp, #96]
   33:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, acceler
  408              		.loc 1 33 39 discriminator 1 view .LVU80
- 409 00de FFF7FEFF 		bl	FusionVectorNormalise
+ 409 00dc FFF7FEFF 		bl	FusionVectorNormalise
  410              	.LVL12:
- 411 00e2 B0EE408A 		vmov.f32	s16, s0
- 412 00e6 B0EE609A 		vmov.f32	s18, s1
- 413 00ea F0EE418A 		vmov.f32	s17, s2
- 414 00ee 8DED070A 		vstr.32	s0, [sp, #28]
- 415 00f2 CDED080A 		vstr.32	s1, [sp, #32]
- 416 00f6 8DED091A 		vstr.32	s2, [sp, #36]
+ 411 00e0 B0EE408A 		vmov.f32	s16, s0
+ 412 00e4 B0EE609A 		vmov.f32	s18, s1
+ 413 00e8 F0EE418A 		vmov.f32	s17, s2
+ 414 00ec 8DED070A 		vstr.32	s0, [sp, #28]
+ 415 00f0 CDED080A 		vstr.32	s1, [sp, #32]
+ 416 00f4 8DED091A 		vstr.32	s2, [sp, #36]
   34:Core/Src/FusionCompass.c ****             const FusionVector east = FusionVectorMultiplyScalar(west, -1.0f);
  417              		.loc 1 34 13 is_stmt 1 view .LVU81
   34:Core/Src/FusionCompass.c ****             const FusionVector east = FusionVectorMultiplyScalar(west, -1.0f);
- 418              		.loc 1 34 40 is_stmt 0 view .LVU82
- 419 00fa F0EE6A1A 		vmov.f32	s3, s21
- 420 00fe B0EE4A2A 		vmov.f32	s4, s20
- 421 0102 F0EE692A 		vmov.f32	s5, s19
- 422 0106 FFF7FEFF 		bl	FusionVectorCrossProduct
+ 418              		.loc 1 34 62 is_stmt 0 view .LVU82
+ 419 00f8 F0EE6A1A 		vmov.f32	s3, s21
+ 420 00fc B0EE4A2A 		vmov.f32	s4, s20
+ 421 0100 F0EE692A 		vmov.f32	s5, s19
+ 422 0104 FFF7FEFF 		bl	FusionVectorCrossProduct
  423              	.LVL13:
- 424 010a 8DED190A 		vstr.32	s0, [sp, #100]
- 425 010e CDED1A0A 		vstr.32	s1, [sp, #104]
- 426 0112 8DED1B1A 		vstr.32	s2, [sp, #108]
+ 424 0108 8DED190A 		vstr.32	s0, [sp, #100]
+ 425 010c CDED1A0A 		vstr.32	s1, [sp, #104]
+ 426 0110 8DED1B1A 		vstr.32	s2, [sp, #108]
   34:Core/Src/FusionCompass.c ****             const FusionVector east = FusionVectorMultiplyScalar(west, -1.0f);
  427              		.loc 1 34 40 discriminator 1 view .LVU83
- 428 0116 FFF7FEFF 		bl	FusionVectorNormalise
+ 428 0114 FFF7FEFF 		bl	FusionVectorNormalise
  429              	.LVL14:
- 430 011a 8DED0A0A 		vstr.32	s0, [sp, #40]
- 431 011e CDED0B0A 		vstr.32	s1, [sp, #44]
- 432 0122 8DED0C1A 		vstr.32	s2, [sp, #48]
+ 430 0118 8DED0A0A 		vstr.32	s0, [sp, #40]
+ 431 011c CDED0B0A 		vstr.32	s1, [sp, #44]
+ 432 0120 8DED0C1A 		vstr.32	s2, [sp, #48]
   35:Core/Src/FusionCompass.c ****             return FusionRadiansToDegrees(atan2f(north.axis.x, east.axis.x));
  433              		.loc 1 35 13 is_stmt 1 view .LVU84
  434              	.LVL15:
@@ -898,33 +898,33 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  439              		.loc 2 241 5 view .LVU86
  242:Core/Inc/FusionMath.h ****             .y = vector.axis.y * scalar,
  440              		.loc 2 242 32 is_stmt 0 view .LVU87
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 16
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 16
 
 
- 441 0126 F1EE480A 		vneg.f32	s1, s16
+ 441 0124 F1EE480A 		vneg.f32	s1, s16
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  442              		.loc 2 241 24 view .LVU88
- 443 012a CDED0D0A 		vstr.32	s1, [sp, #52]
+ 443 0128 CDED0D0A 		vstr.32	s1, [sp, #52]
  243:Core/Inc/FusionMath.h ****             .z = vector.axis.z * scalar,
  444              		.loc 2 243 32 view .LVU89
- 445 012e B1EE499A 		vneg.f32	s18, s18
+ 445 012c B1EE499A 		vneg.f32	s18, s18
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  446              		.loc 2 241 24 view .LVU90
- 447 0132 8DED0E9A 		vstr.32	s18, [sp, #56]
+ 447 0130 8DED0E9A 		vstr.32	s18, [sp, #56]
  244:Core/Inc/FusionMath.h ****     }};
  448              		.loc 2 244 32 view .LVU91
- 449 0136 F1EE688A 		vneg.f32	s17, s17
+ 449 0134 F1EE688A 		vneg.f32	s17, s17
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  450              		.loc 2 241 24 view .LVU92
- 451 013a CDED0F8A 		vstr.32	s17, [sp, #60]
+ 451 0138 CDED0F8A 		vstr.32	s17, [sp, #60]
  246:Core/Inc/FusionMath.h **** }
  452              		.loc 2 246 5 is_stmt 1 view .LVU93
  246:Core/Inc/FusionMath.h **** }
  453              		.loc 2 246 12 is_stmt 0 view .LVU94
- 454 013e 0DF1880C 		add	ip, sp, #136
- 455 0142 0DAB     		add	r3, sp, #52
- 456 0144 93E80700 		ldm	r3, {r0, r1, r2}
- 457 0148 8CE80700 		stm	ip, {r0, r1, r2}
+ 454 013c 0DF1880C 		add	ip, sp, #136
+ 455 0140 0DAB     		add	r3, sp, #52
+ 456 0142 93E80700 		ldm	r3, {r0, r1, r2}
+ 457 0146 8CE80700 		stm	ip, {r0, r1, r2}
  458              	.LVL16:
  246:Core/Inc/FusionMath.h **** }
  459              		.loc 2 246 12 view .LVU95
@@ -933,8 +933,8 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
   36:Core/Src/FusionCompass.c ****         }
  462              		.loc 1 36 13 is_stmt 1 view .LVU96
   36:Core/Src/FusionCompass.c ****         }
- 463              		.loc 1 36 20 is_stmt 0 view .LVU97
- 464 014c FFF7FEFF 		bl	atan2f
+ 463              		.loc 1 36 43 is_stmt 0 view .LVU97
+ 464 014a FFF7FEFF 		bl	atan2f
  465              	.LVL17:
  466              	.LBB37:
  467              	.LBI37:
@@ -945,12 +945,12 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  470              		.loc 2 137 5 view .LVU99
  137:Core/Inc/FusionMath.h **** }
  471              		.loc 2 137 20 is_stmt 0 view .LVU100
- 472 0150 DFED337A 		vldr.32	s15, .L15
- 473 0154 20EE270A 		vmul.f32	s0, s0, s15
+ 472 014e DFED347A 		vldr.32	s15, .L15
+ 473 0152 20EE270A 		vmul.f32	s0, s0, s15
  474              	.LVL18:
  137:Core/Inc/FusionMath.h **** }
  475              		.loc 2 137 20 view .LVU101
- 476 0158 A2E7     		b	.L9
+ 476 0156 A3E7     		b	.L9
  477              	.LVL19:
  478              	.L11:
  137:Core/Inc/FusionMath.h **** }
@@ -958,7 +958,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  480              	.LBE38:
  481              	.LBE37:
  482              	.LBE34:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 17
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 17
 
 
  483              	.LBB39:
@@ -973,44 +973,44 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  489              		.loc 2 241 5 view .LVU105
  242:Core/Inc/FusionMath.h ****             .y = vector.axis.y * scalar,
  490              		.loc 2 242 29 is_stmt 0 view .LVU106
- 491 015a DDED037A 		vldr.32	s15, [sp, #12]
+ 491 0158 DDED037A 		vldr.32	s15, [sp, #12]
  242:Core/Inc/FusionMath.h ****             .y = vector.axis.y * scalar,
  492              		.loc 2 242 32 view .LVU107
- 493 015e F1EE677A 		vneg.f32	s15, s15
+ 493 015c F1EE677A 		vneg.f32	s15, s15
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  494              		.loc 2 241 24 view .LVU108
- 495 0162 CDED0D7A 		vstr.32	s15, [sp, #52]
+ 495 0160 CDED0D7A 		vstr.32	s15, [sp, #52]
  243:Core/Inc/FusionMath.h ****             .z = vector.axis.z * scalar,
  496              		.loc 2 243 29 view .LVU109
- 497 0166 DDED047A 		vldr.32	s15, [sp, #16]
+ 497 0164 DDED047A 		vldr.32	s15, [sp, #16]
  243:Core/Inc/FusionMath.h ****             .z = vector.axis.z * scalar,
  498              		.loc 2 243 32 view .LVU110
- 499 016a F1EE677A 		vneg.f32	s15, s15
+ 499 0168 F1EE677A 		vneg.f32	s15, s15
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  500              		.loc 2 241 24 view .LVU111
- 501 016e CDED0E7A 		vstr.32	s15, [sp, #56]
+ 501 016c CDED0E7A 		vstr.32	s15, [sp, #56]
  244:Core/Inc/FusionMath.h ****     }};
  502              		.loc 2 244 29 view .LVU112
- 503 0172 DDED057A 		vldr.32	s15, [sp, #20]
+ 503 0170 DDED057A 		vldr.32	s15, [sp, #20]
  244:Core/Inc/FusionMath.h ****     }};
  504              		.loc 2 244 32 view .LVU113
- 505 0176 F1EE677A 		vneg.f32	s15, s15
+ 505 0174 F1EE677A 		vneg.f32	s15, s15
  241:Core/Inc/FusionMath.h ****             .x = vector.axis.x * scalar,
  506              		.loc 2 241 24 view .LVU114
- 507 017a CDED0F7A 		vstr.32	s15, [sp, #60]
+ 507 0178 CDED0F7A 		vstr.32	s15, [sp, #60]
  246:Core/Inc/FusionMath.h **** }
  508              		.loc 2 246 5 is_stmt 1 view .LVU115
  246:Core/Inc/FusionMath.h **** }
  509              		.loc 2 246 12 is_stmt 0 view .LVU116
- 510 017e 25AB     		add	r3, sp, #148
- 511 0180 0DAA     		add	r2, sp, #52
- 512 0182 07CA     		ldm	r2, {r0, r1, r2}
+ 510 017c 25AB     		add	r3, sp, #148
+ 511 017e 0DAA     		add	r2, sp, #52
+ 512 0180 07CA     		ldm	r2, {r0, r1, r2}
  513              	.LVL20:
  246:Core/Inc/FusionMath.h **** }
  514              		.loc 2 246 12 view .LVU117
- 515 0184 83E80700 		stm	r3, {r0, r1, r2}
- 516 0188 0DF11C0C 		add	ip, sp, #28
- 517 018c 8CE80700 		stm	ip, {r0, r1, r2}
+ 515 0182 83E80700 		stm	r3, {r0, r1, r2}
+ 516 0186 0DF11C0C 		add	ip, sp, #28
+ 517 018a 8CE80700 		stm	ip, {r0, r1, r2}
  518              	.LVL21:
  246:Core/Inc/FusionMath.h **** }
  519              		.loc 2 246 12 view .LVU118
@@ -1018,59 +1018,59 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  521              	.LBE40:
   40:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, up));
  522              		.loc 1 40 13 is_stmt 1 view .LVU119
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 18
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 18
 
 
   40:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, up));
- 523              		.loc 1 40 39 is_stmt 0 view .LVU120
- 524 0190 DDED079A 		vldr.32	s19, [sp, #28]
- 525 0194 9DED089A 		vldr.32	s18, [sp, #32]
- 526 0198 DDED098A 		vldr.32	s17, [sp, #36]
- 527 019c DDED001A 		vldr.32	s3, [sp]
- 528 01a0 9DED012A 		vldr.32	s4, [sp, #4]
- 529 01a4 DDED022A 		vldr.32	s5, [sp, #8]
- 530 01a8 B0EE690A 		vmov.f32	s0, s19
- 531 01ac F0EE490A 		vmov.f32	s1, s18
- 532 01b0 B0EE681A 		vmov.f32	s2, s17
- 533 01b4 FFF7FEFF 		bl	FusionVectorCrossProduct
+ 523              		.loc 1 40 61 is_stmt 0 view .LVU120
+ 524 018e DDED079A 		vldr.32	s19, [sp, #28]
+ 525 0192 9DED089A 		vldr.32	s18, [sp, #32]
+ 526 0196 DDED098A 		vldr.32	s17, [sp, #36]
+ 527 019a DDED001A 		vldr.32	s3, [sp]
+ 528 019e 9DED012A 		vldr.32	s4, [sp, #4]
+ 529 01a2 DDED022A 		vldr.32	s5, [sp, #8]
+ 530 01a6 B0EE690A 		vmov.f32	s0, s19
+ 531 01aa F0EE490A 		vmov.f32	s1, s18
+ 532 01ae B0EE681A 		vmov.f32	s2, s17
+ 533 01b2 FFF7FEFF 		bl	FusionVectorCrossProduct
  534              	.LVL22:
- 535 01b8 8DED1C0A 		vstr.32	s0, [sp, #112]
- 536 01bc CDED1D0A 		vstr.32	s1, [sp, #116]
- 537 01c0 8DED1E1A 		vstr.32	s2, [sp, #120]
+ 535 01b6 8DED1C0A 		vstr.32	s0, [sp, #112]
+ 536 01ba CDED1D0A 		vstr.32	s1, [sp, #116]
+ 537 01be 8DED1E1A 		vstr.32	s2, [sp, #120]
   40:Core/Src/FusionCompass.c ****             const FusionVector north = FusionVectorNormalise(FusionVectorCrossProduct(west, up));
  538              		.loc 1 40 39 discriminator 1 view .LVU121
- 539 01c4 FFF7FEFF 		bl	FusionVectorNormalise
+ 539 01c2 FFF7FEFF 		bl	FusionVectorNormalise
  540              	.LVL23:
- 541 01c8 B0EE408A 		vmov.f32	s16, s0
- 542 01cc 8DED0A0A 		vstr.32	s0, [sp, #40]
- 543 01d0 CDED0B0A 		vstr.32	s1, [sp, #44]
- 544 01d4 8DED0C1A 		vstr.32	s2, [sp, #48]
+ 541 01c6 B0EE408A 		vmov.f32	s16, s0
+ 542 01ca 8DED0A0A 		vstr.32	s0, [sp, #40]
+ 543 01ce CDED0B0A 		vstr.32	s1, [sp, #44]
+ 544 01d2 8DED0C1A 		vstr.32	s2, [sp, #48]
   41:Core/Src/FusionCompass.c ****             return FusionRadiansToDegrees(atan2f(west.axis.x, north.axis.x));
  545              		.loc 1 41 13 is_stmt 1 view .LVU122
   41:Core/Src/FusionCompass.c ****             return FusionRadiansToDegrees(atan2f(west.axis.x, north.axis.x));
- 546              		.loc 1 41 40 is_stmt 0 view .LVU123
- 547 01d8 F0EE691A 		vmov.f32	s3, s19
- 548 01dc B0EE492A 		vmov.f32	s4, s18
- 549 01e0 F0EE682A 		vmov.f32	s5, s17
- 550 01e4 FFF7FEFF 		bl	FusionVectorCrossProduct
+ 546              		.loc 1 41 62 is_stmt 0 view .LVU123
+ 547 01d6 F0EE691A 		vmov.f32	s3, s19
+ 548 01da B0EE492A 		vmov.f32	s4, s18
+ 549 01de F0EE682A 		vmov.f32	s5, s17
+ 550 01e2 FFF7FEFF 		bl	FusionVectorCrossProduct
  551              	.LVL24:
- 552 01e8 8DED1F0A 		vstr.32	s0, [sp, #124]
- 553 01ec CDED200A 		vstr.32	s1, [sp, #128]
- 554 01f0 8DED211A 		vstr.32	s2, [sp, #132]
+ 552 01e6 8DED1F0A 		vstr.32	s0, [sp, #124]
+ 553 01ea CDED200A 		vstr.32	s1, [sp, #128]
+ 554 01ee 8DED211A 		vstr.32	s2, [sp, #132]
   41:Core/Src/FusionCompass.c ****             return FusionRadiansToDegrees(atan2f(west.axis.x, north.axis.x));
  555              		.loc 1 41 40 discriminator 1 view .LVU124
- 556 01f4 FFF7FEFF 		bl	FusionVectorNormalise
+ 556 01f2 FFF7FEFF 		bl	FusionVectorNormalise
  557              	.LVL25:
- 558 01f8 8DED0D0A 		vstr.32	s0, [sp, #52]
- 559 01fc CDED0E0A 		vstr.32	s1, [sp, #56]
- 560 0200 8DED0F1A 		vstr.32	s2, [sp, #60]
+ 558 01f6 8DED0D0A 		vstr.32	s0, [sp, #52]
+ 559 01fa CDED0E0A 		vstr.32	s1, [sp, #56]
+ 560 01fe 8DED0F1A 		vstr.32	s2, [sp, #60]
   42:Core/Src/FusionCompass.c ****         }
  561              		.loc 1 42 13 is_stmt 1 view .LVU125
   42:Core/Src/FusionCompass.c ****         }
- 562              		.loc 1 42 20 is_stmt 0 view .LVU126
- 563 0204 F0EE400A 		vmov.f32	s1, s0
- 564 0208 B0EE480A 		vmov.f32	s0, s16
- 565 020c FFF7FEFF 		bl	atan2f
+ 562              		.loc 1 42 43 is_stmt 0 view .LVU126
+ 563 0202 F0EE400A 		vmov.f32	s1, s0
+ 564 0206 B0EE480A 		vmov.f32	s0, s16
+ 565 020a FFF7FEFF 		bl	atan2f
  566              	.LVL26:
  567              	.LBB42:
  568              	.LBI42:
@@ -1078,18 +1078,18 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  569              		.loc 2 136 21 is_stmt 1 view .LVU127
  570              	.LBB43:
  137:Core/Inc/FusionMath.h **** }
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 19
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 19
 
 
  571              		.loc 2 137 5 view .LVU128
  137:Core/Inc/FusionMath.h **** }
  572              		.loc 2 137 20 is_stmt 0 view .LVU129
- 573 0210 DFED037A 		vldr.32	s15, .L15
- 574 0214 20EE270A 		vmul.f32	s0, s0, s15
+ 573 020e DFED047A 		vldr.32	s15, .L15
+ 574 0212 20EE270A 		vmul.f32	s0, s0, s15
  575              	.LVL27:
  137:Core/Inc/FusionMath.h **** }
  576              		.loc 2 137 20 view .LVU130
- 577 0218 42E7     		b	.L9
+ 577 0216 43E7     		b	.L9
  578              	.LVL28:
  579              	.L13:
  137:Core/Inc/FusionMath.h **** }
@@ -1099,10 +1099,10 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  583              	.LBE39:
   26:Core/Src/FusionCompass.c ****         case FusionConventionNwu: {
  584              		.loc 1 26 5 view .LVU132
- 585 021a 9FED020A 		vldr.32	s0, .L15+4
- 586 021e 3FE7     		b	.L9
+ 585 0218 9FED020A 		vldr.32	s0, .L15+4
+ 586 021c 40E7     		b	.L9
  587              	.L16:
- 588              		.align	2
+ 588 021e 00BF     		.align	2
  589              	.L15:
  590 0220 E02E6542 		.word	1113927392
  591 0224 00000000 		.word	0
@@ -1110,25 +1110,25 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 1
  593              	.LFE23:
  595              		.text
  596              	.Letext0:
- 597              		.file 3 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_defa
- 598              		.file 4 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/sys/_stdint.h
+ 597              		.file 3 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/machine/_default_ty
+ 598              		.file 4 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/sys/_stdint.h"
  599              		.file 5 "Core/Inc/FusionConvention.h"
- 600              		.file 6 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/math.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s 			page 20
+ 600              		.file 6 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/math.h"
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s 			page 20
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 FusionCompass.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:21     .text.FusionVectorCrossProduct:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:26     .text.FusionVectorCrossProduct:00000000 FusionVectorCrossProduct
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:87     .text.FusionVectorMagnitudeSquared:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:92     .text.FusionVectorMagnitudeSquared:00000000 FusionVectorMagnitudeSquared
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:153    .text.FusionVectorNormalise:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:158    .text.FusionVectorNormalise:00000000 FusionVectorNormalise
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:265    .text.FusionVectorNormalise:00000090 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:272    .text.FusionCompassCalculateHeading:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:278    .text.FusionCompassCalculateHeading:00000000 FusionCompassCalculateHeading
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//ccaB1xeW.s:590    .text.FusionCompassCalculateHeading:00000220 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:21     .text.FusionVectorCrossProduct:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:26     .text.FusionVectorCrossProduct:00000000 FusionVectorCrossProduct
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:87     .text.FusionVectorMagnitudeSquared:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:92     .text.FusionVectorMagnitudeSquared:00000000 FusionVectorMagnitudeSquared
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:153    .text.FusionVectorNormalise:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:158    .text.FusionVectorNormalise:00000000 FusionVectorNormalise
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:265    .text.FusionVectorNormalise:0000008c $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:272    .text.FusionCompassCalculateHeading:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:278    .text.FusionCompassCalculateHeading:00000000 FusionCompassCalculateHeading
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccAnrqjt.s:590    .text.FusionCompassCalculateHeading:00000220 $d
 
 UNDEFINED SYMBOLS
 atan2f

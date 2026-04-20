@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
   28:Core/Src/ist8310driver_middleware.c ****   * @retval         none
   29:Core/Src/ist8310driver_middleware.c ****   */
   30:Core/Src/ist8310driver_middleware.c **** /**
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 2
 
 
   31:Core/Src/ist8310driver_middleware.c ****   * @brief          ³õÊ¼»¯IST8310µÄGPIO
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
   65              	ist8310_IIC_read_single_reg:
   66              	.LVL0:
   67              	.LFB164:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 3
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 3
 
 
   53:Core/Src/ist8310driver_middleware.c **** 
@@ -175,10 +175,10 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  102              	.LCFI2:
  103              		.cfi_def_cfa_offset 4
  104              		@ sp needed
- 105 0028 5DF804FB 		ldr	pc, [sp], #4
+ 105 0028 00BD     		pop	{pc}
  106              	.L6:
- 107              		.align	2
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 4
+ 107 002a 00BF     		.align	2
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 4
 
 
  108              	.L5:
@@ -237,8 +237,8 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  146 0018 1C21     		movs	r1, #28
  147              	.LVL5:
  148              		.loc 1 86 5 view .LVU16
- 149 001a 0348     		ldr	r0, .L9
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 5
+ 149 001a 0248     		ldr	r0, .L9
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 5
 
 
  150              	.LVL6:
@@ -251,11 +251,11 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  156              	.LCFI5:
  157              		.cfi_def_cfa_offset 4
  158              		@ sp needed
- 159 0022 5DF804FB 		ldr	pc, [sp], #4
+ 159 0022 00BD     		pop	{pc}
  160              	.L10:
- 161 0026 00BF     		.align	2
+ 161              		.align	2
  162              	.L9:
- 163 0028 00000000 		.word	hi2c3
+ 163 0024 00000000 		.word	hi2c3
  164              		.cfi_endproc
  165              	.LFE165:
  167              		.section	.text.ist8310_IIC_read_muli_reg,"ax",%progbits
@@ -298,7 +298,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  188              		.cfi_def_cfa_offset 24
  105:Core/Src/ist8310driver_middleware.c ****     HAL_I2C_Mem_Read(&hi2c3, IST8310_IIC_ADDRESS <<1, reg,I2C_MEMADD_SIZE_8BIT,buf,len,10);
  189              		.loc 1 105 5 is_stmt 1 view .LVU21
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 6
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 6
 
 
  190 0004 0A23     		movs	r3, #10
@@ -312,7 +312,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  198 0010 1C21     		movs	r1, #28
  199              	.LVL10:
  200              		.loc 1 105 5 view .LVU23
- 201 0012 0348     		ldr	r0, .L13
+ 201 0012 0248     		ldr	r0, .L13
  202              	.LVL11:
  203              		.loc 1 105 5 view .LVU24
  204 0014 FFF7FEFF 		bl	HAL_I2C_Mem_Read
@@ -323,11 +323,11 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  208              	.LCFI8:
  209              		.cfi_def_cfa_offset 4
  210              		@ sp needed
- 211 001a 5DF804FB 		ldr	pc, [sp], #4
+ 211 001a 00BD     		pop	{pc}
  212              	.L14:
- 213 001e 00BF     		.align	2
+ 213              		.align	2
  214              	.L13:
- 215 0020 00000000 		.word	hi2c3
+ 215 001c 00000000 		.word	hi2c3
  216              		.cfi_endproc
  217              	.LFE166:
  219              		.section	.text.ist8310_IIC_write_muli_reg,"ax",%progbits
@@ -358,7 +358,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  123:Core/Src/ist8310driver_middleware.c **** void ist8310_IIC_write_muli_reg(uint8_t reg, uint8_t *data, uint8_t len)
  124:Core/Src/ist8310driver_middleware.c **** {
  229              		.loc 1 124 1 is_stmt 1 view -0
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 7
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 7
 
 
  230              		.cfi_startproc
@@ -385,7 +385,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  250 0010 1C21     		movs	r1, #28
  251              	.LVL15:
  252              		.loc 1 125 5 view .LVU30
- 253 0012 0348     		ldr	r0, .L17
+ 253 0012 0248     		ldr	r0, .L17
  254              	.LVL16:
  255              		.loc 1 125 5 view .LVU31
  256 0014 FFF7FEFF 		bl	HAL_I2C_Mem_Write
@@ -396,11 +396,11 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  260              	.LCFI11:
  261              		.cfi_def_cfa_offset 4
  262              		@ sp needed
- 263 001a 5DF804FB 		ldr	pc, [sp], #4
+ 263 001a 00BD     		pop	{pc}
  264              	.L18:
- 265 001e 00BF     		.align	2
+ 265              		.align	2
  266              	.L17:
- 267 0020 00000000 		.word	hi2c3
+ 267 001c 00000000 		.word	hi2c3
  268              		.cfi_endproc
  269              	.LFE167:
  271              		.section	.text.ist8310_delay_ms,"ax",%progbits
@@ -418,7 +418,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  130:Core/Src/ist8310driver_middleware.c ****   * @param[in]      ms: ms millisecond
  131:Core/Src/ist8310driver_middleware.c ****   * @retval         none
  132:Core/Src/ist8310driver_middleware.c ****   */
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 8
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 8
 
 
  133:Core/Src/ist8310driver_middleware.c **** /**
@@ -478,7 +478,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  314              		.loc 1 155 1 is_stmt 0 view .LVU38
  315 0000 10B4     		push	{r4}
  316              	.LCFI13:
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 9
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 9
 
 
  317              		.cfi_def_cfa_offset 4
@@ -538,7 +538,7 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  352              	.LVL28:
  353              	.L24:
  174:Core/Src/ist8310driver_middleware.c ****             }
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 10
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 10
 
 
  175:Core/Src/ist8310driver_middleware.c ****             told = tnow;
@@ -598,25 +598,22 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  182:Core/Src/ist8310driver_middleware.c **** }
  389              		.loc 1 182 1 view .LVU69
  390 0034 5DF8044B 		ldr	r4, [sp], #4
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 11
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 11
 
 
- 391              	.LCFI14:
- 392              		.cfi_restore 4
- 393              		.cfi_def_cfa_offset 0
- 394              	.LVL35:
- 395              		.loc 1 182 1 view .LVU70
- 396 0038 7047     		bx	lr
- 397              		.cfi_endproc
- 398              	.LFE169:
- 400              		.section	.text.ist8310_RST_H,"ax",%progbits
- 401              		.align	1
- 402              		.global	ist8310_RST_H
- 403              		.syntax unified
- 404              		.thumb
- 405              		.thumb_func
- 407              	ist8310_RST_H:
- 408              	.LFB170:
+ 391              	.LVL35:
+ 392              		.loc 1 182 1 view .LVU70
+ 393 0038 7047     		bx	lr
+ 394              		.cfi_endproc
+ 395              	.LFE169:
+ 397              		.section	.text.ist8310_RST_H,"ax",%progbits
+ 398              		.align	1
+ 399              		.global	ist8310_RST_H
+ 400              		.syntax unified
+ 401              		.thumb
+ 402              		.thumb_func
+ 404              	ist8310_RST_H:
+ 405              	.LFB170:
  183:Core/Src/ist8310driver_middleware.c **** 
  184:Core/Src/ist8310driver_middleware.c **** 
  185:Core/Src/ist8310driver_middleware.c **** /**
@@ -631,42 +628,42 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  194:Core/Src/ist8310driver_middleware.c ****   */
  195:Core/Src/ist8310driver_middleware.c **** void ist8310_RST_H(void)
  196:Core/Src/ist8310driver_middleware.c **** {
- 409              		.loc 1 196 1 is_stmt 1 view -0
- 410              		.cfi_startproc
- 411              		@ args = 0, pretend = 0, frame = 0
- 412              		@ frame_needed = 0, uses_anonymous_args = 0
- 413 0000 08B5     		push	{r3, lr}
- 414              	.LCFI15:
- 415              		.cfi_def_cfa_offset 8
- 416              		.cfi_offset 3, -8
- 417              		.cfi_offset 14, -4
+ 406              		.loc 1 196 1 is_stmt 1 view -0
+ 407              		.cfi_startproc
+ 408              		@ args = 0, pretend = 0, frame = 0
+ 409              		@ frame_needed = 0, uses_anonymous_args = 0
+ 410 0000 08B5     		push	{r3, lr}
+ 411              	.LCFI14:
+ 412              		.cfi_def_cfa_offset 8
+ 413              		.cfi_offset 3, -8
+ 414              		.cfi_offset 14, -4
  197:Core/Src/ist8310driver_middleware.c ****     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, GPIO_PIN_SET);
- 418              		.loc 1 197 5 view .LVU72
- 419 0002 0122     		movs	r2, #1
- 420 0004 4021     		movs	r1, #64
- 421 0006 0248     		ldr	r0, .L30
- 422 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 423              	.LVL36:
+ 415              		.loc 1 197 5 view .LVU72
+ 416 0002 0122     		movs	r2, #1
+ 417 0004 4021     		movs	r1, #64
+ 418 0006 0248     		ldr	r0, .L30
+ 419 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 420              	.LVL36:
  198:Core/Src/ist8310driver_middleware.c **** }
- 424              		.loc 1 198 1 is_stmt 0 view .LVU73
- 425 000c 08BD     		pop	{r3, pc}
- 426              	.L31:
- 427 000e 00BF     		.align	2
- 428              	.L30:
- 429 0010 00180240 		.word	1073879040
- 430              		.cfi_endproc
- 431              	.LFE170:
- 433              		.section	.text.ist8310_RST_L,"ax",%progbits
- 434              		.align	1
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 12
+ 421              		.loc 1 198 1 is_stmt 0 view .LVU73
+ 422 000c 08BD     		pop	{r3, pc}
+ 423              	.L31:
+ 424 000e 00BF     		.align	2
+ 425              	.L30:
+ 426 0010 00180240 		.word	1073879040
+ 427              		.cfi_endproc
+ 428              	.LFE170:
+ 430              		.section	.text.ist8310_RST_L,"ax",%progbits
+ 431              		.align	1
+ 432              		.global	ist8310_RST_L
+ 433              		.syntax unified
+ 434              		.thumb
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 12
 
 
- 435              		.global	ist8310_RST_L
- 436              		.syntax unified
- 437              		.thumb
- 438              		.thumb_func
- 440              	ist8310_RST_L:
- 441              	.LFB171:
+ 435              		.thumb_func
+ 437              	ist8310_RST_L:
+ 438              	.LFB171:
  199:Core/Src/ist8310driver_middleware.c **** 
  200:Core/Src/ist8310driver_middleware.c **** 
  201:Core/Src/ist8310driver_middleware.c **** /**
@@ -681,73 +678,73 @@ ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 1
  210:Core/Src/ist8310driver_middleware.c ****   */
  211:Core/Src/ist8310driver_middleware.c **** extern void ist8310_RST_L(void)
  212:Core/Src/ist8310driver_middleware.c **** {
- 442              		.loc 1 212 1 is_stmt 1 view -0
- 443              		.cfi_startproc
- 444              		@ args = 0, pretend = 0, frame = 0
- 445              		@ frame_needed = 0, uses_anonymous_args = 0
- 446 0000 08B5     		push	{r3, lr}
- 447              	.LCFI16:
- 448              		.cfi_def_cfa_offset 8
- 449              		.cfi_offset 3, -8
- 450              		.cfi_offset 14, -4
+ 439              		.loc 1 212 1 is_stmt 1 view -0
+ 440              		.cfi_startproc
+ 441              		@ args = 0, pretend = 0, frame = 0
+ 442              		@ frame_needed = 0, uses_anonymous_args = 0
+ 443 0000 08B5     		push	{r3, lr}
+ 444              	.LCFI15:
+ 445              		.cfi_def_cfa_offset 8
+ 446              		.cfi_offset 3, -8
+ 447              		.cfi_offset 14, -4
  213:Core/Src/ist8310driver_middleware.c ****     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, GPIO_PIN_RESET);
- 451              		.loc 1 213 5 view .LVU75
- 452 0002 0022     		movs	r2, #0
- 453 0004 4021     		movs	r1, #64
- 454 0006 0248     		ldr	r0, .L34
- 455 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 456              	.LVL37:
+ 448              		.loc 1 213 5 view .LVU75
+ 449 0002 0022     		movs	r2, #0
+ 450 0004 4021     		movs	r1, #64
+ 451 0006 0248     		ldr	r0, .L34
+ 452 0008 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 453              	.LVL37:
  214:Core/Src/ist8310driver_middleware.c **** }
- 457              		.loc 1 214 1 is_stmt 0 view .LVU76
- 458 000c 08BD     		pop	{r3, pc}
- 459              	.L35:
- 460 000e 00BF     		.align	2
- 461              	.L34:
- 462 0010 00180240 		.word	1073879040
- 463              		.cfi_endproc
- 464              	.LFE171:
- 466              		.text
- 467              	.Letext0:
- 468              		.file 2 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_defa
- 469              		.file 3 "/Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/sys/_stdint.h
- 470              		.file 4 "Drivers/CMSIS/Include/core_cm4.h"
- 471              		.file 5 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
- 472              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
- 473              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
- 474              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
- 475              		.file 9 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h"
- 476              		.file 10 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  /var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s 			page 13
+ 454              		.loc 1 214 1 is_stmt 0 view .LVU76
+ 455 000c 08BD     		pop	{r3, pc}
+ 456              	.L35:
+ 457 000e 00BF     		.align	2
+ 458              	.L34:
+ 459 0010 00180240 		.word	1073879040
+ 460              		.cfi_endproc
+ 461              	.LFE171:
+ 463              		.text
+ 464              	.Letext0:
+ 465              		.file 2 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/machine/_default_ty
+ 466              		.file 3 "/opt/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/arm-none-eabi/include/sys/_stdint.h"
+ 467              		.file 4 "Drivers/CMSIS/Include/core_cm4.h"
+ 468              		.file 5 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
+ 469              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 470              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
+ 471              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 472              		.file 9 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h"
+ 473              		.file 10 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  /var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s 			page 13
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 ist8310driver_middleware.c
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:21     .text.ist8310_GPIO_init:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:27     .text.ist8310_GPIO_init:00000000 ist8310_GPIO_init
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:40     .text.ist8310_com_init:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:46     .text.ist8310_com_init:00000000 ist8310_com_init
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:59     .text.ist8310_IIC_read_single_reg:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:65     .text.ist8310_IIC_read_single_reg:00000000 ist8310_IIC_read_single_reg
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:109    .text.ist8310_IIC_read_single_reg:0000002c $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:114    .text.ist8310_IIC_write_single_reg:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:120    .text.ist8310_IIC_write_single_reg:00000000 ist8310_IIC_write_single_reg
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:163    .text.ist8310_IIC_write_single_reg:00000028 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:168    .text.ist8310_IIC_read_muli_reg:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:174    .text.ist8310_IIC_read_muli_reg:00000000 ist8310_IIC_read_muli_reg
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:215    .text.ist8310_IIC_read_muli_reg:00000020 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:220    .text.ist8310_IIC_write_muli_reg:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:226    .text.ist8310_IIC_write_muli_reg:00000000 ist8310_IIC_write_muli_reg
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:267    .text.ist8310_IIC_write_muli_reg:00000020 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:272    .text.ist8310_delay_ms:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:278    .text.ist8310_delay_ms:00000000 ist8310_delay_ms
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:300    .text.ist8310_delay_us:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:306    .text.ist8310_delay_us:00000000 ist8310_delay_us
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:401    .text.ist8310_RST_H:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:407    .text.ist8310_RST_H:00000000 ist8310_RST_H
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:429    .text.ist8310_RST_H:00000010 $d
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:434    .text.ist8310_RST_L:00000000 $t
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:440    .text.ist8310_RST_L:00000000 ist8310_RST_L
-/var/folders/w5/30yxzty101lfkjn94y0dlkk00000gn/T//cc76hn0O.s:462    .text.ist8310_RST_L:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:21     .text.ist8310_GPIO_init:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:27     .text.ist8310_GPIO_init:00000000 ist8310_GPIO_init
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:40     .text.ist8310_com_init:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:46     .text.ist8310_com_init:00000000 ist8310_com_init
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:59     .text.ist8310_IIC_read_single_reg:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:65     .text.ist8310_IIC_read_single_reg:00000000 ist8310_IIC_read_single_reg
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:109    .text.ist8310_IIC_read_single_reg:0000002c $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:114    .text.ist8310_IIC_write_single_reg:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:120    .text.ist8310_IIC_write_single_reg:00000000 ist8310_IIC_write_single_reg
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:163    .text.ist8310_IIC_write_single_reg:00000024 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:168    .text.ist8310_IIC_read_muli_reg:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:174    .text.ist8310_IIC_read_muli_reg:00000000 ist8310_IIC_read_muli_reg
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:215    .text.ist8310_IIC_read_muli_reg:0000001c $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:220    .text.ist8310_IIC_write_muli_reg:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:226    .text.ist8310_IIC_write_muli_reg:00000000 ist8310_IIC_write_muli_reg
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:267    .text.ist8310_IIC_write_muli_reg:0000001c $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:272    .text.ist8310_delay_ms:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:278    .text.ist8310_delay_ms:00000000 ist8310_delay_ms
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:300    .text.ist8310_delay_us:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:306    .text.ist8310_delay_us:00000000 ist8310_delay_us
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:398    .text.ist8310_RST_H:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:404    .text.ist8310_RST_H:00000000 ist8310_RST_H
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:426    .text.ist8310_RST_H:00000010 $d
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:431    .text.ist8310_RST_L:00000000 $t
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:437    .text.ist8310_RST_L:00000000 ist8310_RST_L
+/var/folders/w9/l2kswtfn3fs2kslkvv5vg9sh0000gn/T//ccgWM94J.s:459    .text.ist8310_RST_L:00000010 $d
 
 UNDEFINED SYMBOLS
 HAL_I2C_Mem_Read

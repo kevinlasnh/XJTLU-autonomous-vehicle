@@ -35,9 +35,11 @@
    - Status: Software complete, awaiting outdoor verification
    - Impact: Cannot claim GPS goal navigation capability as a final on-vehicle stable feature
 
-4. **[Fatal] Velocity smoother closed-loop control failure**
+4. **[Fixed] Velocity smoother closed-loop control failure**
    - Description: C Board odometry closed-loop causes abnormal vehicle spinning; FAST-LIO2 odometry closed-loop also did not achieve stable path tracking.
-   - Status: Still using `OPEN_LOOP`
+   - Root cause: Ki=100 with integral limit commented out → iout accumulates unbounded; speed_rpm parsed as uint16_t causing incorrect negative speed; UART RX buffer missing \0 terminator causing sscanf overflow
+   - Fix: Branch `stm32f4_fix` — restored integral limit, fixed speed_rpm sign cast, added UART \0 termination, unified wheelbase parameter, used actual DeltaTime and 4-motor average for odometry
+   - Status: Code complete, pending flash verification (2026-04-20)
    - Source: 2025-11 series of on-vehicle tests
 
 ## Important Issues
@@ -109,9 +111,11 @@
     - Description: This output is not a core dependency in the current main chain and can be re-evaluated during future resource optimization.
     - Status: Low priority
 
-18. **[Low] Lower-level controller PID emergency stop causes wheel reversal**
+18. **[Fixed] Lower-level controller PID emergency stop causes wheel reversal**
     - Description: The emergency stop logic causes noticeable wheel reversal.
-    - Status: Hardware / lower-level controller issue
+    - Root cause: B-key e-stop did not clear PID integrators + led_pink_blink() blocked 400ms + lacked near-zero-speed release stage
+    - Fix: Branch `stm32f4_fix` — rewritten as two-stage controlled braking (PID active braking + near-zero-speed release), integrators cleared, non-blocking LED
+    - Status: Code complete, pending flash verification (2026-04-20)
 
 19. **[Low] USB 2.0 interface limitation**
     - Description: Unfriendly for certain high-bandwidth peripheral expansion.
