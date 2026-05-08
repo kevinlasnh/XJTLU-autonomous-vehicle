@@ -203,8 +203,10 @@
     odom_watchdog_tf_stale_abort_count: 3
     # watchdog 检查周期。
     odom_watchdog_monitor_period_s: 0.1
-    # 已下发 subgoal 若因 live alignment 飘移而偏移超阈值，则取消并重算。
+    # 已下发 subgoal 若因 live alignment 飘移而偏移超阈值，则 preempt 并重算。
     alignment_shift_cancel_threshold_m: 0.5
+    # alignment shift 触发 preempt 后的冷却时间，避免 GPS 抖动导致高频重发 goal。
+    alignment_shift_cooldown_s: 3.0
 
 /serial_twistctl_node:
   ros__parameters:

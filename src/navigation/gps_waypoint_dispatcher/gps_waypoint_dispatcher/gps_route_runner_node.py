@@ -95,6 +95,7 @@ class GPSRouteRunner(Node):
         self.declare_parameter("odom_watchdog_tf_stale_abort_count", 3)
         self.declare_parameter("odom_watchdog_monitor_period_s", 0.1)
         self.declare_parameter("alignment_shift_cancel_threshold_m", 0.5)
+        self.declare_parameter("alignment_shift_cooldown_s", 3.0)
 
         self._route_file = FSPath(self.get_parameter("route_file").value).expanduser()
         self._route_frame = str(self.get_parameter("route_frame").value)
@@ -124,6 +125,10 @@ class GPSRouteRunner(Node):
         self._alignment_shift_cancel_threshold_m = float(
             self.get_parameter("alignment_shift_cancel_threshold_m").value
         )
+        self._alignment_shift_cooldown_s = float(
+            self.get_parameter("alignment_shift_cooldown_s").value
+        )
+        self._last_alignment_shift_mono = -math.inf
 
         self._status_pub = self.create_publisher(String, "/gps_corridor/status", 10)
         self._goal_pub = self.create_publisher(PoseStamped, "/gps_corridor/goal_map", 10)
@@ -613,22 +618,28 @@ class GPSRouteRunner(Node):
                 return int(result.status)
 
             if alignment_at_send is not None and self._latest_alignment is not None:
-                goal_enu = self._map_to_enu(
-                    pose.pose.position.x, pose.pose.position.y, alignment_at_send
-                )
-                new_map = self._enu_to_map(goal_enu[0], goal_enu[1], self._latest_alignment)
-                displacement_m = math.hypot(
-                    new_map[0] - pose.pose.position.x,
-                    new_map[1] - pose.pose.position.y,
-                )
-                if displacement_m > self._alignment_shift_cancel_threshold_m:
-                    self.get_logger().info(
-                        "Alignment shifted %.2fm for %s subgoal %d, cancelling goal"
-                        % (displacement_m, waypoint_name, subgoal_index)
+                alignment_check_mono = time.monotonic()
+                if (
+                    alignment_check_mono - self._last_alignment_shift_mono
+                    >= self._alignment_shift_cooldown_s
+                ):
+                    goal_enu = self._map_to_enu(
+                        pose.pose.position.x, pose.pose.position.y, alignment_at_send
                     )
-                    cancel_future = goal_handle.cancel_goal_async()
-                    rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=2.0)
-                    return GOAL_STATUS_ALIGNMENT_SHIFT
+                    new_map = self._enu_to_map(
+                        goal_enu[0], goal_enu[1], self._latest_alignment
+                    )
+                    displacement_m = math.hypot(
+                        new_map[0] - pose.pose.position.x,
+                        new_map[1] - pose.pose.position.y,
+                    )
+                    if displacement_m > self._alignment_shift_cancel_threshold_m:
+                        self.get_logger().info(
+                            "Alignment shifted %.2fm for %s subgoal %d, preempting with new goal"
+                            % (displacement_m, waypoint_name, subgoal_index)
+                        )
+                        self._last_alignment_shift_mono = alignment_check_mono
+                        return GOAL_STATUS_ALIGNMENT_SHIFT
 
             current_pose = self._try_lookup_current_pose(timeout_s=0.05)
             now_mono = time.monotonic()
