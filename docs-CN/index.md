@@ -1,6 +1,6 @@
 # FYP 自主导航车辆文档索引
 
-> 最后更新: 2026-04-17
+> 最后更新: 2026-05-08
 
 ## 当前系统摘要
 
@@ -23,7 +23,8 @@
   - **直线稳定性调优已完成**（2026-04-02）：引入 Savitzky-Golay 路径平滑 + MPPI critic 调优，直线跟踪已达到"完美成功"标准
   - **动态避障恢复与重规划优化**（2026-04-05）：全局重规划提升至 5Hz，Navfn 启用 A* 搜索；BT 恢复机制升级为 5 级渐进式（局部清理 -> 等待 -> 原地旋转 -> 全局清理 -> 后退 1m）。这组 5Hz 重规划/A* 仍保留在当前基线中。
   - **PGO 可视化增强已并入当前基线**：支持按需发布 `/pgo/global_map`，并可通过 `pgo_launch.py rviz_config:=...` 注入自定义 RViz 布局。
-  - 当前状态：**室内导航已验证；GPS corridor 基本可用；当前仓库集成基线来自原 `gps-mppi` 主线**
+  - **2026-05-08 部署修复**：alignment shift 改为 Nav2 goal preemption、global costmap 扩到 `100m x 100m`、corridor/explore 默认恢复 bringup 完整 RViz 布局。
+  - 当前状态：**室内导航已验证；GPS corridor 软件链可部署并能进入路线执行；普通 GNSS `/fix` 的物理坐标精度仍是当前主阻塞**
 - 当前导航与建图主栈: FAST-LIO2 + PGO + Nav2 (MPPI)
 - 运行时数据根目录: `~/XJTLU-autonomous-vehicle/runtime-data`
 - 参数统一入口: `src/bringup/config/master_params.yaml`
@@ -57,6 +58,7 @@
 | 2025-12 | [devlog/2025-12.md](devlog/2025-12.md) |
 | 2026-03 | [devlog/2026-03.md](devlog/2026-03.md) |
 | 2026-04 | [devlog/2026-04.md](devlog/2026-04.md) |
+| 2026-05 | [devlog/2026-05.md](devlog/2026-05.md) |
 
 ## 仓库级辅助文档
 

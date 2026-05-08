@@ -2,6 +2,16 @@
 
 ## 当前阻塞
 
+34. **[重要] GPS Corridor v3 普通 GNSS 坐标精度不足，Nav2 目标物理点不准**
+   - 描述: 2026-05-08 v3 路线实车测试中，系统能通过 startup guard 并进入 `RUNNING_ROUTE`，但用户实车观察到 GPS 转换后的坐标在 Nav2 中不对应正确物理点。
+   - 直接证据:
+     - `2026-05-08-17-43-03`: startup `distance_to_start_ref=1.83m`、`spread=0.06m`，进入 `RUNNING_ROUTE`，后续持续 alignment preempt，并出现 `Failed to make progress`
+     - `2026-05-08-17-50-10`: startup `distance_to_start_ref=3.25m`、`spread=0.36m`，进入 `RUNNING_ROUTE`，第一段 subgoal 从 `x=33.03 y=-0.67` 经 alignment shift 重算到 `x=46.69/-0.96`、`x=48.64/-1.46`、`x=48.35/-1.92`
+     - PGO/FAST-LIO2 持续收到 cloud + odom，未见点云地图、里程计或 `map -> odom` 发散证据
+     - 100x100 global costmap 已部署，v2 的 `goal off the global costmap` / `worldToMap failed` 问题未在 v3 复现
+   - 状态: 2026-05-08 记录。当前 runner、costmap、RViz 部署修复已收口；剩余问题归因到普通 `/fix` 绝对坐标与 ENU -> map 锚定/换算精度。
+   - 影响: 不能把当前普通 GNSS corridor 宣称为物理路径精确可用；后续应进入 RTK / robot_localization / 多点配准 / map 物理点路线等定位精度方案阶段。
+
 32. **[重要] runtime-data Hugging Face 远端同步阻塞**
    - 描述: 尝试将实车测试的 runtime-data 数据归档推送到 Hugging Face dataset 时失败。
    - 现象:

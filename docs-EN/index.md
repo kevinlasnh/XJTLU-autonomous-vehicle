@@ -1,6 +1,6 @@
 # FYP Autonomous Navigation Vehicle Documentation Index
 
-> Last updated: 2026-04-17
+> Last updated: 2026-05-08
 
 ## Current System Summary
 
@@ -23,7 +23,8 @@
   - **Straight-line stability tuning completed** (2026-04-02): Introduced Savitzky-Golay path smoothing + MPPI critic tuning, straight-line tracking achieved "perfectly successful" standard
   - **Dynamic obstacle avoidance recovery and replanning optimized** (2026-04-05): Global replanning raised to 5Hz, Navfn A* search enabled; BT recovery upgraded to 5-level progressive escalation (partial clear -> wait -> spin -> full clear -> backup 1m). This 5Hz replanning + A* baseline remains active.
   - **PGO visualization enhancements are now part of the baseline**: on-demand `/pgo/global_map` publication and custom RViz layout injection through `pgo_launch.py rviz_config:=...`.
-  - Current status: **Indoor navigation verified; GPS corridor basically functional; the repository integration baseline comes from the former `gps-mppi` line**
+  - **2026-05-08 deployment fixes**: alignment shift now uses Nav2 goal preemption, global costmap expanded to `100m x 100m`, and corridor/explore defaults back to the full bringup RViz layout.
+  - Current status: **Indoor navigation verified; GPS corridor software chain is deployable and can enter route execution; ordinary GNSS `/fix` physical-coordinate accuracy remains the current main blocker**
 - Current navigation and mapping stack: FAST-LIO2 + PGO + Nav2 (MPPI)
 - Runtime data root directory: `~/XJTLU-autonomous-vehicle/runtime-data`
 - Unified parameter entry point: `src/bringup/config/master_params.yaml`
@@ -57,6 +58,7 @@
 | 2025-12 | [devlog/2025-12.md](devlog/2025-12.md) |
 | 2026-03 | [devlog/2026-03.md](devlog/2026-03.md) |
 | 2026-04 | [devlog/2026-04.md](devlog/2026-04.md) |
+| 2026-05 | [devlog/2026-05.md](devlog/2026-05.md) |
 
 ## Repository-Level Auxiliary Documentation
 

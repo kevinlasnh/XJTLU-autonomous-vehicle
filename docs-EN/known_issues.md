@@ -2,6 +2,16 @@
 
 ## Current Blockers
 
+34. **[Important] GPS Corridor v3 ordinary GNSS accuracy is insufficient; Nav2 targets do not match physical points**
+   - Description: During the 2026-05-08 v3 on-vehicle tests, the system passed the startup guard and entered `RUNNING_ROUTE`, but the user observed that GPS-converted coordinates in Nav2 did not correspond to the intended physical points.
+   - Direct evidence:
+     - `2026-05-08-17-43-03`: startup `distance_to_start_ref=1.83m`, `spread=0.06m`, entered `RUNNING_ROUTE`, then repeatedly triggered alignment preemption and later reported `Failed to make progress`
+     - `2026-05-08-17-50-10`: startup `distance_to_start_ref=3.25m`, `spread=0.36m`, entered `RUNNING_ROUTE`; the first-segment subgoal moved from `x=33.03 y=-0.67` to `x=46.69/-0.96`, `x=48.64/-1.46`, and `x=48.35/-1.92` after alignment shifts
+     - PGO/FAST-LIO2 continuously received cloud + odom; no evidence of point cloud map, odometry, or `map -> odom` divergence
+     - The 100x100 global costmap was deployed, and the previous v2 `goal off the global costmap` / `worldToMap failed` issue did not recur in v3
+   - Status: Recorded on 2026-05-08. Runner, costmap, and RViz deployment fixes are closed; the remaining issue is attributed to ordinary `/fix` absolute positioning and ENU -> map anchoring/conversion accuracy.
+   - Impact: The current ordinary-GNSS corridor cannot be claimed as physically precise. The next phase should move to RTK, `robot_localization`, multi-point registration, or map-anchored physical waypoint routing.
+
 32. **[Important] runtime-data Hugging Face remote synchronization blocked**
    - Description: Attempts to archive and push on-vehicle test runtime-data to the Hugging Face dataset failed.
    - Symptom:
