@@ -528,10 +528,10 @@ global_costmap:
       rolling_window: true
       # 地图宽度；决定 costmap 在 X 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      width: 50
+      width: 100
       # 地图高度；决定 costmap 在 Y 方向覆盖的物理范围。
       # 调大：覆盖更广但内存和更新开销更高；调小：更省资源但看不到更远区域。
-      height: 50
+      height: 100
       # 代价地图层列表；决定当前 costmap 会叠加哪些地图层。
       # 增删地图层：会直接改变障碍信息来源和代价图行为。
       plugins: ["stvl_layer", "inflation_layer"]

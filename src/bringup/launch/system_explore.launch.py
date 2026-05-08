@@ -23,6 +23,7 @@ def generate_launch_description():
     bringup_share = get_package_share_directory("bringup")
     default_master_params_file = os.path.join(bringup_share, "config", "master_params.yaml")
     nav2_params_file = os.path.join(bringup_share, "config", "nav2_explore.yaml")
+    default_rviz_config = os.path.join(bringup_share, "rviz", "pgo.rviz")
     corridor_bt_xml = os.path.join(
         bringup_share,
         "behavior_trees",
@@ -48,6 +49,11 @@ def generate_launch_description():
         "pgo_extra_params_file",
         default_value="",
         description="Optional ROS2 parameter file appended only to the PGO node",
+    )
+    rviz_config_arg = DeclareLaunchArgument(
+        "rviz_config",
+        default_value=default_rviz_config,
+        description="RViz layout used by the Explore/Corridor stack",
     )
 
     livox_launch = IncludeLaunchDescription(
@@ -76,6 +82,7 @@ def generate_launch_description():
             "params_file": LaunchConfiguration("master_params_file"),
             "extra_params_file": LaunchConfiguration("pgo_extra_params_file"),
             "use_rviz": LaunchConfiguration("use_rviz"),
+            "rviz_config": LaunchConfiguration("rviz_config"),
         }.items(),
     )
 
@@ -116,6 +123,7 @@ def generate_launch_description():
             use_rviz_arg,
             master_params_arg,
             pgo_extra_params_arg,
+            rviz_config_arg,
             livox_launch,
             pgo_launch,
             serial_node,
