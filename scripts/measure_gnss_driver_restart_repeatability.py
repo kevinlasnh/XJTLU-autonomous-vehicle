@@ -105,7 +105,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--save-raw",
         action="store_true",
-        help="Also save CSV/JSON raw data beside the PNG.",
+        default=True,
+        help="Save CSV/JSON raw data beside the PNG. Enabled by default.",
+    )
+    parser.add_argument(
+        "--no-save-raw",
+        dest="save_raw",
+        action="store_false",
+        help="Disable CSV/JSON raw data output.",
     )
     parser.add_argument(
         "--save-driver-logs",
@@ -514,7 +521,8 @@ def write_raw_outputs(
     all_samples: list[dict[str, Any]],
     round_means: list[dict[str, Any]],
     summary: dict[str, Any],
-) -> None:
+) -> dict[str, Path]:
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     stamp = now_stamp()
     samples_path = args.output_dir / f"samples_{stamp}.csv"
     rounds_path = args.output_dir / f"round_summary_{stamp}.csv"
@@ -532,6 +540,12 @@ def write_raw_outputs(
 
     with open(summary_path, "w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2)
+
+    return {
+        "samples": samples_path,
+        "round_summary": rounds_path,
+        "summary": summary_path,
+    }
 
 
 def configure_plot_style(deps: RuntimeDeps) -> None:
@@ -722,11 +736,11 @@ def plot_results(
     )
     ax_bar.text(
         0.98,
-        0.04,
+        3.0,
         annotation,
-        transform=ax_bar.transAxes,
+        transform=ax_bar.get_yaxis_transform(),
         ha="right",
-        va="bottom",
+        va="center",
         fontsize=7,
         color=c_ref,
         bbox={"boxstyle": "round,pad=0.28", "facecolor": "white", "edgecolor": "#CBD5E1", "alpha": 0.95},
@@ -759,7 +773,7 @@ def print_header(args: argparse.Namespace) -> None:
     print("=" * 72)
 
 
-def run_experiment(deps: RuntimeDeps, args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
+def run_experiment(deps: RuntimeDeps, args: argparse.Namespace) -> tuple[Path, dict[str, Any], dict[str, Path]]:
     args.output_dir = args.output_dir.expanduser()
     args.params_file = args.params_file.expanduser()
     args.route_file = args.route_file.expanduser()
@@ -805,13 +819,14 @@ def run_experiment(deps: RuntimeDeps, args: argparse.Namespace) -> tuple[Path, d
                 current_driver = None
                 wait_for_no_publishers(deps, node, args.topic, timeout_s=3.0)
 
+        raw_outputs: dict[str, Path] = {}
         round_means, summary = analyze_samples(deps, args, all_samples)
-        output_path = plot_results(deps, args, all_samples, round_means, summary)
         if args.save_raw:
-            write_raw_outputs(args, all_samples, round_means, summary)
+            raw_outputs = write_raw_outputs(args, all_samples, round_means, summary)
+        output_path = plot_results(deps, args, all_samples, round_means, summary)
         if not args.save_driver_logs:
             shutil.rmtree(args.output_dir / ".driver_logs_tmp", ignore_errors=True)
-        return output_path, summary
+        return output_path, summary, raw_outputs
     finally:
         stop_gnss_driver(current_driver)
         node.destroy_node()
@@ -822,7 +837,7 @@ def main() -> int:
     args = parse_args()
     try:
         deps = preflight()
-        output_path, summary = run_experiment(deps, args)
+        output_path, summary, raw_outputs = run_experiment(deps, args)
     except KeyboardInterrupt:
         print("\nInterrupted. GNSS driver cleanup attempted.", file=sys.stderr)
         return 130
@@ -832,6 +847,10 @@ def main() -> int:
 
     print("")
     print(f"Saved PNG: {output_path}")
+    if raw_outputs:
+        print(f"Saved samples CSV: {raw_outputs['samples']}")
+        print(f"Saved round summary CSV: {raw_outputs['round_summary']}")
+        print(f"Saved summary JSON: {raw_outputs['summary']}")
     print(
         "Summary: "
         f"max={summary['max_mean_distance_m']:.2f}m, "
